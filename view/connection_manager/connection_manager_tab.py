@@ -1,11 +1,9 @@
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-                               QPushButton, QScrollArea, QFrame)
+                               QPushButton, QScrollArea, QFrame, QToolButton, QMenu)
 from PySide6.QtCore import Qt, Signal
 
+
 class AddConnectionCard(QPushButton):
-    """
-    A square dashed card used to trigger the addition of a new connection.
-    """
     def __init__(self, protocol_name):
         super().__init__()
         self.setFixedSize(160, 120)
@@ -20,23 +18,87 @@ class AddConnectionCard(QPushButton):
         """)
 
         layout = QVBoxLayout(self)
+        layout.setAlignment(Qt.AlignCenter)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(5)
+
         plus_icon = QLabel("+")
-        plus_icon.setStyleSheet("color: #666; font-size: 32px; font-weight: bold; background: transparent;")
+        plus_icon.setStyleSheet(
+            "color: #666; font-size: 32px; font-weight: bold; background: transparent; border: none;")
         plus_icon.setAlignment(Qt.AlignCenter)
 
         text_label = QLabel(f"Add {protocol_name}")
-        text_label.setStyleSheet("color: #666; font-size: 9pt; font-weight: bold; background: transparent;")
+        text_label.setStyleSheet(
+            "color: #666; font-size: 9pt; font-weight: bold; background: transparent; border: none;")
         text_label.setAlignment(Qt.AlignCenter)
 
         layout.addWidget(plus_icon)
         layout.addWidget(text_label)
 
+
+class ConnectionCard(QFrame):
+    connect_requested = Signal(dict)
+    edit_requested = Signal(dict)
+    delete_requested = Signal(dict)
+
+    def __init__(self, conn, parent=None):
+        super().__init__(parent)
+        self.conn = conn
+        self.setFixedSize(160, 120)
+        self.setCursor(Qt.PointingHandCursor)
+        self.setStyleSheet("""
+            QFrame {
+                background-color: #2d2d2d;
+                border: 1px solid #3d3d3d;
+                border-radius: 8px;
+            }
+            QFrame:hover { background-color: #3d3d3d; border-color: #0078d4; }
+            QLabel { color: white; font-weight: bold; border: none; background: transparent; }
+            QToolButton { color: white; border: none; background: transparent; font-size: 18px; font-weight: bold; }
+            QToolButton:hover { color: #0078d4; }
+            QToolButton::menu-indicator { image: none; }
+        """)
+
+        self.options_btn = QToolButton(self)
+        self.options_btn.setText("⋮")
+        self.options_btn.setPopupMode(QToolButton.InstantPopup)
+        self.options_btn.setCursor(Qt.ArrowCursor)
+        self.options_btn.setGeometry(135, 5, 20, 25)
+
+        self.menu = QMenu(self)
+        self.menu.setStyleSheet(
+            "QMenu { background-color: #2d2d2d; color: white; border: 1px solid #444; } QMenu::item:selected { background-color: #0078d4; }")
+
+        connect_action = self.menu.addAction("Connect")
+        edit_action = self.menu.addAction("Edit")
+        delete_action = self.menu.addAction("Delete")
+
+        connect_action.triggered.connect(lambda: self.connect_requested.emit(self.conn))
+        edit_action.triggered.connect(lambda: self.edit_requested.emit(self.conn))
+        delete_action.triggered.connect(lambda: self.delete_requested.emit(self.conn))
+
+        self.options_btn.setMenu(self.menu)
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(10, 10, 10, 10)
+        layout.setAlignment(Qt.AlignCenter)
+
+        name_label = QLabel(self.conn.get('name', 'Unnamed'))
+        name_label.setAlignment(Qt.AlignCenter)
+        name_label.setWordWrap(True)
+        layout.addWidget(name_label)
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.connect_requested.emit(self.conn)
+        super().mousePressEvent(event)
+
+
 class ConnectionRow(QWidget):
-    """
-    A horizontal row with left-aligned connections and manual arrow navigation.
-    """
     add_requested = Signal()
     connect_requested = Signal(dict)
+    edit_requested = Signal(dict)
+    delete_requested = Signal(dict)
 
     def __init__(self, title, protocol):
         super().__init__()
@@ -52,12 +114,12 @@ class ConnectionRow(QWidget):
         self.left_btn = QPushButton("<")
         self.left_btn.setFixedSize(30, 120)
         self.left_btn.setCursor(Qt.PointingHandCursor)
-        self.left_btn.setStyleSheet("background-color: #252525; color: white; border-radius: 4px;")
+        self.left_btn.setStyleSheet("background-color: #252525; color: white; border-radius: 4px; border: none;")
 
         self.right_btn = QPushButton(">")
         self.right_btn.setFixedSize(30, 120)
         self.right_btn.setCursor(Qt.PointingHandCursor)
-        self.right_btn.setStyleSheet("background-color: #252525; color: white; border-radius: 4px;")
+        self.right_btn.setStyleSheet("background-color: #252525; color: white; border-radius: 4px; border: none;")
 
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
@@ -96,9 +158,6 @@ class ConnectionRow(QWidget):
         bar.setValue(min(bar.value() + 200, bar.maximum()))
 
     def update_connections(self, connections):
-        """
-        Rebuilds the row while keeping the 'Add' card at index 0.
-        """
         while self.container_layout.count() > 1:
             item = self.container_layout.takeAt(1)
             widget = item.widget()
@@ -106,27 +165,20 @@ class ConnectionRow(QWidget):
                 widget.deleteLater()
 
         for conn in connections:
-            card = QPushButton(conn.get('name', 'Unnamed'))
-            card.setFixedSize(160, 120)
-            card.setStyleSheet("""
-                QPushButton {
-                    background-color: #2d2d2d;
-                    border: 1px solid #3d3d3d;
-                    border-radius: 8px;
-                    color: white;
-                    font-weight: bold;
-                }
-                QPushButton:hover { background-color: #3d3d3d; border-color: #0078d4; }
-            """)
-            card.clicked.connect(lambda checked=False, c=conn: self.connect_requested.emit(c))
+            card = ConnectionCard(conn)
+            card.connect_requested.connect(self.connect_requested.emit)
+            card.edit_requested.connect(self.edit_requested.emit)
+            card.delete_requested.connect(self.delete_requested.emit)
             self.container_layout.addWidget(card)
 
         self.container_layout.addStretch()
 
+
 class ConnectionManagerTab(QWidget):
-    """
-    Unified container for connection rows using a shared borderless background.
-    """
+    connect_profile_requested = Signal(dict)
+    edit_profile_requested = Signal(dict)
+    delete_profile_requested = Signal(dict)
+
     def __init__(self):
         super().__init__()
         self.main_layout = QVBoxLayout(self)
@@ -150,6 +202,10 @@ class ConnectionManagerTab(QWidget):
         self.ssh_row = ConnectionRow("SSH Connections", "SSH")
         self.telnet_row = ConnectionRow("Telnet Connections", "Telnet")
 
+        self._connect_row_signals(self.serial_row)
+        self._connect_row_signals(self.ssh_row)
+        self._connect_row_signals(self.telnet_row)
+
         self.container_layout.addWidget(self.serial_row)
         self.container_layout.addWidget(self._create_separator())
         self.container_layout.addWidget(self.ssh_row)
@@ -159,6 +215,11 @@ class ConnectionManagerTab(QWidget):
         self.main_layout.addWidget(self.shared_container)
         self.main_layout.addStretch()
 
+    def _connect_row_signals(self, row):
+        row.connect_requested.connect(self.connect_profile_requested.emit)
+        row.edit_requested.connect(self.edit_profile_requested.emit)
+        row.delete_requested.connect(self.delete_profile_requested.emit)
+
     def _create_separator(self):
         line = QFrame()
         line.setFrameShape(QFrame.HLine)
@@ -167,9 +228,6 @@ class ConnectionManagerTab(QWidget):
         return line
 
     def update_list(self, all_connections):
-        """
-        Synchronizes all protocol rows with the provided connection data list.
-        """
         self.serial_row.update_connections([c for c in all_connections if c.get('protocol') == 'Serial'])
         self.ssh_row.update_connections([c for c in all_connections if c.get('protocol') == 'SSH'])
         self.telnet_row.update_connections([c for c in all_connections if c.get('protocol') == 'Telnet'])
