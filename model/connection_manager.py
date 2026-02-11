@@ -9,9 +9,6 @@ from PySide6.QtCore import QObject, Signal
 logger = logging.getLogger(__name__)
 
 class ConnectionManager(QObject):
-    """
-    Manages connection profile persistence and provides connectivity testing logic with authentication.
-    """
     connections_updated = Signal()
 
     def __init__(self, filename="connections.json"):
@@ -20,9 +17,6 @@ class ConnectionManager(QObject):
         self.connections = self.load_connections()
 
     def load_connections(self):
-        """
-        Reads connection profiles from storage.
-        """
         if not os.path.exists(self.filename):
             return []
         try:
@@ -34,16 +28,10 @@ class ConnectionManager(QObject):
             return []
 
     def is_name_unique(self, name, protocol):
-        """
-        Ensures profile names are unique per protocol.
-        """
         return not any(c['name'].lower() == name.lower() and c['protocol'] == protocol
                        for c in self.connections)
 
     def save_connection(self, name, host, username, password, protocol, **kwargs):
-        """
-        Saves new connection profiles to memory and disk.
-        """
         if not self.is_name_unique(name, protocol):
             return False, f"A {protocol} profile named '{name}' already exists."
 
@@ -61,9 +49,6 @@ class ConnectionManager(QObject):
         return True, "Success"
 
     def _write_to_file(self):
-        """
-        Persists connection profiles to a JSON file.
-        """
         try:
             with open(self.filename, 'w', encoding='utf-8') as f:
                 json.dump(self.connections, f, indent=4)
@@ -72,9 +57,6 @@ class ConnectionManager(QObject):
 
     @staticmethod
     def test_ssh(host, port, timeout, username, password):
-        """
-        Performs a full SSH authentication test using Paramiko with strict timeouts.
-        """
         client = paramiko.SSHClient()
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         try:
@@ -98,15 +80,12 @@ class ConnectionManager(QObject):
             client.close()
 
     @staticmethod
-    def test_telnet(host, port, timeout, username, password):
+    def test_telnet(host, port, timeout, password):
         """
-        Performs a basic Telnet login test using telnetlib.
+        Performs a basic Telnet login test expecting only a password prompt.
         """
         try:
             tn = telnetlib.Telnet(host, port, timeout=timeout)
-            if username:
-                tn.read_until(b"Username: ", timeout=timeout)
-                tn.write(username.encode('ascii') + b"\n")
             if password:
                 tn.read_until(b"Password: ", timeout=timeout)
                 tn.write(password.encode('ascii') + b"\n")
@@ -122,9 +101,6 @@ class ConnectionManager(QObject):
 
     @staticmethod
     def test_serial_connection(port, baud):
-        """
-        Verifies availability of hardware COM ports.
-        """
         try:
             test_conn = serial.Serial(port=port, baudrate=baud, timeout=0.1)
             test_conn.close()
