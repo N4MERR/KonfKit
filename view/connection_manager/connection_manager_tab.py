@@ -27,7 +27,7 @@ class AddConnectionCard(QPushButton):
             "color: #666; font-size: 32px; font-weight: bold; background: transparent; border: none;")
         plus_icon.setAlignment(Qt.AlignCenter)
 
-        text_label = QLabel(f"Add {protocol_name}")
+        text_label = QLabel(f"Add {protocol_name} connection")
         text_label.setStyleSheet(
             "color: #666; font-size: 9pt; font-weight: bold; background: transparent; border: none;")
         text_label.setAlignment(Qt.AlignCenter)

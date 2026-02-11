@@ -6,7 +6,6 @@ from view.connection_manager.ssh_connection_dialog import SSHConnectionDialog
 from view.connection_manager.telnet_connection_dialog import TelnetConnectionDialog
 from view.progress_dialog import ProgressDialog
 
-
 class ConnectionController(QObject):
     def __init__(self, view, model, terminal_callback):
         super().__init__()
@@ -23,8 +22,7 @@ class ConnectionController(QObject):
         self.view.ssh_row.add_requested.connect(lambda: self.handle_add_with_protocol("SSH"))
         self.view.telnet_row.add_requested.connect(lambda: self.handle_add_with_protocol("Telnet"))
 
-        self.view.connect_profile_requested.connect(
-            lambda data: self.run_connection_process(data, "Connecting to device..."))
+        self.view.connect_profile_requested.connect(self.start_session)
         self.view.edit_profile_requested.connect(self.handle_edit_profile)
         self.view.delete_profile_requested.connect(self.handle_delete_profile)
 
@@ -34,15 +32,14 @@ class ConnectionController(QObject):
     def handle_add_with_protocol(self, protocol):
         if protocol == "SSH":
             dialog = SSHConnectionDialog(self.view)
-            dialog.test_requested.connect(lambda data: self.run_connection_process(data, "Testing connection..."))
         elif protocol == "Telnet":
             dialog = TelnetConnectionDialog(self.view)
-            dialog.test_requested.connect(lambda data: self.run_connection_process(data, "Testing connection..."))
         elif protocol == "Serial":
             dialog = SerialConnectionDialog(self.view)
-            dialog.test_requested.connect(lambda data: self.run_connection_process(data, "Testing connection..."))
         else:
             return
+
+        dialog.test_requested.connect(lambda data: self.run_test_process(data, "Testing connection..."))
 
         result = dialog.exec()
         if result == 10:
@@ -58,7 +55,7 @@ class ConnectionController(QObject):
             self.refresh_ui()
         elif result == 20:
             data = dialog.get_data()
-            self.run_connection_process(data, "Connecting to device...")
+            self.start_session(data)
 
     def handle_edit_profile(self, data):
         if data['protocol'] == "SSH":
@@ -82,14 +79,14 @@ class ConnectionController(QObject):
         else:
             return
 
-        dialog.test_requested.connect(lambda test_data: self.run_connection_process(test_data, "Testing connection..."))
+        dialog.test_requested.connect(lambda test_data: self.run_test_process(test_data, "Testing connection..."))
         result = dialog.exec()
 
         if result == 10:
             new_data = dialog.get_data()
             self.update_profile_in_model(data, new_data)
         elif result == 20:
-            self.run_connection_process(dialog.get_data(), "Connecting to device...")
+            self.start_session(dialog.get_data())
 
     def update_profile_in_model(self, old_data, new_data):
         for i, c in enumerate(self.model.connections):
@@ -109,7 +106,7 @@ class ConnectionController(QObject):
             self.model._write_to_file()
             self.refresh_ui()
 
-    def run_connection_process(self, data, message):
+    def run_test_process(self, data, message):
         self.progress_window = ProgressDialog(message, self.view)
 
         if data['protocol'] == "SSH":
@@ -121,13 +118,13 @@ class ConnectionController(QObject):
         else:
             worker = Worker(self.model.test_serial_connection, data['host'], data['baud'])
 
-        worker.signals.result.connect(lambda res: self.on_process_finished(res, data))
-        worker.signals.error.connect(lambda err: self.on_process_finished((False, str(err[1])), data))
+        worker.signals.result.connect(self.on_test_finished)
+        worker.signals.error.connect(lambda err: self.on_test_finished((False, str(err[1]))))
 
         self.threadpool.start(worker)
         self.progress_window.exec()
 
-    def on_process_finished(self, result, data):
+    def on_test_finished(self, result):
         if self.progress_window:
             self.progress_window.close()
             self.progress_window = None
@@ -135,7 +132,5 @@ class ConnectionController(QObject):
         success, message = result
         if success:
             QMessageBox.information(self.view, "Success", message)
-            if "Connecting" in message or data.get('name') == "":
-                self.start_session(data)
         else:
             QMessageBox.critical(self.view, "Failed", f"Process failed: {message}")

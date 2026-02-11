@@ -1,7 +1,6 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QPlainTextEdit, QGroupBox
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QPlainTextEdit, QFrame, QLabel
 from PySide6.QtCore import Signal, Qt
 from PySide6.QtGui import QTextCursor
-
 
 class TerminalWidget(QWidget):
     key_pressed = Signal(str)
@@ -11,32 +10,28 @@ class TerminalWidget(QWidget):
         self.layout = QVBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
 
-        self.group_box = QGroupBox(title)
-        self.group_layout = QVBoxLayout(self.group_box)
+        self.title_label = QLabel(title)
+        self.title_label.setAlignment(Qt.AlignCenter)
+        self.title_label.setStyleSheet("font-size: 11pt; font-weight: bold; margin-bottom: 5px;")
+        self.layout.addWidget(self.title_label)
 
         self.console_output = QPlainTextEdit()
-        self.console_output.setStyleSheet("""
-            background-color: #1e1e1e; 
-            color: #dcdcdc; 
-            font-family: 'Consolas', monospace;
-            font-size: 10pt;
-        """)
-
-        self.group_layout.addWidget(self.console_output)
-        self.layout.addWidget(self.group_box)
+        self.console_output.setFrameShape(QFrame.NoFrame)
+        self.layout.addWidget(self.console_output)
         self.console_output.installEventFilter(self)
 
         self.set_terminal_enabled(False)
 
     def set_terminal_enabled(self, enabled: bool):
-        """Visually locks the terminal and changes background color based on connection state."""
         self.console_output.setEnabled(enabled)
         if not enabled:
             self.console_output.setStyleSheet(
-                "background-color: #0d0d0d; color: #555555; font-family: 'Consolas', monospace; font-size: 10pt;")
+                "background-color: #0d0d0d; color: #555555; font-family: 'Consolas', monospace; font-size: 10pt; padding: 5px;"
+            )
         else:
             self.console_output.setStyleSheet(
-                "background-color: #1e1e1e; color: #dcdcdc; font-family: 'Consolas', monospace; font-size: 10pt;")
+                "background-color: #1e1e1e; color: #dcdcdc; font-family: 'Consolas', monospace; font-size: 10pt; padding: 5px;"
+            )
 
     def eventFilter(self, obj, event):
         if obj is self.console_output and event.type() == event.Type.KeyPress:
