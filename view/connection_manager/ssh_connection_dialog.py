@@ -1,12 +1,12 @@
 import re
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QFormLayout, QLineEdit,
-                               QPushButton, QHBoxLayout, QMessageBox, QProgressBar, QLabel, QWidget)
+                               QPushButton, QHBoxLayout, QMessageBox, QWidget)
 from PySide6.QtCore import Signal, Qt
 
 
 class SSHConnectionDialog(QDialog):
     """
-    Dialog for SSH configuration with input validation and loading state.
+    Dialog for SSH configuration with input validation.
     """
     test_requested = Signal(dict)
 
@@ -33,7 +33,7 @@ class SSHConnectionDialog(QDialog):
         self.form.addRow("Profile Name:", self.name_input)
         self.form.addRow("IP Address:", self.ip_input)
         self.form.addRow("SSH Port:", self.port_input)
-        self.form.addRow("Username:", self.user_input)
+        self.form.addRow("Username/Login:", self.user_input)
         self.form.addRow("Password:", self.pass_input)
         self.content_layout.addLayout(self.form)
 
@@ -55,27 +55,6 @@ class SSHConnectionDialog(QDialog):
         self.content_layout.addLayout(self.button_layout)
 
         self.main_layout.addWidget(self.content_widget)
-
-        self.loading_overlay = QWidget()
-        self.loading_layout = QVBoxLayout(self.loading_overlay)
-        self.loading_label = QLabel("Establishing Connection...")
-        self.loading_label.setAlignment(Qt.AlignCenter)
-        self.progress_bar = QProgressBar()
-        self.progress_bar.setRange(0, 0)
-        self.loading_layout.addWidget(self.loading_label)
-        self.loading_layout.addWidget(self.progress_bar)
-        self.main_layout.addWidget(self.loading_overlay)
-        self.loading_overlay.hide()
-
-    def set_loading(self, loading: bool):
-        """
-        Toggles the loading overlay and disables inputs.
-        """
-        self.content_widget.setEnabled(not loading)
-        if loading:
-            self.loading_overlay.show()
-        else:
-            self.loading_overlay.hide()
 
     def _on_test_clicked(self):
         """
