@@ -2,39 +2,33 @@ from PySide6.QtCore import QThreadPool
 from view.progress_dialog import ProgressDialog
 from model.worker import Worker
 from controller.tab_controllers.password_reset_controller import PasswordResetController
-from controller.tab_controllers.connection_controller import ConnectionController
-from model.connection_managers.serial_connection_manager import SerialConnectionManager
-from model.connection_managers.ssh_connection_manager import SSHConnectionManager
-from model.connection_managers.telnet_connection_manager import TelnetConnectionManager
-
+from controller.tab_controllers.connection_profile_controller import ConnectionProfileController
+from model.network_session_manager import NetworkSessionManager
 
 class MainController:
     """
-    Coordinates application state and ensures active connection managers persist across view changes.
+    Coordinates application state and manages the unified NetworkSessionManager across views.
     """
 
     def __init__(self, window, model):
         self.window = window
         self.model = model
 
-        self.serial_manager = SerialConnectionManager()
-        self.ssh_manager = SSHConnectionManager()
-        self.telnet_manager = TelnetConnectionManager()
+        self.session_manager = NetworkSessionManager()
 
         self.password_reset_ctrl = PasswordResetController(
             self.window.password_reset_tab,
-            self.serial_manager,
+            self.session_manager,
             self.window.show_error
         )
 
-        self.connection_ctrl = ConnectionController(
+        self.connection_ctrl = ConnectionProfileController(
             self.window.connection_manager_tab,
             self.model,
             self.handle_start_session
         )
 
         self.window.device_config_tab.close_tab_signal.connect(self.handle_disconnect)
-        self.active_manager = None
         self.progress_window = None
 
     def handle_start_session(self, connection_data):
@@ -50,28 +44,10 @@ class MainController:
 
     def _connect_device(self, connection_data):
         """
-        Connects using the appropriate manager based on selected protocol.
+        Passes cleaned configuration data directly to the session manager.
         """
-        protocol = connection_data.get("protocol", "SSH")
-        host = connection_data.get("host")
-
-        try:
-            if protocol == "SSH":
-                user = connection_data.get("username", "")
-                pw = connection_data.get("password", "")
-                port = int(connection_data.get("port", 22))
-                return self.ssh_manager.connect_ssh(host, user, pw, port=port)
-
-            elif protocol == "Telnet":
-                port = int(connection_data.get("port", 23))
-                return self.telnet_manager.connect_telnet(host, port=port)
-
-            elif protocol == "Serial":
-                return self.serial_manager.connect_serial(host, baudrate=int(connection_data.get("baud", 9600)))
-
-            return False, "Unsupported protocol."
-        except Exception as e:
-            return False, str(e)
+        netmiko_settings = {k: v for k, v in connection_data.items() if k != "name"}
+        return self.session_manager.connect_device(netmiko_settings)
 
     def _on_connect_finished(self, result, connection_data):
         """
@@ -82,55 +58,47 @@ class MainController:
 
         success, message = result
         if success:
-            self._setup_terminal_signals(connection_data.get("protocol"))
+            terminal = self.window.device_config_tab.create_new_terminal()
+            self._setup_terminal_signals(terminal)
             self.window.show_device_config(connection_data)
         else:
             self.window.show_error(f"Connection Failed: {message}")
 
-    def _setup_terminal_signals(self, protocol):
+    def _setup_terminal_signals(self, terminal):
         """
-        Maps hardware/socket signals to the UI terminal.
+        Connects the unified session manager to the UI terminal widget.
         """
-        terminal = self.window.device_config_tab.terminal_widget
-
-        if protocol == "SSH":
-            self.active_manager = self.ssh_manager
-        elif protocol == "Telnet":
-            self.active_manager = self.telnet_manager
-        elif protocol == "Serial":
-            self.active_manager = self.serial_manager
-        else:
-            return
-
         try:
-            self.active_manager.data_received.disconnect()
-            self.active_manager.connection_lost.disconnect()
-            terminal.key_pressed.disconnect()
+            self.session_manager.data_received.disconnect()
+            self.session_manager.connection_lost.disconnect()
         except (TypeError, RuntimeError):
             pass
 
-        self.active_manager.data_received.connect(terminal.append_output)
-        self.active_manager.connection_lost.connect(self.handle_connection_lost)
-        terminal.key_pressed.connect(self.active_manager.send_input)
+        self.session_manager.data_received.connect(terminal.append_output)
+        self.session_manager.connection_lost.connect(self.handle_connection_lost)
+        terminal.key_pressed.connect(self.session_manager.send_raw)
 
         terminal.set_terminal_enabled(True)
 
     def handle_disconnect(self):
         """
-        Terminates the active session and cleans up UI when closing the configuration tab.
+        Terminates the active session and cleans up UI components.
         """
-        if self.active_manager:
-            self.active_manager.close_connection()
-            self.active_manager = None
+        self.session_manager.close_connection()
+        try:
+            self.session_manager.data_received.disconnect()
+            self.session_manager.connection_lost.disconnect()
+        except (TypeError, RuntimeError):
+            pass
 
-        self.window.device_config_tab.terminal_widget.clear()
-        self.window.device_config_tab.terminal_widget.set_terminal_enabled(False)
+        self.window.device_config_tab.cleanup_terminal()
         self.window.show_home()
 
     def handle_connection_lost(self, message):
         """
-        Handles unexpected socket closure.
+        Handles unexpected session termination.
         """
-        self.window.device_config_tab.terminal_widget.set_terminal_enabled(False)
+        if self.window.device_config_tab.terminal_widget:
+            self.window.device_config_tab.terminal_widget.set_terminal_enabled(False)
         self.window.show_error(f"Session Terminated: {message}")
         self.handle_disconnect()

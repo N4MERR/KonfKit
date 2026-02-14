@@ -5,12 +5,14 @@ from view.connection_manager.serial_connection_dialog import SerialConnectionDia
 from view.connection_manager.ssh_connection_dialog import SSHConnectionDialog
 from view.connection_manager.telnet_connection_dialog import TelnetConnectionDialog
 from view.progress_dialog import ProgressDialog
-from model.connection_managers.ssh_connection_manager import SSHConnectionManager
-from model.connection_managers.telnet_connection_manager import TelnetConnectionManager
-from model.connection_managers.serial_connection_manager import SerialConnectionManager
+from model.network_session_manager import NetworkSessionManager
 
 
-class ConnectionController(QObject):
+class ConnectionProfileController(QObject):
+    """
+    Controller managing connection profiles and testing connectivity via NetworkSessionManager.
+    """
+
     def __init__(self, view, model, terminal_callback):
         super().__init__()
         self.view = view
@@ -55,26 +57,28 @@ class ConnectionController(QObject):
             self.start_session(data)
 
     def handle_edit_profile(self, data):
-        if data['protocol'] == "SSH":
+        device_type = data.get('device_type', '')
+        if 'telnet' in device_type:
+            dialog = TelnetConnectionDialog(self.view)
+            dialog.name_input.setText(data['name'])
+            dialog.ip_input.setText(data['host'])
+            dialog.port_input.setText(str(data.get('port', 23)))
+            dialog.pass_input.setText(data.get('password', ''))
+            dialog.secret_input.setText(data.get('secret', ''))
+        elif 'serial' in device_type:
+            dialog = SerialConnectionDialog(self.view)
+            dialog.name_input.setText(data['name'])
+            dialog.port_input.setCurrentText(data['serial_settings']['port'])
+            dialog.baud_input.setCurrentText(str(data['serial_settings'].get('baudrate', 9600)))
+            dialog.secret_input.setText(data.get('secret', ''))
+        else:
             dialog = SSHConnectionDialog(self.view)
             dialog.name_input.setText(data['name'])
             dialog.ip_input.setText(data['host'])
             dialog.port_input.setText(str(data.get('port', 22)))
             dialog.user_input.setText(data.get('username', ''))
             dialog.pass_input.setText(data.get('password', ''))
-        elif data['protocol'] == "Telnet":
-            dialog = TelnetConnectionDialog(self.view)
-            dialog.name_input.setText(data['name'])
-            dialog.ip_input.setText(data['host'])
-            dialog.port_input.setText(str(data.get('port', 23)))
-            dialog.pass_input.setText(data.get('password', ''))
-        elif data['protocol'] == "Serial":
-            dialog = SerialConnectionDialog(self.view)
-            dialog.name_input.setText(data['name'])
-            dialog.port_input.setCurrentText(data['host'])
-            dialog.baud_input.setCurrentText(str(data.get('baud', 9600)))
-        else:
-            return
+            dialog.secret_input.setText(data.get('secret', ''))
 
         dialog.test_requested.connect(lambda test_data: self.run_test_process(test_data, "Testing connection..."))
         result = dialog.exec()
@@ -91,7 +95,7 @@ class ConnectionController(QObject):
                                      f"Are you sure you want to delete profile '{data['name']}'?",
                                      QMessageBox.Yes | QMessageBox.No)
         if reply == QMessageBox.Yes:
-            self.model.delete_profile(data['name'], data['protocol'])
+            self.model.delete_profile(data['name'], data['device_type'])
             self.refresh_ui()
 
     def run_test_process(self, data, message):
@@ -105,38 +109,15 @@ class ConnectionController(QObject):
         self.progress_window.exec()
 
     def _perform_test(self, data):
-        protocol = data.get("protocol")
-        host = data.get("host")
+        temp_manager = NetworkSessionManager()
+        netmiko_settings = {k: v for k, v in data.items() if k != "name"}
 
         try:
-            success = False
-            msg = "Unknown error"
-
-            if protocol == "SSH":
-                manager = SSHConnectionManager()
-                port = int(data.get("port", 22))
-                user = data.get("username", "")
-                password = data.get("password", "")
-                success, msg = manager.connect_ssh(host, user, password, port=port)
-                manager.close_connection()
-
-            elif protocol == "Telnet":
-                manager = TelnetConnectionManager()
-                port = int(data.get("port", 23))
-                success, msg = manager.connect_telnet(host, port=port)
-                manager.close_connection()
-
-            elif protocol == "Serial":
-                manager = SerialConnectionManager()
-                baud = int(data.get("baud", 9600))
-                success, msg = manager.connect_serial(host, baudrate=baud)
-                manager.close_connection()
-
-            else:
-                return False, "Unknown Protocol"
-
-            return success, msg
-
+            success, msg = temp_manager.connect_device(netmiko_settings)
+            if success:
+                temp_manager.close_connection()
+                return True, "Successfully reached device."
+            return False, msg
         except Exception as e:
             return False, str(e)
 

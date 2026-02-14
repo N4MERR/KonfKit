@@ -5,11 +5,9 @@ from PySide6.QtCore import QObject, Signal
 
 logger = logging.getLogger(__name__)
 
-
 class ProfileManager(QObject):
     """
-    Manages the loading, saving, and deletion of connection profiles for SSH, Telnet, and Serial protocols.
-    Persists data to a JSON file.
+    Manages the loading, saving, and deletion of connection profiles using Netmiko-compatible keys.
     """
     profiles_updated = Signal()
 
@@ -21,7 +19,6 @@ class ProfileManager(QObject):
     def load_profiles(self):
         """
         Loads connection profiles from the JSON file.
-        Returns an empty list if the file does not exist or is invalid.
         """
         if not os.path.exists(self.filename):
             return []
@@ -35,11 +32,11 @@ class ProfileManager(QObject):
 
     def save_profile(self, profile_data):
         """
-        Saves a new profile or updates an existing one based on the name and protocol.
+        Saves or updates a profile based on name and device_type.
         """
         existing_index = -1
         for i, profile in enumerate(self.profiles):
-            if profile['name'] == profile_data['name'] and profile['protocol'] == profile_data['protocol']:
+            if profile['name'] == profile_data['name'] and profile['device_type'] == profile_data['device_type']:
                 existing_index = i
                 break
 
@@ -51,12 +48,12 @@ class ProfileManager(QObject):
         self._write_to_file()
         self.profiles_updated.emit()
 
-    def delete_profile(self, name, protocol):
+    def delete_profile(self, name, device_type):
         """
-        Removes a profile matching the given name and protocol.
+        Removes a profile matching the given name and device_type.
         """
         initial_count = len(self.profiles)
-        self.profiles = [p for p in self.profiles if not (p['name'] == name and p['protocol'] == protocol)]
+        self.profiles = [p for p in self.profiles if not (p['name'] == name and p['device_type'] == device_type)]
 
         if len(self.profiles) < initial_count:
             self._write_to_file()

@@ -2,8 +2,10 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
                                QPushButton, QScrollArea, QFrame, QToolButton, QMenu)
 from PySide6.QtCore import Qt, Signal
 
-
 class AddConnectionCard(QPushButton):
+    """
+    UI element for adding a new connection.
+    """
     def __init__(self, protocol_name):
         super().__init__()
         self.setFixedSize(160, 120)
@@ -35,8 +37,10 @@ class AddConnectionCard(QPushButton):
         layout.addWidget(plus_icon)
         layout.addWidget(text_label)
 
-
 class ConnectionCard(QFrame):
+    """
+    UI element representing an individual connection profile.
+    """
     connect_requested = Signal(dict)
     edit_requested = Signal(dict)
     delete_requested = Signal(dict)
@@ -93,8 +97,10 @@ class ConnectionCard(QFrame):
             self.connect_requested.emit(self.conn)
         super().mousePressEvent(event)
 
-
 class ConnectionRow(QWidget):
+    """
+    A horizontal row containing connection cards for a specific protocol.
+    """
     add_requested = Signal()
     connect_requested = Signal(dict)
     edit_requested = Signal(dict)
@@ -173,8 +179,10 @@ class ConnectionRow(QWidget):
 
         self.container_layout.addStretch()
 
-
 class ConnectionManagerTab(QWidget):
+    """
+    Main tab for managing all connection profiles.
+    """
     connect_profile_requested = Signal(dict)
     edit_profile_requested = Signal(dict)
     delete_profile_requested = Signal(dict)
@@ -228,6 +236,9 @@ class ConnectionManagerTab(QWidget):
         return line
 
     def update_list(self, all_connections):
-        self.serial_row.update_connections([c for c in all_connections if c.get('protocol') == 'Serial'])
-        self.ssh_row.update_connections([c for c in all_connections if c.get('protocol') == 'SSH'])
-        self.telnet_row.update_connections([c for c in all_connections if c.get('protocol') == 'Telnet'])
+        """
+        Sorts profiles into rows based on the device_type key.
+        """
+        self.serial_row.update_connections([c for c in all_connections if 'serial' in c.get('device_type', '')])
+        self.ssh_row.update_connections([c for c in all_connections if c.get('device_type') == 'cisco_ios'])
+        self.telnet_row.update_connections([c for c in all_connections if 'telnet' in c.get('device_type', '')])
