@@ -109,30 +109,34 @@ class ConnectionController(QObject):
         host = data.get("host")
 
         try:
+            success = False
+            msg = "Unknown error"
+
             if protocol == "SSH":
                 manager = SSHConnectionManager()
                 port = int(data.get("port", 22))
                 user = data.get("username", "")
                 password = data.get("password", "")
-                result = manager.connect_ssh(host, user, password, port=port)
+                success, msg = manager.connect_ssh(host, user, password, port=port)
                 manager.close_connection()
-                return result, "Connection Successful" if result else "Connection Failed"
 
             elif protocol == "Telnet":
                 manager = TelnetConnectionManager()
                 port = int(data.get("port", 23))
-                result = manager.connect_telnet(host, port=port)
+                success, msg = manager.connect_telnet(host, port=port)
                 manager.close_connection()
-                return result, "Connection Successful" if result else "Connection Failed"
 
             elif protocol == "Serial":
                 manager = SerialConnectionManager()
                 baud = int(data.get("baud", 9600))
-                result = manager.connect_serial(host, baudrate=baud)
+                success, msg = manager.connect_serial(host, baudrate=baud)
                 manager.close_connection()
-                return result, "Port Opened Successfully" if result else "Failed to Open Port"
 
-            return False, "Unknown Protocol"
+            else:
+                return False, "Unknown Protocol"
+
+            return success, msg
+
         except Exception as e:
             return False, str(e)
 
@@ -145,4 +149,4 @@ class ConnectionController(QObject):
         if success:
             QMessageBox.information(self.view, "Success", message)
         else:
-            QMessageBox.critical(self.view, "Failed", f"Test failed: {message}")
+            QMessageBox.critical(self.view, "Failed", message)

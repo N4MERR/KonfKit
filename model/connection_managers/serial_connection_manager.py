@@ -8,8 +8,7 @@ logger = logging.getLogger(__name__)
 
 class SerialConnectionManager(QObject):
     """
-    Manages active Serial connections. Handles port opening,
-    data transmission, and reception.
+    Manages hardware serial port communication including port initialization and data throughput.
     """
     data_received = Signal(str)
     connection_lost = Signal(str)
@@ -19,40 +18,56 @@ class SerialConnectionManager(QObject):
         self.serial_conn = None
         self._receiving = False
 
-    def connect_serial(self, port, baudrate=9600, timeout=1):
+    def connect_serial(self, port, baudrate=9600, timeout=0.1):
         """
-        Opens a serial connection to the specified port and baudrate.
+        Initializes the serial port with specified parameters and starts the data monitoring thread.
         """
         try:
             self.serial_conn = serial.Serial(port=port, baudrate=baudrate, timeout=timeout)
             self._receiving = True
-            threading.Thread(target=self._read_output, daemon=True).start()
-            return True
+            threading.Thread(target=self._read_output, args=(self.serial_conn,), daemon=True).start()
+            return True, "Connection successful"
         except serial.SerialException as e:
-            self.connection_lost.emit(f"Serial error: {str(e)}")
-            return False
+            if "Access is denied" in str(e):
+                return False, f"Access denied. Port {port} might be in use."
+            elif "FileNotFoundError" in str(e) or "The system cannot find" in str(e):
+                return False, f"Port {port} not found. Check cable."
+            return False, f"Serial Error: {str(e)}"
+        except ValueError:
+            return False, "Invalid parameters (e.g., baudrate)."
+        except Exception as e:
+            return False, f"Error: {str(e)}"
 
-    def _read_output(self):
+    def _read_output(self, current_serial):
         """
-        Continuously reads data from the Serial port.
+        Monitors the serial buffer and emits received data as string sequences.
         """
         while self._receiving:
             try:
-                if self.serial_conn and self.serial_conn.is_open and self.serial_conn.in_waiting > 0:
-                    data = self.serial_conn.read(self.serial_conn.in_waiting)
-                    text = data.decode('utf-8', errors='ignore')
-                    self.data_received.emit(text)
-                time.sleep(0.01)
+                if current_serial.is_open:
+                    data = current_serial.read(1024)
+                    if data:
+                        text = data.decode('utf-8', errors='ignore')
+                        self.data_received.emit(text)
+                else:
+                    if self._receiving:
+                        self._receiving = False
+                        self.connection_lost.emit("Serial port closed unexpectedly.")
+                    break
             except serial.SerialException as e:
-                self._receiving = False
-                self.connection_lost.emit(f"Serial connection lost: {str(e)}")
+                if self._receiving:
+                    self._receiving = False
+                    self.connection_lost.emit(f"Serial connection lost: {str(e)}")
+                break
             except Exception as e:
-                self._receiving = False
-                self.connection_lost.emit(f"Error reading serial: {str(e)}")
+                if self._receiving:
+                    self._receiving = False
+                    self.connection_lost.emit(f"Error reading serial: {str(e)}")
+                break
 
     def send_input(self, text):
         """
-        Sends data to the active serial connection.
+        Writes raw byte sequences to the serial hardware interface.
         """
         if self.serial_conn and self.serial_conn.is_open:
             try:
@@ -63,7 +78,7 @@ class SerialConnectionManager(QObject):
 
     def close_connection(self):
         """
-        Closes the Serial connection.
+        Releases the serial port and stops the reception thread.
         """
         self._receiving = False
         if self.serial_conn and self.serial_conn.is_open:
@@ -71,3 +86,5 @@ class SerialConnectionManager(QObject):
                 self.serial_conn.close()
             except Exception as e:
                 logger.error(f"Error closing serial connection: {e}")
+            finally:
+                self.serial_conn = None

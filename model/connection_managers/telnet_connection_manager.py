@@ -1,6 +1,7 @@
 import telnetlib
 import threading
 import time
+import socket
 import logging
 from PySide6.QtCore import QObject, Signal
 
@@ -8,8 +9,7 @@ logger = logging.getLogger(__name__)
 
 class TelnetConnectionManager(QObject):
     """
-    Manages active Telnet sessions. Handles connection establishment,
-    data transmission, and reception.
+    Manages Telnet communication using a polled reading mechanism to handle remote host output.
     """
     data_received = Signal(str)
     connection_lost = Signal(str)
@@ -21,38 +21,46 @@ class TelnetConnectionManager(QObject):
 
     def connect_telnet(self, host, port=23, timeout=10):
         """
-        Establishes a Telnet connection to the specified host.
+        Opens a Telnet connection to the target host and starts the background reception thread.
         """
         try:
             self.tn = telnetlib.Telnet(host, port, timeout)
             self._receiving = True
-            threading.Thread(target=self._read_output, daemon=True).start()
-            return True
+            threading.Thread(target=self._read_output, args=(self.tn,), daemon=True).start()
+            return True, "Connection successful"
+        except socket.timeout:
+            return False, "Connection timed out. Host unreachable."
+        except ConnectionRefusedError:
+            return False, "Connection refused. Telnet service might be down."
         except Exception as e:
-            self.connection_lost.emit(f"Telnet error: {str(e)}")
-            return False
+            return False, f"Telnet Error: {str(e)}"
 
-    def _read_output(self):
+    def _read_output(self, current_tn):
         """
-        Continuously reads data from the Telnet connection.
+        Performs non-blocking eager reads in a loop to capture Telnet data streams.
         """
         while self._receiving:
             try:
-                data = self.tn.read_very_eager()
+                data = current_tn.read_very_eager()
                 if data:
                     text = data.decode('utf-8', errors='ignore')
                     self.data_received.emit(text)
-                time.sleep(0.01)
+                else:
+                    time.sleep(0.1)
             except EOFError:
-                self._receiving = False
-                self.connection_lost.emit("Telnet connection closed by host.")
+                if self._receiving:
+                    self._receiving = False
+                    self.connection_lost.emit("Telnet connection closed by host.")
+                break
             except Exception as e:
-                self._receiving = False
-                self.connection_lost.emit(f"Telnet connection error: {str(e)}")
+                if self._receiving:
+                    self._receiving = False
+                    self.connection_lost.emit(f"Telnet connection error: {str(e)}")
+                break
 
     def send_input(self, text):
         """
-        Sends data to the active Telnet session.
+        Encodes and writes text input to the active Telnet socket.
         """
         if self.tn:
             try:
@@ -63,7 +71,7 @@ class TelnetConnectionManager(QObject):
 
     def close_connection(self):
         """
-        Closes the Telnet connection.
+        Closes the Telnet session and terminates the background processing thread.
         """
         self._receiving = False
         if self.tn:
@@ -71,3 +79,5 @@ class TelnetConnectionManager(QObject):
                 self.tn.close()
             except Exception as e:
                 logger.error(f"Error closing Telnet connection: {e}")
+            finally:
+                self.tn = None
