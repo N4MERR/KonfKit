@@ -5,7 +5,7 @@ from PySide6.QtCore import Signal, Qt
 
 class TelnetConnectionDialog(QDialog):
     """
-    Telnet configuration dialog without username.
+    Dialog for Telnet configuration that returns data mapped to Netmiko's ConnectHandler keys.
     """
     test_requested = Signal(dict)
 
@@ -27,11 +27,14 @@ class TelnetConnectionDialog(QDialog):
         self.port_input = QLineEdit("23")
         self.pass_input = QLineEdit()
         self.pass_input.setEchoMode(QLineEdit.EchoMode.Password)
+        self.secret_input = QLineEdit()
+        self.secret_input.setEchoMode(QLineEdit.EchoMode.Password)
 
         self.form.addRow("Profile Name:", self.name_input)
         self.form.addRow("IP Address:", self.ip_input)
         self.form.addRow("Telnet Port:", self.port_input)
         self.form.addRow("Password:", self.pass_input)
+        self.form.addRow("Enable Secret:", self.secret_input)
         self.content_layout.addLayout(self.form)
 
         self.test_btn = QPushButton("Test Connection")
@@ -83,8 +86,9 @@ class TelnetConnectionDialog(QDialog):
     def get_data(self):
         return {
             "name": self.name_input.text().strip(),
-            "protocol": "Telnet",
+            "device_type": "cisco_ios_telnet",
             "host": self.ip_input.text().strip(),
             "port": int(self.port_input.text() or 23),
-            "password": self.pass_input.text()
+            "password": self.pass_input.text(),
+            "secret": self.secret_input.text().strip()
         }

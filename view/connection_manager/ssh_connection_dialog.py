@@ -3,10 +3,9 @@ from PySide6.QtWidgets import (QDialog, QVBoxLayout, QFormLayout, QLineEdit,
                                QPushButton, QHBoxLayout, QMessageBox, QWidget)
 from PySide6.QtCore import Signal, Qt
 
-
 class SSHConnectionDialog(QDialog):
     """
-    Dialog for SSH configuration with input validation.
+    Dialog for SSH configuration that returns data mapped to Netmiko's ConnectHandler keys.
     """
     test_requested = Signal(dict)
 
@@ -29,12 +28,15 @@ class SSHConnectionDialog(QDialog):
         self.user_input = QLineEdit()
         self.pass_input = QLineEdit()
         self.pass_input.setEchoMode(QLineEdit.EchoMode.Password)
+        self.secret_input = QLineEdit()
+        self.secret_input.setEchoMode(QLineEdit.EchoMode.Password)
 
         self.form.addRow("Profile Name:", self.name_input)
         self.form.addRow("IP Address:", self.ip_input)
         self.form.addRow("SSH Port:", self.port_input)
-        self.form.addRow("Username/Login:", self.user_input)
+        self.form.addRow("Username:", self.user_input)
         self.form.addRow("Password:", self.pass_input)
+        self.form.addRow("Enable Secret:", self.secret_input)
         self.content_layout.addLayout(self.form)
 
         self.test_btn = QPushButton("Test Connection")
@@ -57,25 +59,16 @@ class SSHConnectionDialog(QDialog):
         self.main_layout.addWidget(self.content_widget)
 
     def _on_test_clicked(self):
-        """
-        Emits signal with data for authentication testing.
-        """
         if self.validate_inputs(require_name=False):
             self.test_requested.emit(self.get_data())
 
     def is_valid_ip(self, ip):
-        """
-        Validates IPv4 address format.
-        """
         pattern = r"^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$"
         if not re.match(pattern, ip):
             return False
         return all(0 <= int(part) <= 255 for part in ip.split('.'))
 
     def validate_inputs(self, require_name=True):
-        """
-        Verifies all required fields. Profile name is optional for connections.
-        """
         if require_name and not self.name_input.text().strip():
             QMessageBox.warning(self, "Error", "Profile Name is required for saving.")
             return False
@@ -85,28 +78,20 @@ class SSHConnectionDialog(QDialog):
         return True
 
     def handle_save(self):
-        """
-        Accepts the dialog with save code.
-        """
         if self.validate_inputs(require_name=True):
             self.done(10)
 
     def handle_connect(self):
-        """
-        Accepts the dialog with connect code.
-        """
         if self.validate_inputs(require_name=False):
             self.done(20)
 
     def get_data(self):
-        """
-        Returns a dictionary of collected input data.
-        """
         return {
             "name": self.name_input.text().strip(),
-            "protocol": "SSH",
+            "device_type": "cisco_ios",
             "host": self.ip_input.text().strip(),
             "port": int(self.port_input.text() or 22),
             "username": self.user_input.text().strip(),
-            "password": self.pass_input.text()
+            "password": self.pass_input.text(),
+            "secret": self.secret_input.text().strip()
         }
