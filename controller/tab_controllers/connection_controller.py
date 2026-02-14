@@ -1,10 +1,14 @@
-from PySide6.QtCore import QObject, QThreadPool, Qt
+from PySide6.QtCore import QObject, QThreadPool
 from PySide6.QtWidgets import QMessageBox
 from model.worker import Worker
 from view.connection_manager.serial_connection_dialog import SerialConnectionDialog
 from view.connection_manager.ssh_connection_dialog import SSHConnectionDialog
 from view.connection_manager.telnet_connection_dialog import TelnetConnectionDialog
 from view.progress_dialog import ProgressDialog
+from model.connection_managers.ssh_connection_manager import SSHConnectionManager
+from model.connection_managers.telnet_connection_manager import TelnetConnectionManager
+from model.connection_managers.serial_connection_manager import SerialConnectionManager
+
 
 class ConnectionController(QObject):
     def __init__(self, view, model, terminal_callback):
@@ -27,7 +31,7 @@ class ConnectionController(QObject):
         self.view.delete_profile_requested.connect(self.handle_delete_profile)
 
     def refresh_ui(self):
-        self.view.update_list(self.model.connections)
+        self.view.update_list(self.model.get_profiles())
 
     def handle_add_with_protocol(self, protocol):
         if protocol == "SSH":
@@ -44,14 +48,7 @@ class ConnectionController(QObject):
         result = dialog.exec()
         if result == 10:
             data = dialog.get_data()
-            success, message = self.model.save_connection(
-                data['name'], data['host'], data.get('username', ''),
-                data.get('password', ''), data['protocol'],
-                baud=data.get('baud'), port=data.get('port')
-            )
-            if not success:
-                QMessageBox.warning(self.view, "Duplicate Name", message)
-                return
+            self.model.save_profile(data)
             self.refresh_ui()
         elif result == 20:
             data = dialog.get_data()
@@ -84,45 +81,60 @@ class ConnectionController(QObject):
 
         if result == 10:
             new_data = dialog.get_data()
-            self.update_profile_in_model(data, new_data)
+            self.model.save_profile(new_data)
+            self.refresh_ui()
         elif result == 20:
             self.start_session(dialog.get_data())
-
-    def update_profile_in_model(self, old_data, new_data):
-        for i, c in enumerate(self.model.connections):
-            if c['name'] == old_data['name'] and c['protocol'] == old_data['protocol']:
-                self.model.connections[i] = new_data
-                break
-        self.model._write_to_file()
-        self.refresh_ui()
 
     def handle_delete_profile(self, data):
         reply = QMessageBox.question(self.view, "Delete Profile",
                                      f"Are you sure you want to delete profile '{data['name']}'?",
                                      QMessageBox.Yes | QMessageBox.No)
         if reply == QMessageBox.Yes:
-            self.model.connections = [c for c in self.model.connections if
-                                      not (c['name'] == data['name'] and c['protocol'] == data['protocol'])]
-            self.model._write_to_file()
+            self.model.delete_profile(data['name'], data['protocol'])
             self.refresh_ui()
 
     def run_test_process(self, data, message):
         self.progress_window = ProgressDialog(message, self.view)
 
-        if data['protocol'] == "SSH":
-            worker = Worker(self.model.test_ssh, data['host'], data['port'], 5.0,
-                            data.get('username', ''), data.get('password', ''))
-        elif data['protocol'] == "Telnet":
-            worker = Worker(self.model.test_telnet, data['host'], data['port'], 5.0,
-                            data.get('password', ''))
-        else:
-            worker = Worker(self.model.test_serial_connection, data['host'], data['baud'])
-
+        worker = Worker(self._perform_test, data)
         worker.signals.result.connect(self.on_test_finished)
         worker.signals.error.connect(lambda err: self.on_test_finished((False, str(err[1]))))
 
         self.threadpool.start(worker)
         self.progress_window.exec()
+
+    def _perform_test(self, data):
+        protocol = data.get("protocol")
+        host = data.get("host")
+
+        try:
+            if protocol == "SSH":
+                manager = SSHConnectionManager()
+                port = int(data.get("port", 22))
+                user = data.get("username", "")
+                password = data.get("password", "")
+                result = manager.connect_ssh(host, user, password, port=port)
+                manager.close_connection()
+                return result, "Connection Successful" if result else "Connection Failed"
+
+            elif protocol == "Telnet":
+                manager = TelnetConnectionManager()
+                port = int(data.get("port", 23))
+                result = manager.connect_telnet(host, port=port)
+                manager.close_connection()
+                return result, "Connection Successful" if result else "Connection Failed"
+
+            elif protocol == "Serial":
+                manager = SerialConnectionManager()
+                baud = int(data.get("baud", 9600))
+                result = manager.connect_serial(host, baudrate=baud)
+                manager.close_connection()
+                return result, "Port Opened Successfully" if result else "Failed to Open Port"
+
+            return False, "Unknown Protocol"
+        except Exception as e:
+            return False, str(e)
 
     def on_test_finished(self, result):
         if self.progress_window:
@@ -133,4 +145,4 @@ class ConnectionController(QObject):
         if success:
             QMessageBox.information(self.view, "Success", message)
         else:
-            QMessageBox.critical(self.view, "Failed", f"Process failed: {message}")
+            QMessageBox.critical(self.view, "Failed", f"Test failed: {message}")
