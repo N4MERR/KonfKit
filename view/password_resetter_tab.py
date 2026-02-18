@@ -1,7 +1,9 @@
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
                                QPushButton, QComboBox, QCheckBox, QLineEdit,
                                QGroupBox)
-from view.terminal_widget import TerminalWidget
+
+from view.terminal_view import TerminalView
+
 
 class PasswordResetTab(QWidget):
     """
@@ -113,7 +115,7 @@ class PasswordResetTab(QWidget):
         columns_layout.addWidget(self.groupBox_options, 2)
         self.main_layout.addLayout(columns_layout)
 
-        self.terminal = TerminalWidget()
+        self.terminal = TerminalView()
         self.main_layout.addWidget(self.terminal)
 
         buttons_container = QHBoxLayout()
