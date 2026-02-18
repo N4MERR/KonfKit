@@ -1,5 +1,6 @@
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
-                               QLabel, QTabWidget, QListWidget, QStackedWidget, QSplitter)
+                               QLabel, QTabWidget, QListWidget, QStackedWidget, QSplitter,
+                               QSpacerItem, QSizePolicy)
 from PySide6.QtCore import Signal, Qt
 
 from view.terminal_view import TerminalView
@@ -9,6 +10,7 @@ class ConfigSection(QWidget):
     """
     Represents a specific configuration category with a navigation list and a content area.
     """
+
     def __init__(self, items):
         super().__init__()
         layout = QHBoxLayout(self)
@@ -62,6 +64,7 @@ class ConfigSection(QWidget):
 class DeviceConfigTab(QWidget):
     """
     Main configuration interface that manages different sections and the terminal instance.
+    Includes a centered terminal layout with constrained width.
     """
     close_tab_signal = Signal()
 
@@ -101,7 +104,23 @@ class DeviceConfigTab(QWidget):
 
         self.terminal_tab_container = QWidget()
         self.terminal_tab_layout = QVBoxLayout(self.terminal_tab_container)
-        self.terminal_tab_layout.setContentsMargins(0, 0, 0, 0)
+
+        self.terminal_centering_wrapper = QHBoxLayout()
+
+        self.left_spacer = QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        self.right_spacer = QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.terminal_centering_wrapper.addItem(self.left_spacer)
+
+        self.terminal_inner_container = QWidget()
+        self.terminal_inner_layout = QVBoxLayout(self.terminal_inner_container)
+        self.terminal_inner_layout.setContentsMargins(0, 0, 0, 0)
+        self.terminal_inner_container.setFixedWidth(800)
+
+        self.terminal_centering_wrapper.addWidget(self.terminal_inner_container)
+        self.terminal_centering_wrapper.addItem(self.right_spacer)
+
+        self.terminal_tab_layout.addLayout(self.terminal_centering_wrapper)
 
         self.tabs.addTab(self.router_section, "Router")
         self.tabs.addTab(self.switch_section, "Switch")
@@ -125,7 +144,7 @@ class DeviceConfigTab(QWidget):
             self.terminal_widget.show()
             self.switch_section.splitter.setSizes([500, 500])
         elif tab_text == "Terminal":
-            self.terminal_tab_layout.addWidget(self.terminal_widget)
+            self.terminal_inner_layout.addWidget(self.terminal_widget)
             self.terminal_widget.show()
 
     def create_new_terminal(self):
