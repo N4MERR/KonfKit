@@ -4,7 +4,7 @@ import traceback
 from PySide6.QtWidgets import QApplication, QMessageBox
 from view.main_window import MainWindow
 from controller.main_controller import MainController
-from model.connection_manager import ConnectionManager
+from model.connection_profile_manager import ProfileManager
 
 app_handler = logging.FileHandler("application.log", mode='a', encoding='utf-8')
 app_handler.setLevel(logging.INFO)
@@ -20,6 +20,7 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
     handlers=[app_handler, error_handler, stream_handler]
 )
+
 
 def handle_exception(exc_type, exc_value, exc_traceback):
     if issubclass(exc_type, KeyboardInterrupt):
@@ -38,12 +39,16 @@ def handle_exception(exc_type, exc_value, exc_traceback):
         msg_box.setDetailedText(error_msg)
         msg_box.exec()
 
+
 sys.excepthook = handle_exception
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = MainWindow()
-    connection_model = ConnectionManager()
-    controller = MainController(window, connection_model)
+
+    profile_model = ProfileManager()
+
+    controller = MainController(window, profile_model)
+
     window.show()
     sys.exit(app.exec())

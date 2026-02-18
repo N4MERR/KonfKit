@@ -7,7 +7,6 @@ from view.connection_manager.telnet_connection_dialog import TelnetConnectionDia
 from view.progress_dialog import ProgressDialog
 from model.network_session_manager import NetworkSessionManager
 
-
 class ConnectionProfileController(QObject):
     """
     Controller managing connection profiles and testing connectivity via NetworkSessionManager.
@@ -24,6 +23,9 @@ class ConnectionProfileController(QObject):
         self.refresh_ui()
 
     def _connect_signals(self):
+        """
+        Connects UI signals from the ConnectionManagerTab to handler methods.
+        """
         self.view.serial_row.add_requested.connect(lambda: self.handle_add_with_protocol("Serial"))
         self.view.ssh_row.add_requested.connect(lambda: self.handle_add_with_protocol("SSH"))
         self.view.telnet_row.add_requested.connect(lambda: self.handle_add_with_protocol("Telnet"))
@@ -33,9 +35,15 @@ class ConnectionProfileController(QObject):
         self.view.delete_profile_requested.connect(self.handle_delete_profile)
 
     def refresh_ui(self):
+        """
+        Updates the view with the latest profile list from the model.
+        """
         self.view.update_list(self.model.get_profiles())
 
     def handle_add_with_protocol(self, protocol):
+        """
+        Opens the appropriate connection dialog based on the selected protocol.
+        """
         if protocol == "SSH":
             dialog = SSHConnectionDialog(self.view)
         elif protocol == "Telnet":
@@ -57,6 +65,9 @@ class ConnectionProfileController(QObject):
             self.start_session(data)
 
     def handle_edit_profile(self, data):
+        """
+        Populates a dialog with existing profile data for editing.
+        """
         device_type = data.get('device_type', '')
         if 'telnet' in device_type:
             dialog = TelnetConnectionDialog(self.view)
@@ -91,6 +102,9 @@ class ConnectionProfileController(QObject):
             self.start_session(dialog.get_data())
 
     def handle_delete_profile(self, data):
+        """
+        Prompts for confirmation before deleting a profile.
+        """
         reply = QMessageBox.question(self.view, "Delete Profile",
                                      f"Are you sure you want to delete profile '{data['name']}'?",
                                      QMessageBox.Yes | QMessageBox.No)
@@ -99,6 +113,9 @@ class ConnectionProfileController(QObject):
             self.refresh_ui()
 
     def run_test_process(self, data, message):
+        """
+        Starts a background worker to test the network connection.
+        """
         self.progress_window = ProgressDialog(message, self.view)
 
         worker = Worker(self._perform_test, data)
@@ -109,6 +126,9 @@ class ConnectionProfileController(QObject):
         self.progress_window.exec()
 
     def _perform_test(self, data):
+        """
+        Internal method executed by the worker to attempt a Netmiko connection.
+        """
         temp_manager = NetworkSessionManager()
         netmiko_settings = {k: v for k, v in data.items() if k != "name"}
 
@@ -122,6 +142,9 @@ class ConnectionProfileController(QObject):
             return False, str(e)
 
     def on_test_finished(self, result):
+        """
+        Handles the result of the connection test and closes the progress dialog.
+        """
         if self.progress_window:
             self.progress_window.close()
             self.progress_window = None

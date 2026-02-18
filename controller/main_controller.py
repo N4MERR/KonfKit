@@ -1,104 +1,54 @@
-from PySide6.QtCore import QThreadPool
-from view.progress_dialog import ProgressDialog
-from model.worker import Worker
-from controller.tab_controllers.password_reset_controller import PasswordResetController
-from controller.tab_controllers.connection_profile_controller import ConnectionProfileController
 from model.network_session_manager import NetworkSessionManager
+from model.terminal_model import TerminalModel
+from controller.tab_controllers.terminal_controller import TerminalController
+from controller.tab_controllers.connection_profile_controller import ConnectionProfileController
+
 
 class MainController:
     """
-    Coordinates application state and manages the unified NetworkSessionManager across views.
+    Main application controller that initializes the session manager and sub-controllers.
     """
 
-    def __init__(self, window, model):
+    def __init__(self, window, profile_model):
         self.window = window
-        self.model = model
-
+        self.profile_model = profile_model
         self.session_manager = NetworkSessionManager()
 
-        self.password_reset_ctrl = PasswordResetController(
-            self.window.password_reset_tab,
-            self.session_manager,
-            self.window.show_error
+        self.terminal_view = self.window.device_config_tab.create_new_terminal()
+        self.terminal_model = TerminalModel(self.session_manager)
+        self.terminal_controller = TerminalController(
+            self.terminal_model,
+            self.terminal_view
         )
 
-        self.connection_ctrl = ConnectionProfileController(
+        self.profile_controller = ConnectionProfileController(
             self.window.connection_manager_tab,
-            self.model,
-            self.handle_start_session
+            self.profile_model,
+            self.handle_session_start
         )
 
-        self.window.device_config_tab.close_tab_signal.connect(self.handle_disconnect)
-        self.progress_window = None
+        self._setup_connections()
 
-    def handle_start_session(self, connection_data):
+    def _setup_connections(self):
         """
-        Launches the connection worker thread.
+        Binds UI actions from the window to controller logic.
         """
-        self.progress_window = ProgressDialog("Connecting to device...", self.window)
-        worker = Worker(self._connect_device, connection_data)
-        worker.signals.result.connect(lambda res: self._on_connect_finished(res, connection_data))
-        worker.signals.error.connect(lambda err: self._on_connect_finished((False, str(err[1])), connection_data))
-        QThreadPool.globalInstance().start(worker)
-        self.progress_window.exec()
+        self.window.device_config_tab.close_tab_signal.connect(self.window.show_home)
 
-    def _connect_device(self, connection_data):
+    def handle_session_start(self, connection_data):
         """
-        Passes cleaned configuration data directly to the session manager.
+        Initiates a connection and switches the UI to the device configuration tab.
         """
+        self.window.show_device_config(connection_data)
+        self.terminal_controller.reset_view()
+        self.terminal_controller.log_info(f"Connecting to {connection_data.get('name', 'Device')}...")
+
         netmiko_settings = {k: v for k, v in connection_data.items() if k != "name"}
-        return self.session_manager.connect_device(netmiko_settings)
 
-    def _on_connect_finished(self, result, connection_data):
-        """
-        Transitions to configuration view upon successful connection.
-        """
-        if self.progress_window:
-            self.progress_window.close()
-
-        success, message = result
+        success, message = self.session_manager.connect_device(netmiko_settings)
         if success:
-            terminal = self.window.device_config_tab.create_new_terminal()
-            self._setup_terminal_signals(terminal)
-            self.window.show_device_config(connection_data)
+            self.terminal_model.start_reading()
+            self.terminal_controller.log_info("Connection established.")
         else:
-            self.window.show_error(f"Connection Failed: {message}")
-
-    def _setup_terminal_signals(self, terminal):
-        """
-        Connects the unified session manager to the UI terminal widget.
-        """
-        try:
-            self.session_manager.data_received.disconnect()
-            self.session_manager.connection_lost.disconnect()
-        except (TypeError, RuntimeError):
-            pass
-
-        self.session_manager.data_received.connect(terminal.append_output)
-        self.session_manager.connection_lost.connect(self.handle_connection_lost)
-        terminal.key_pressed.connect(self.session_manager.send_raw)
-
-        terminal.set_terminal_enabled(True)
-
-    def handle_disconnect(self):
-        """
-        Terminates the active session and cleans up UI components.
-        """
-        self.session_manager.close_connection()
-        try:
-            self.session_manager.data_received.disconnect()
-            self.session_manager.connection_lost.disconnect()
-        except (TypeError, RuntimeError):
-            pass
-
-        self.window.device_config_tab.cleanup_terminal()
-        self.window.show_home()
-
-    def handle_connection_lost(self, message):
-        """
-        Handles unexpected session termination.
-        """
-        if self.window.device_config_tab.terminal_widget:
-            self.window.device_config_tab.terminal_widget.set_terminal_enabled(False)
-        self.window.show_error(f"Session Terminated: {message}")
-        self.handle_disconnect()
+            self.window.show_error(message)
+            self.window.show_home()

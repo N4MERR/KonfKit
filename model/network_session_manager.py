@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 class NetworkSessionManager(QObject):
     """
-    Core engine for managing multi-protocol network sessions and batch command execution.
+    Core engine for managing multi-protocol network sessions with centralized data polling.
     """
     data_received = Signal(str)
     connection_lost = Signal(str)
@@ -17,10 +17,11 @@ class NetworkSessionManager(QObject):
         super().__init__()
         self.connection = None
         self._receiving = False
+        self._lock = threading.Lock()
 
     def connect_device(self, connection_settings):
         """
-        Establishes a connection by passing settings directly to the handler.
+        Establishes a connection and starts the unified reading thread.
         """
         try:
             self.connection = ConnectHandler(**connection_settings)
@@ -33,74 +34,73 @@ class NetworkSessionManager(QObject):
 
     def _read_loop(self):
         """
-        Continuously polls the session for new data and emits it to the UI.
+        The single authoritative loop for reading channel data.
         """
         while self._receiving:
             try:
-                if self.connection and self.connection.is_alive():
-                    output = self.connection.read_channel()
-                    if output:
-                        self.data_received.emit(output)
+                with self._lock:
+                    if self.connection:
+                        output = self.connection.read_channel()
+                        if output:
+                            self.data_received.emit(output)
                     else:
-                        time.sleep(0.05)
-                else:
-                    self._handle_disconnect("Connection lost.")
-                    break
+                        break
+                time.sleep(0.01)
             except Exception as e:
                 self._handle_disconnect(f"Read error: {str(e)}")
                 break
 
     def send_raw(self, text):
         """
-        Sends raw characters for interactive terminal use and echoes to UI.
+        Sends raw characters to the device channel using a thread lock to prevent collision with automated commands.
         """
         if self.connection and self._receiving:
             try:
-                self.connection.write_channel(text)
-                self.data_received.emit(text)
+                with self._lock:
+                    self.connection.write_channel(text)
             except Exception as e:
                 logger.error(f"Failed to send raw input: {e}")
 
     def send_exec_command(self, cmd):
         """
-        Sends a single command in Privilege EXEC mode (#).
+        Sends a single command in Privilege EXEC mode.
         """
         if self.connection and self._receiving:
             try:
-                if not self.connection.check_enable_mode():
-                    self.connection.enable()
-                self.data_received.emit(f"{cmd}\n")
-                result = self.connection.send_command(cmd)
-                self.data_received.emit(f"{result}\n")
-                return result
+                with self._lock:
+                    if not self.connection.check_enable_mode():
+                        self.connection.enable()
+                    result = self.connection.send_command(cmd)
+                    self.data_received.emit(f"{cmd}\n{result}\n")
+                    return result
             except Exception as e:
                 logger.error(f"EXEC command failed: {e}")
                 return None
 
     def send_config_command(self, cmd):
         """
-        Enters Global Config mode, executes a single command, and exits.
+        Enters Global Config mode, executes a command, and exits.
         """
         if self.connection and self._receiving:
             try:
-                self.data_received.emit(f"{cmd} (config)\n")
-                result = self.connection.send_config_set([cmd])
-                self.data_received.emit(f"{result}\n")
-                return result
+                with self._lock:
+                    result = self.connection.send_config_set([cmd])
+                    self.data_received.emit(f"{cmd} (config)\n{result}\n")
+                    return result
             except Exception as e:
                 logger.error(f"Config command failed: {e}")
                 return None
 
     def send_rommon_command(self, cmd, prompt=r">"):
         """
-        Sends a single command in ROMmon or bootloader mode.
+        Sends a command in ROMmon or bootloader mode.
         """
         if self.connection and self._receiving:
             try:
-                self.data_received.emit(f"{cmd}\n")
-                result = self.connection.send_command(cmd, expect_string=prompt)
-                self.data_received.emit(f"{result}\n")
-                return result
+                with self._lock:
+                    result = self.connection.send_command(cmd, expect_string=prompt)
+                    self.data_received.emit(f"{cmd}\n{result}\n")
+                    return result
             except Exception as e:
                 logger.error(f"ROMmon command failed: {e}")
                 return None
@@ -112,17 +112,17 @@ class NetworkSessionManager(QObject):
         if self.connection and self._receiving:
             cmd, pattern = cmd_data
             try:
-                self.data_received.emit(f"{cmd}\n")
-                result = self.connection.send_command(cmd, expect_string=pattern)
-                self.data_received.emit(f"{result}\n")
-                return result
+                with self._lock:
+                    result = self.connection.send_command(cmd, expect_string=pattern)
+                    self.data_received.emit(f"{cmd}\n{result}\n")
+                    return result
             except Exception as e:
                 logger.error(f"Send and expect failed: {e}")
                 return None
 
     def execute_batch(self, command_list):
         """
-        Executes a list of tuples containing (method_reference, argument).
+        Executes a list of commands sequentially.
         """
         if not self.connection or not self._receiving:
             return
@@ -138,7 +138,7 @@ class NetworkSessionManager(QObject):
 
     def _handle_disconnect(self, message):
         """
-        Internal cleanup when a connection is lost or closed.
+        Internal cleanup when a connection is lost.
         """
         if self._receiving:
             self._receiving = False
@@ -150,10 +150,11 @@ class NetworkSessionManager(QObject):
         Disconnects the session and releases resources.
         """
         self._receiving = False
-        if self.connection:
-            try:
-                self.connection.disconnect()
-            except Exception as e:
-                logger.error(f"Error during disconnect: {e}")
-            finally:
-                self.connection = None
+        with self._lock:
+            if self.connection:
+                try:
+                    self.connection.disconnect()
+                except Exception as e:
+                    logger.error(f"Error during disconnect: {e}")
+                finally:
+                    self.connection = None

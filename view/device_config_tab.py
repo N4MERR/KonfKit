@@ -1,10 +1,14 @@
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
                                QLabel, QTabWidget, QListWidget, QStackedWidget, QSplitter)
 from PySide6.QtCore import Signal, Qt
-from view.terminal_widget import TerminalWidget
+
+from view.terminal_view import TerminalView
 
 
 class ConfigSection(QWidget):
+    """
+    Represents a specific configuration category with a navigation list and a content area.
+    """
     def __init__(self, items):
         super().__init__()
         layout = QHBoxLayout(self)
@@ -56,21 +60,24 @@ class ConfigSection(QWidget):
 
 
 class DeviceConfigTab(QWidget):
-    home_requested = Signal()
+    """
+    Main configuration interface that manages different sections and the terminal instance.
+    """
+    close_tab_signal = Signal()
 
     def __init__(self):
         super().__init__()
         self.current_connection = None
-        self.terminal_widget = TerminalWidget()
+        self.terminal_widget = None
         self._setup_ui()
 
     def _setup_ui(self):
         layout = QVBoxLayout(self)
 
         top_bar = QHBoxLayout()
-        self.home_btn = QPushButton("← Home")
-        self.home_btn.setFixedSize(100, 30)
-        self.home_btn.clicked.connect(self.home_requested.emit)
+        self.close_btn = QPushButton("Close")
+        self.close_btn.setFixedSize(100, 30)
+        self.close_btn.clicked.connect(self.close_tab_signal.emit)
 
         self.info_label = QLabel()
         self.info_label.setAlignment(Qt.AlignCenter)
@@ -79,7 +86,7 @@ class DeviceConfigTab(QWidget):
         dummy_spacer = QWidget()
         dummy_spacer.setFixedSize(100, 30)
 
-        top_bar.addWidget(self.home_btn)
+        top_bar.addWidget(self.close_btn)
         top_bar.addStretch()
         top_bar.addWidget(self.info_label)
         top_bar.addStretch()
@@ -104,9 +111,10 @@ class DeviceConfigTab(QWidget):
 
         layout.addWidget(self.tabs)
 
-        self._on_tab_changed(0)
-
     def _on_tab_changed(self, index):
+        if not self.terminal_widget:
+            return
+
         tab_text = self.tabs.tabText(index)
         if tab_text == "Router":
             self.router_section.terminal_layout.addWidget(self.terminal_widget)
@@ -119,6 +127,18 @@ class DeviceConfigTab(QWidget):
         elif tab_text == "Terminal":
             self.terminal_tab_layout.addWidget(self.terminal_widget)
             self.terminal_widget.show()
+
+    def create_new_terminal(self):
+        self.cleanup_terminal()
+        self.terminal_widget = TerminalView()
+        self._on_tab_changed(self.tabs.currentIndex())
+        return self.terminal_widget
+
+    def cleanup_terminal(self):
+        if self.terminal_widget:
+            self.terminal_widget.setParent(None)
+            self.terminal_widget.deleteLater()
+            self.terminal_widget = None
 
     def set_connection(self, data):
         self.current_connection = data
