@@ -1,9 +1,9 @@
 from PySide6.QtCore import QObject, QThreadPool
 from PySide6.QtWidgets import QMessageBox
 from model.worker import Worker
-from view.connection_manager.serial_connection_dialog import SerialConnectionDialog
-from view.connection_manager.ssh_connection_dialog import SSHConnectionDialog
-from view.connection_manager.telnet_connection_dialog import TelnetConnectionDialog
+from view.connection_dialogs.serial_connection_dialog import SerialConnectionDialog
+from view.connection_dialogs.ssh_connection_dialog import SSHConnectionDialog
+from view.connection_dialogs.telnet_connection_dialog import TelnetConnectionDialog
 from view.progress_dialog import ProgressDialog
 from model.network_session_manager import NetworkSessionManager
 
