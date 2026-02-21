@@ -1,7 +1,6 @@
 from model.device_configuration_models.base_config_model import BaseConfigModel
 from utils.response_patterns import ResponsePatterns
 
-
 class OSPFModel(BaseConfigModel):
     """
     OSPF-specific configuration model inheriting from BaseConfigModel.

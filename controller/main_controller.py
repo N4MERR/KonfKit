@@ -5,12 +5,10 @@ from controller.tab_controllers.terminal_controller import TerminalController
 from controller.tab_controllers.connection_profile_controller import ConnectionProfileController
 from controller.tab_controllers.device_configuration_controllers.ospf_controller import OSPFController
 
-
 class MainController:
     """
     Main application controller that initializes the session manager and sub-controllers.
     """
-
     def __init__(self, window, profile_model):
         """
         Initializes the main controller with window and profile models.

@@ -1,5 +1,6 @@
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFormLayout, QPushButton
 from PySide6.QtCore import Qt
+
 class BaseConfigView(QWidget):
     """
     Base view class establishing the standard layout and UI components for configuration tabs.
@@ -19,15 +20,14 @@ class BaseConfigView(QWidget):
         self.layout.addWidget(self.title_label)
 
         self.layout.addLayout(self.form_layout)
+        self.layout.addStretch()
 
         self.button_layout = QHBoxLayout()
         self.apply_button = QPushButton("Apply Configuration")
         self.button_layout.addStretch()
         self.button_layout.addWidget(self.apply_button)
-        self.button_layout.addStretch()
 
         self.layout.addLayout(self.button_layout)
-        self.layout.addStretch()
 
     def add_input_field(self, label: str, widget: QWidget):
         """
