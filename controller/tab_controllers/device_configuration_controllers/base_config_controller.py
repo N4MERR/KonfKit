@@ -1,24 +1,29 @@
-class BaseConfigController:
-    """
-    Base controller class managing the relationship between configuration views and models.
-    """
+from view.progress_dialog import ProgressDialog
 
+class BaseConfigController:
     def __init__(self, view, model):
-        """
-        Initializes the base controller and binds the default apply signal.
-        """
         self.view = view
         self.model = model
+        self.progress_dialog = None
         self._setup_connections()
 
     def _setup_connections(self):
-        """
-        Connects the view's generic apply signal to the controller's processing method.
-        """
         self.view.apply_config_signal.connect(self.handle_apply)
+        self.model.session_manager.batch_finished.connect(self._close_progress)
+        self.model.session_manager.error_occurred.connect(self._handle_error)
 
     def handle_apply(self, data: dict):
-        """
-        Must be implemented by child classes to validate and pass data to the model.
-        """
         raise NotImplementedError
+
+    def _show_progress(self, message="Processing..."):
+        if not self.progress_dialog:
+            self.progress_dialog = ProgressDialog(message, self.view)
+        self.progress_dialog.show()
+
+    def _close_progress(self):
+        if self.progress_dialog:
+            self.progress_dialog.close()
+            self.progress_dialog = None
+
+    def _handle_error(self, message):
+        self._close_progress()

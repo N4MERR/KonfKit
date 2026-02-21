@@ -1,7 +1,9 @@
 from model.network_session_manager import NetworkSessionManager
 from model.terminal_model import TerminalModel
+from model.device_configuration_models.ospf_model import OSPFModel
 from controller.tab_controllers.terminal_controller import TerminalController
 from controller.tab_controllers.connection_profile_controller import ConnectionProfileController
+from controller.tab_controllers.device_configuration_controllers.ospf_controller import OSPFController
 
 
 class MainController:
@@ -10,6 +12,9 @@ class MainController:
     """
 
     def __init__(self, window, profile_model):
+        """
+        Initializes the main controller with window and profile models.
+        """
         self.window = window
         self.profile_model = profile_model
         self.session_manager = NetworkSessionManager()
@@ -27,13 +32,20 @@ class MainController:
             self.handle_session_start
         )
 
+        self.ospf_model = OSPFModel(self.session_manager)
+        self.ospf_controller = OSPFController(
+            self.window.device_config_tab.ospf_view,
+            self.ospf_model
+        )
+
         self._setup_connections()
 
     def _setup_connections(self):
         """
-        Binds UI actions from the window to controller logic.
+        Binds UI actions from the window and session manager signals to controller logic.
         """
         self.window.device_config_tab.close_tab_signal.connect(self.window.show_home)
+        self.session_manager.error_occurred.connect(self.window.show_error)
 
     def handle_session_start(self, connection_data):
         """
