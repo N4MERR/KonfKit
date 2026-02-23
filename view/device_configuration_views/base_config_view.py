@@ -8,7 +8,7 @@ class BaseConfigView(QWidget):
 
     def __init__(self, title: str):
         """
-        Initializes the base UI layout, title, and form structure.
+        Initializes the base UI layout, title, form structure, and action buttons.
         """
         super().__init__()
         self.layout = QVBoxLayout(self)
@@ -23,8 +23,10 @@ class BaseConfigView(QWidget):
         self.layout.addStretch()
 
         self.button_layout = QHBoxLayout()
+        self.preview_button = QPushButton("Preview Configuration")
         self.apply_button = QPushButton("Apply Configuration")
         self.button_layout.addStretch()
+        self.button_layout.addWidget(self.preview_button)
         self.button_layout.addWidget(self.apply_button)
 
         self.layout.addLayout(self.button_layout)
