@@ -42,8 +42,15 @@ class MainController:
         """
         Binds UI actions from the window and session manager signals to controller logic.
         """
-        self.window.device_config_tab.close_tab_signal.connect(self.window.show_home)
+        self.window.device_config_tab.close_tab_signal.connect(self.handle_session_close)
         self.session_manager.error_occurred.connect(self.window.show_error)
+
+    def handle_session_close(self):
+        """
+        Safely terminates the active network session and returns to the home view.
+        """
+        self.session_manager.close_connection()
+        self.window.show_home()
 
     def handle_session_start(self, connection_data):
         """
