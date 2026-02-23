@@ -2,38 +2,74 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
                                QLabel, QTabWidget, QTreeWidget, QTreeWidgetItem, QStackedWidget, QSplitter,
                                QSpacerItem, QSizePolicy)
 from PySide6.QtCore import Signal, Qt
+from PySide6.QtGui import QFont
 
 from view.terminal_view import TerminalView
 from view.device_configuration_views.ospf_view import (OSPFBasicView, OSPFRouterIdView,
                                                        OSPFPassiveInterfaceView, OSPFDefaultRouteView)
 
+
 class ConfigSection(QWidget):
-    """
-    Represents a specific configuration category with a hierarchical navigation tree and a content area.
-    """
+
     def __init__(self, section_items):
-        """
-        Initializes the configuration section with a nested dictionary of items and their corresponding view widgets.
-        """
         super().__init__()
         layout = QHBoxLayout(self)
 
         self.nav_tree = QTreeWidget()
         self.nav_tree.setHeaderHidden(True)
-        self.nav_tree.setFixedWidth(200)
+        self.nav_tree.setFixedWidth(250)
+
+        self.nav_tree.setStyleSheet("""
+            QTreeWidget {
+                background-color: transparent;
+                border: none;
+                border-right: 2px solid #444444;
+                outline: none;
+                show-decoration-selected: 0;
+            }
+            QTreeWidget:focus {
+                outline: none;
+            }
+            QTreeWidget::item {
+                min-height: 40px;
+                border-bottom: 1px solid #555555;
+                border-left: 4px solid transparent;
+                margin: 0px;
+                padding: 0px;
+                outline: none;
+            }
+            QTreeWidget::item:hover {
+                background-color: transparent;
+                border-bottom: 1px solid white;
+            }
+            QTreeWidget::item:selected {
+                background-color: #2d2d2d;
+                border-bottom: 1px solid #555555;
+                border-left: 4px solid #0078d4;
+                color: white;
+                outline: none;
+            }
+        """)
 
         self.gray_window = QWidget()
         self.gray_layout = QVBoxLayout(self.gray_window)
         self.gray_layout.setContentsMargins(0, 0, 0, 0)
 
         self.splitter = QSplitter(Qt.Horizontal)
-        self.splitter.setStyleSheet("QSplitter::handle { background: transparent; }")
+        self.splitter.setStyleSheet("QSplitter::handle { background: #444444; width: 2px; }")
 
         self.content_stack = QStackedWidget()
         self.widget_map = {}
 
         for section_name, subsections in section_items.items():
             top_item = QTreeWidgetItem(self.nav_tree, [section_name])
+            top_item.setFlags(top_item.flags() & ~Qt.ItemIsSelectable)
+
+            font = QFont()
+            font.setBold(True)
+            font.setPointSize(11)
+            top_item.setFont(0, font)
+
             for sub_name, widget in subsections.items():
                 sub_item = QTreeWidgetItem(top_item, [sub_name])
                 if widget is not None:
@@ -53,14 +89,13 @@ class ConfigSection(QWidget):
                 self.widget_map[id(sub_item)] = self.content_stack.count() - 1
 
         self.nav_tree.itemClicked.connect(self._on_item_clicked)
-        self.nav_tree.expandAll()
 
         if self.content_stack.count() > 0:
             self.content_stack.setCurrentIndex(0)
 
         self.terminal_container = QWidget()
         self.terminal_layout = QVBoxLayout(self.terminal_container)
-        self.terminal_layout.setContentsMargins(0, 0, 0, 0)
+        self.terminal_layout.setContentsMargins(10, 10, 10, 10)
         self.terminal_container.setMinimumWidth(300)
 
         self.splitter.addWidget(self.content_stack)
@@ -76,23 +111,16 @@ class ConfigSection(QWidget):
         layout.addWidget(self.gray_window)
 
     def _on_item_clicked(self, item, column):
-        """
-        Updates the stacked widget to show the corresponding configuration view when a tree item is clicked.
-        """
-        if id(item) in self.widget_map:
+        if item.childCount() > 0:
+            item.setExpanded(not item.isExpanded())
+        elif id(item) in self.widget_map:
             self.content_stack.setCurrentIndex(self.widget_map[id(item)])
 
 
 class DeviceConfigTab(QWidget):
-    """
-    Main configuration interface that manages different sections and the terminal instance.
-    """
     close_tab_signal = Signal()
 
     def __init__(self):
-        """
-        Initializes the device configuration tab, its UI elements, and sub-views.
-        """
         super().__init__()
         self.current_connection = None
         self.terminal_widget = None
@@ -105,9 +133,6 @@ class DeviceConfigTab(QWidget):
         self._setup_ui()
 
     def _setup_ui(self):
-        """
-        Sets up the layout, tabs, sections, and terminal container.
-        """
         layout = QVBoxLayout(self)
 
         top_bar = QHBoxLayout()
@@ -218,9 +243,6 @@ class DeviceConfigTab(QWidget):
         layout.addWidget(self.tabs)
 
     def _on_tab_changed(self, index):
-        """
-        Handles switching the terminal widget visibility between different tabs.
-        """
         if not self.terminal_widget:
             return
 
@@ -238,27 +260,18 @@ class DeviceConfigTab(QWidget):
             self.terminal_widget.show()
 
     def create_new_terminal(self):
-        """
-        Creates and registers a new terminal view instance.
-        """
         self.cleanup_terminal()
         self.terminal_widget = TerminalView()
         self._on_tab_changed(self.tabs.currentIndex())
         return self.terminal_widget
 
     def cleanup_terminal(self):
-        """
-        Removes and destroys the current terminal widget.
-        """
         if self.terminal_widget:
             self.terminal_widget.setParent(None)
             self.terminal_widget.deleteLater()
             self.terminal_widget = None
 
     def set_connection(self, data):
-        """
-        Updates the UI to display the active connection details.
-        """
         self.current_connection = data
         name = data.get('name', '')
         host = data.get('host', '')
