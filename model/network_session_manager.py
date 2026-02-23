@@ -13,13 +13,12 @@ class TerminalStream(io.BufferedIOBase):
     Custom stream handler that intercepts Netmiko's session logging and routes it directly to the UI signal.
     """
 
-    def __init__(self, signal, filename):
+    def __init__(self, signal):
         """
-        Initializes the stream with a target signal and log file path.
+        Initializes the stream with a target signal.
         """
         super().__init__()
         self.signal = signal
-        self.filename = filename
 
     def writable(self):
         """
@@ -35,7 +34,7 @@ class TerminalStream(io.BufferedIOBase):
 
     def write(self, b):
         """
-        Processes incoming data, emits it as a string, and appends to the log file.
+        Processes incoming data and emits it as a string to the UI.
         """
         if not b:
             return 0
@@ -44,11 +43,6 @@ class TerminalStream(io.BufferedIOBase):
 
         if text:
             self.signal.emit(text)
-            try:
-                with open(self.filename, "a", encoding="utf-8") as f:
-                    f.write(text)
-            except Exception as e:
-                logger.error(f"Failed to write to log file: {e}")
         return len(b)
 
     def flush(self):
@@ -75,27 +69,21 @@ class NetworkSessionManager(QObject):
         self.connection = None
         self._receiving = False
         self._lock = threading.Lock()
-        self._log_file = "device_session.log"
         self.session_logger = None
 
     def _record_and_emit(self, data):
         """
-        Records manual channel reads to the log file and emits them via signals.
+        Emits manual channel reads via signals to the UI.
         """
         if data:
             self.data_received.emit(data)
-            try:
-                with open(self._log_file, "a", encoding="utf-8") as f:
-                    f.write(data)
-            except Exception as e:
-                logger.error(f"Failed to write to session log: {e}")
 
     def connect_device(self, connection_settings):
         """
         Establishes a device connection and configures the live terminal stream.
         """
         try:
-            self.session_logger = TerminalStream(self.data_received, self._log_file)
+            self.session_logger = TerminalStream(self.data_received)
             connection_settings["session_log"] = self.session_logger
 
             self.connection = ConnectHandler(**connection_settings)
