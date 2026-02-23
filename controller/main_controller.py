@@ -1,6 +1,7 @@
 from model.network_session_manager import NetworkSessionManager
 from model.terminal_model import TerminalModel
-from model.device_configuration_models.ospf_model import OSPFModel
+from model.device_configuration_models.ospf_model import (OSPFBasicModel, OSPFRouterIdModel,
+                                                          OSPFPassiveInterfaceModel, OSPFDefaultRouteModel)
 from controller.tab_controllers.terminal_controller import TerminalController
 from controller.tab_controllers.connection_profile_controller import ConnectionProfileController
 from controller.tab_controllers.device_configuration_controllers.ospf_controller import OSPFController
@@ -30,10 +31,28 @@ class MainController:
             self.handle_session_start
         )
 
-        self.ospf_model = OSPFModel(self.session_manager)
-        self.ospf_controller = OSPFController(
+        self.ospf_basic_model = OSPFBasicModel(self.session_manager)
+        self.ospf_basic_controller = OSPFController(
             self.window.device_config_tab.ospf_view,
-            self.ospf_model
+            self.ospf_basic_model
+        )
+
+        self.ospf_router_id_model = OSPFRouterIdModel(self.session_manager)
+        self.ospf_router_id_controller = OSPFController(
+            self.window.device_config_tab.ospf_router_id_view,
+            self.ospf_router_id_model
+        )
+
+        self.ospf_passive_int_model = OSPFPassiveInterfaceModel(self.session_manager)
+        self.ospf_passive_int_controller = OSPFController(
+            self.window.device_config_tab.ospf_passive_int_view,
+            self.ospf_passive_int_model
+        )
+
+        self.ospf_default_route_model = OSPFDefaultRouteModel(self.session_manager)
+        self.ospf_default_route_controller = OSPFController(
+            self.window.device_config_tab.ospf_default_route_view,
+            self.ospf_default_route_model
         )
 
         self._setup_connections()
