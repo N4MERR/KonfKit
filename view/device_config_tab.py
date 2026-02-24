@@ -1,3 +1,6 @@
+"""
+Main configuration view orchestrating router, switch, and terminal tab integration.
+"""
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
                                QLabel, QTabWidget, QTreeWidget, QTreeWidgetItem, QStackedWidget, QSplitter,
                                QSpacerItem, QSizePolicy)
@@ -59,13 +62,35 @@ class ConfigSection(QWidget):
         """)
 
         self.gray_window = QWidget()
-        self.gray_layout = QVBoxLayout(self.gray_window)
+        self.gray_layout = QHBoxLayout(self.gray_window)
         self.gray_layout.setContentsMargins(0, 0, 0, 0)
+        self.gray_layout.setSpacing(0)
 
         self.splitter = QSplitter(Qt.Horizontal)
         self.splitter.setStyleSheet("QSplitter::handle { background: #444444; width: 2px; }")
 
+        self.restore_terminal_btn = QPushButton("◀")
+        self.restore_terminal_btn.setToolTip("Restore Terminal")
+        self.restore_terminal_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #2b2b2b;
+                color: #a0a0a0;
+                border: none;
+                border-left: 1px solid #444444;
+                font-size: 14px;
+            }
+            QPushButton:hover {
+                background-color: #3b3b3b;
+                color: white;
+            }
+        """)
+        self.restore_terminal_btn.setFixedWidth(24)
+        self.restore_terminal_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
+        self.restore_terminal_btn.hide()
+        self.restore_terminal_btn.clicked.connect(self._restore_terminal)
+
         self.content_stack = QStackedWidget()
+        self.content_stack.setMinimumWidth(450)
         self.widget_map = {}
 
         for section_name, subsections in section_items.items():
@@ -102,17 +127,19 @@ class ConfigSection(QWidget):
 
         self.terminal_container = QWidget()
         self.terminal_layout = QVBoxLayout(self.terminal_container)
-        self.terminal_layout.setContentsMargins(10, 10, 10, 10)
-        self.terminal_container.setMinimumWidth(300)
+        self.terminal_layout.setContentsMargins(0, 0, 0, 38)
+        self.terminal_container.setMinimumWidth(0)
 
         self.splitter.addWidget(self.content_stack)
         self.splitter.addWidget(self.terminal_container)
 
         self.splitter.setStretchFactor(0, 1)
         self.splitter.setStretchFactor(1, 1)
-        self.splitter.setSizes([500, 500])
+        self.splitter.setSizes([600, 400])
+        self.splitter.splitterMoved.connect(self._on_splitter_moved)
 
         self.gray_layout.addWidget(self.splitter)
+        self.gray_layout.addWidget(self.restore_terminal_btn)
 
         layout.addWidget(self.nav_tree)
         layout.addWidget(self.gray_window)
@@ -125,6 +152,27 @@ class ConfigSection(QWidget):
             item.setExpanded(not item.isExpanded())
         elif id(item) in self.widget_map:
             self.content_stack.setCurrentIndex(self.widget_map[id(item)])
+
+    def _on_splitter_moved(self, pos, index):
+        """
+        Displays the restore button if the terminal is completely collapsed.
+        """
+        sizes = self.splitter.sizes()
+        if len(sizes) > 1 and sizes[1] == 0:
+            self.restore_terminal_btn.show()
+        else:
+            self.restore_terminal_btn.hide()
+
+    def _restore_terminal(self):
+        """
+        Instantly resizes the terminal to a visible default size when the restore button is clicked.
+        """
+        sizes = self.splitter.sizes()
+        total_width = sum(sizes)
+        term_width = 400 if total_width > 850 else int(total_width / 3)
+
+        self.splitter.setSizes([total_width - term_width, term_width])
+        self.restore_terminal_btn.hide()
 
 
 class DeviceConfigTab(QWidget):
@@ -259,7 +307,10 @@ class DeviceConfigTab(QWidget):
         self.terminal_inner_container = QWidget()
         self.terminal_inner_layout = QVBoxLayout(self.terminal_inner_container)
         self.terminal_inner_layout.setContentsMargins(0, 0, 0, 0)
-        self.terminal_inner_container.setFixedWidth(800)
+
+        self.terminal_inner_container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.terminal_inner_container.setMinimumWidth(900)
+        self.terminal_inner_container.setMaximumWidth(1200)
 
         self.terminal_centering_wrapper.addWidget(self.terminal_inner_container)
         self.terminal_centering_wrapper.addItem(self.right_spacer)
@@ -285,11 +336,9 @@ class DeviceConfigTab(QWidget):
         if tab_text == "Router":
             self.router_section.terminal_layout.addWidget(self.terminal_widget)
             self.terminal_widget.show()
-            self.router_section.splitter.setSizes([500, 500])
         elif tab_text == "Switch":
             self.switch_section.terminal_layout.addWidget(self.terminal_widget)
             self.terminal_widget.show()
-            self.switch_section.splitter.setSizes([500, 500])
         elif tab_text == "Terminal":
             self.terminal_inner_layout.addWidget(self.terminal_widget)
             self.terminal_widget.show()
