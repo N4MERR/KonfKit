@@ -1,43 +1,48 @@
-from PySide6.QtWidgets import QLineEdit, QTextEdit, QCheckBox, QHBoxLayout, QVBoxLayout, QWidget, QLabel, QMessageBox, \
-    QSizePolicy
+"""
+Provides the view for configuring basic device settings like hostname, secret, and banner.
+"""
+from PySide6.QtWidgets import QLineEdit, QTextEdit, QCheckBox, QHBoxLayout, QVBoxLayout, QWidget, QLabel, QSizePolicy, QPushButton
 from PySide6.QtCore import Signal, Qt
 from view.device_configuration_views.base_config_view import BaseConfigView
 
 
 class BasicSettingsView(BaseConfigView):
     """
-    View providing inputs for Hostname, Enable Secret, and Banner MOTD with toggle checkboxes.
+    View for basic device configuration including Hostname, Enable Secret, and Banner MOTD.
     """
     apply_config_signal = Signal(dict)
     preview_config_signal = Signal(dict)
 
     def __init__(self):
         """
-        Initializes the basic settings form components and connects action buttons to signal handlers.
+        Initializes basic setting inputs and registers them with the base class for validation highlighting.
         """
-        super().__init__("Basic Device Configuration")
+        super().__init__()
 
         self.hostname_input = QLineEdit()
         self.hostname_check = QCheckBox()
         self.hostname_input.textChanged.connect(lambda text: self.hostname_check.setChecked(bool(text)))
-        self._add_row_with_toggle("Hostname:", self.hostname_input, self.hostname_check)
+        self.hostname_input.textChanged.connect(lambda: self.clear_field_highlight("hostname"))
+        self._add_row_with_toggle("Hostname:", self.hostname_input, self.hostname_check, "hostname")
 
         self.secret_input = QLineEdit()
         self.secret_input.setEchoMode(QLineEdit.Password)
         self.secret_check = QCheckBox()
         self.secret_input.textChanged.connect(lambda text: self.secret_check.setChecked(bool(text)))
-        self._add_row_with_toggle("Enable Secret:", self.secret_input, self.secret_check)
+        self.secret_input.textChanged.connect(lambda: self.clear_field_highlight("secret"))
+        self._add_row_with_toggle("Enable Secret:", self.secret_input, self.secret_check, "secret", is_password=True)
 
         self.secret_confirm_input = QLineEdit()
         self.secret_confirm_input.setEchoMode(QLineEdit.Password)
-        self.secret_confirm_dummy_check = QCheckBox()
+        self.secret_confirm_input.textChanged.connect(lambda: self.clear_field_highlight("confirm"))
 
-        sp_retain = self.secret_confirm_dummy_check.sizePolicy()
-        sp_retain.setRetainSizeWhenHidden(True)
-        self.secret_confirm_dummy_check.setSizePolicy(sp_retain)
+        dummy_check = QCheckBox()
+        policy = dummy_check.sizePolicy()
+        policy.setRetainSizeWhenHidden(True)
+        dummy_check.setSizePolicy(policy)
+        dummy_check.hide()
 
-        self.secret_confirm_dummy_check.setVisible(False)
-        self._add_row_with_toggle("Confirm Secret:", self.secret_confirm_input, self.secret_confirm_dummy_check)
+        self._add_row_with_toggle("Confirm Secret:", self.secret_confirm_input, dummy_check, "confirm", is_password=True)
 
         self.encryption_check = QCheckBox("Enable Service Password Encryption")
         self.add_input_field("Encryption:", self.encryption_check)
@@ -50,44 +55,74 @@ class BasicSettingsView(BaseConfigView):
 
         banner_container = QWidget()
         banner_layout = QVBoxLayout(banner_container)
-        banner_layout.setContentsMargins(0, 5, 0, 5)
+        banner_layout.setContentsMargins(0, 0, 0, 0)
 
         header_layout = QHBoxLayout()
-        header_layout.addWidget(QLabel("Banner MOTD Content:"))
+        header_label = QLabel("Banner MOTD:")
+        header_layout.addWidget(header_label)
         header_layout.addStretch()
         header_layout.addWidget(self.banner_check)
 
         banner_layout.addLayout(header_layout)
         banner_layout.addWidget(self.banner_input)
+
+        error_label = QLabel()
+        error_label.setStyleSheet("color: #ff4c4c; font-size: 12px; font-weight: bold; margin-top: 2px;")
+        error_label.hide()
+        banner_layout.addWidget(error_label)
+
         self.form_layout.addRow(banner_container)
+        self.field_widgets["banner"] = self.banner_input
+        self.error_labels["banner"] = error_label
+        self.banner_input.installEventFilter(self)
 
         self.apply_button.clicked.connect(self._on_apply_clicked)
         self.preview_button.clicked.connect(self._on_preview_clicked)
 
-    def _add_row_with_toggle(self, label_text, input_widget, checkbox):
+    def _add_row_with_toggle(self, label_text, input_widget, checkbox, key, is_password=False):
         """
-        Adds a standard input row with a trailing checkbox for enablement.
+        Creates a layout for a text input with an optional trailing checkbox and an inline password visibility toggle.
         """
         container = QWidget()
         layout = QHBoxLayout(container)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(input_widget)
-        layout.addWidget(checkbox)
-        self.add_input_field(label_text, container)
+
+        if is_password:
+            toggle_btn = QPushButton("Show", input_widget)
+            toggle_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+            toggle_btn.setCheckable(True)
+            toggle_btn.setStyleSheet("QPushButton { border: none; background: transparent; color: #a0a0a0; font-size: 11px; font-weight: bold; padding: 0px 5px; } QPushButton:checked { color: #4fc1ff; }")
+
+            toggle_btn.toggled.connect(lambda checked, btn=toggle_btn, w=input_widget: (
+                w.setEchoMode(QLineEdit.Normal if checked else QLineEdit.Password),
+                btn.setText("Hide" if checked else "Show")
+            ))
+
+            inner_layout = QHBoxLayout(input_widget)
+            inner_layout.setContentsMargins(0, 0, 2, 0)
+            inner_layout.addStretch()
+            inner_layout.addWidget(toggle_btn)
+
+            input_widget.setTextMargins(0, 0, 35, 0)
+
+        if checkbox:
+            layout.addWidget(checkbox)
+
+        self.add_input_field(label_text, container, key)
+        self.field_widgets[key] = input_widget
+        input_widget.installEventFilter(self)
 
     def _get_data(self):
         """
-        Extracts data from the UI and validates password matching.
+        Gathers all user input data from the form into a dictionary for processing.
         """
-        if self.secret_check.isChecked() and self.secret_input.text() != self.secret_confirm_input.text():
-            QMessageBox.warning(self, "Validation Error", "Passwords do not match!")
-            return None
-
         return {
             "hostname": self.hostname_input.text(),
             "hostname_enabled": self.hostname_check.isChecked(),
             "secret": self.secret_input.text(),
             "secret_enabled": self.secret_check.isChecked(),
+            "confirm_secret": self.secret_confirm_input.text(),
             "encrypt_all": self.encryption_check.isChecked(),
             "banner": self.banner_input.toPlainText(),
             "banner_enabled": self.banner_check.isChecked()
@@ -95,29 +130,14 @@ class BasicSettingsView(BaseConfigView):
 
     def _on_apply_clicked(self):
         """
-        Triggers the apply signal.
+        Clears previous highlights and emits the apply signal with form data.
         """
-        data = self._get_data()
-        if data:
-            self.apply_config_signal.emit(data)
+        self.clear_highlights()
+        self.apply_config_signal.emit(self._get_data())
 
     def _on_preview_clicked(self):
         """
-        Triggers the preview signal.
+        Clears previous highlights and emits the preview signal with form data.
         """
-        data = self._get_data()
-        if data:
-            self.preview_config_signal.emit(data)
-
-    def clear_inputs(self):
-        """
-        Clears all form fields.
-        """
-        self.hostname_input.clear()
-        self.hostname_check.setChecked(False)
-        self.secret_input.clear()
-        self.secret_confirm_input.clear()
-        self.secret_check.setChecked(False)
-        self.encryption_check.setChecked(False)
-        self.banner_input.clear()
-        self.banner_check.setChecked(False)
+        self.clear_highlights()
+        self.preview_config_signal.emit(self._get_data())
