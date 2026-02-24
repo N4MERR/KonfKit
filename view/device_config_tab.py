@@ -5,12 +5,13 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
                                QLabel, QTabWidget, QTreeWidget, QTreeWidgetItem, QStackedWidget, QSplitter,
                                QSpacerItem, QSizePolicy)
 from PySide6.QtCore import Signal, Qt
-from PySide6.QtGui import QFont
 
 from view.terminal_view import TerminalView
 from view.device_configuration_views.ospf_view import (OSPFBasicView, OSPFRouterIdView,
                                                        OSPFPassiveInterfaceView, OSPFDefaultRouteView)
 from view.device_configuration_views.basic_settings_view import BasicSettingsView
+from view.device_configuration_views.telnet_view import TelnetView
+from view.device_configuration_views.ssh_view import SSHView
 
 
 class ConfigSection(QWidget):
@@ -24,6 +25,8 @@ class ConfigSection(QWidget):
         """
         super().__init__()
         layout = QHBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
 
         self.nav_tree = QTreeWidget()
         self.nav_tree.setHeaderHidden(True)
@@ -69,23 +72,21 @@ class ConfigSection(QWidget):
         self.splitter = QSplitter(Qt.Horizontal)
         self.splitter.setStyleSheet("QSplitter::handle { background: #444444; width: 2px; }")
 
-        self.restore_terminal_btn = QPushButton("◀")
+        self.restore_terminal_btn = QPushButton("◀", self.gray_window)
         self.restore_terminal_btn.setToolTip("Restore Terminal")
+        self.restore_terminal_btn.setFixedWidth(20)
         self.restore_terminal_btn.setStyleSheet("""
             QPushButton {
                 background-color: #2b2b2b;
-                color: #a0a0a0;
-                border: none;
-                border-left: 1px solid #444444;
-                font-size: 14px;
+                color: #4fc1ff;
+                border: 1px solid #444444;
+                border-right: none;
+                border-top-left-radius: 5px;
+                border-bottom-left-radius: 5px;
+                font-weight: bold;
             }
-            QPushButton:hover {
-                background-color: #3b3b3b;
-                color: white;
-            }
+            QPushButton:hover { background-color: #3b3b3b; color: white; }
         """)
-        self.restore_terminal_btn.setFixedWidth(24)
-        self.restore_terminal_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
         self.restore_terminal_btn.hide()
         self.restore_terminal_btn.clicked.connect(self._restore_terminal)
 
@@ -97,7 +98,7 @@ class ConfigSection(QWidget):
             top_item = QTreeWidgetItem(self.nav_tree, [section_name])
             top_item.setFlags(top_item.flags() & ~Qt.ItemIsSelectable)
 
-            font = QFont()
+            font = self.font()
             font.setBold(True)
             font.setPointSize(11)
             top_item.setFont(0, font)
@@ -109,11 +110,9 @@ class ConfigSection(QWidget):
                 else:
                     page = QWidget()
                     page_layout = QVBoxLayout(page)
-
                     title_label = QLabel(f"{section_name} - {sub_name} Configuration")
                     title_label.setStyleSheet("font-size: 16pt; font-weight: bold;")
                     title_label.setAlignment(Qt.AlignCenter)
-
                     page_layout.addWidget(title_label)
                     page_layout.addStretch()
                     self.content_stack.addWidget(page)
@@ -139,10 +138,22 @@ class ConfigSection(QWidget):
         self.splitter.splitterMoved.connect(self._on_splitter_moved)
 
         self.gray_layout.addWidget(self.splitter)
-        self.gray_layout.addWidget(self.restore_terminal_btn)
-
         layout.addWidget(self.nav_tree)
         layout.addWidget(self.gray_window)
+
+    def resizeEvent(self, event):
+        """
+        Keeps the floating restore button anchored to the right edge.
+        """
+        super().resizeEvent(event)
+        btn_w = self.restore_terminal_btn.width()
+        btn_h = 60
+        self.restore_terminal_btn.setGeometry(
+            self.gray_window.width() - btn_w,
+            (self.gray_window.height() - btn_h) // 2,
+            btn_w,
+            btn_h
+        )
 
     def _on_item_clicked(self, item, column):
         """
@@ -155,23 +166,21 @@ class ConfigSection(QWidget):
 
     def _on_splitter_moved(self, pos, index):
         """
-        Displays the restore button if the terminal is completely collapsed.
+        Checks if terminal is collapsed and reveals the floating toggle.
         """
         sizes = self.splitter.sizes()
-        if len(sizes) > 1 and sizes[1] == 0:
+        if len(sizes) > 1 and sizes[1] <= 5:
             self.restore_terminal_btn.show()
+            self.restore_terminal_btn.raise_()
         else:
             self.restore_terminal_btn.hide()
 
     def _restore_terminal(self):
         """
-        Instantly resizes the terminal to a visible default size when the restore button is clicked.
+        Springs the terminal back to life.
         """
-        sizes = self.splitter.sizes()
-        total_width = sum(sizes)
-        term_width = 400 if total_width > 850 else int(total_width / 3)
-
-        self.splitter.setSizes([total_width - term_width, term_width])
+        total = sum(self.splitter.sizes())
+        self.splitter.setSizes([total - 400, 400])
         self.restore_terminal_btn.hide()
 
 
@@ -189,7 +198,15 @@ class DeviceConfigTab(QWidget):
         self.current_connection = None
         self.terminal_widget = None
 
-        self.base_settings_view = BasicSettingsView()
+        self.router_basic_settings = BasicSettingsView()
+        self.switch_basic_settings = BasicSettingsView()
+
+        self.router_telnet = TelnetView()
+        self.switch_telnet = TelnetView()
+
+        self.router_ssh = SSHView()
+        self.switch_ssh = SSHView()
+
         self.ospf_view = OSPFBasicView()
         self.ospf_router_id_view = OSPFRouterIdView()
         self.ospf_passive_int_view = OSPFPassiveInterfaceView()
@@ -199,7 +216,7 @@ class DeviceConfigTab(QWidget):
 
     def _setup_ui(self):
         """
-        Sets up the UI structure with System section expanded and others collapsed.
+        Sets up the UI structure with sections organized by category.
         """
         layout = QVBoxLayout(self)
 
@@ -226,8 +243,12 @@ class DeviceConfigTab(QWidget):
         self.tabs = QTabWidget()
 
         router_items = {
-            "System": {
-                "Base Settings": self.base_settings_view
+            "System Setup": {
+                "General Settings": self.router_basic_settings
+            },
+            "Remote Access": {
+                "Telnet": self.router_telnet,
+                "SSH": self.router_ssh
             },
             "OSPF": {
                 "Basic Config": self.ospf_view,
@@ -263,14 +284,21 @@ class DeviceConfigTab(QWidget):
         self.router_section = ConfigSection(router_items)
 
         self.router_section.nav_tree.collapseAll()
-        system_category = self.router_section.nav_tree.topLevelItem(0)
-        if system_category:
-            system_category.setExpanded(True)
-            if system_category.childCount() > 0:
-                self.router_section.nav_tree.setCurrentItem(system_category.child(0))
+        router_system_category = self.router_section.nav_tree.topLevelItem(0)
+        if router_system_category:
+            router_system_category.setExpanded(True)
+            if router_system_category.childCount() > 0:
+                self.router_section.nav_tree.setCurrentItem(router_system_category.child(0))
                 self.router_section.content_stack.setCurrentIndex(0)
 
         switch_items = {
+            "System Setup": {
+                "General Settings": self.switch_basic_settings
+            },
+            "Remote Access": {
+                "Telnet": self.switch_telnet,
+                "SSH": self.switch_ssh
+            },
             "VLANs": {
                 "Create/Delete": None,
                 "Assign Ports": None
@@ -292,35 +320,36 @@ class DeviceConfigTab(QWidget):
             }
         }
         self.switch_section = ConfigSection(switch_items)
+
         self.switch_section.nav_tree.collapseAll()
+        switch_system_category = self.switch_section.nav_tree.topLevelItem(0)
+        if switch_system_category:
+            switch_system_category.setExpanded(True)
+            if switch_system_category.childCount() > 0:
+                self.switch_section.nav_tree.setCurrentItem(switch_system_category.child(0))
+                self.switch_section.content_stack.setCurrentIndex(0)
 
         self.terminal_tab_container = QWidget()
         self.terminal_tab_layout = QVBoxLayout(self.terminal_tab_container)
-
         self.terminal_centering_wrapper = QHBoxLayout()
-
         self.left_spacer = QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         self.right_spacer = QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-
         self.terminal_centering_wrapper.addItem(self.left_spacer)
 
         self.terminal_inner_container = QWidget()
         self.terminal_inner_layout = QVBoxLayout(self.terminal_inner_container)
         self.terminal_inner_layout.setContentsMargins(0, 0, 0, 0)
-
         self.terminal_inner_container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.terminal_inner_container.setMinimumWidth(900)
         self.terminal_inner_container.setMaximumWidth(1200)
 
         self.terminal_centering_wrapper.addWidget(self.terminal_inner_container)
         self.terminal_centering_wrapper.addItem(self.right_spacer)
-
         self.terminal_tab_layout.addLayout(self.terminal_centering_wrapper)
 
         self.tabs.addTab(self.router_section, "Router")
         self.tabs.addTab(self.switch_section, "Switch")
         self.tabs.addTab(self.terminal_tab_container, "Terminal")
-
         self.tabs.currentChanged.connect(self._on_tab_changed)
 
         layout.addWidget(self.tabs)
@@ -369,6 +398,5 @@ class DeviceConfigTab(QWidget):
         name = data.get('name', '')
         host = data.get('host', '')
         protocol = data.get('protocol', '')
-
         display_name = name if name else host
         self.info_label.setText(f"Connected to: {display_name} ({protocol})")
