@@ -2,9 +2,11 @@ from model.network_session_manager import NetworkSessionManager
 from model.terminal_model import TerminalModel
 from model.device_configuration_models.ospf_model import (OSPFBasicModel, OSPFRouterIdModel,
                                                           OSPFPassiveInterfaceModel, OSPFDefaultRouteModel)
+from model.device_configuration_models.basic_settings_model import BasicSettingsModel
 from controller.tab_controllers.terminal_controller import TerminalController
 from controller.tab_controllers.connection_profile_controller import ConnectionProfileController
 from controller.tab_controllers.device_configuration_controllers.ospf_controller import OSPFController
+from controller.tab_controllers.device_configuration_controllers.basic_settings_controller import BasicSettingsController
 
 class MainController:
     """
@@ -29,6 +31,12 @@ class MainController:
             self.window.connection_manager_tab,
             self.profile_model,
             self.handle_session_start
+        )
+
+        self.basic_settings_model = BasicSettingsModel(self.session_manager)
+        self.basic_settings_controller = BasicSettingsController(
+            self.window.device_config_tab.base_settings_view,
+            self.basic_settings_model
         )
 
         self.ospf_basic_model = OSPFBasicModel(self.session_manager)
