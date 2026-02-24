@@ -7,11 +7,18 @@ from PySide6.QtGui import QFont
 from view.terminal_view import TerminalView
 from view.device_configuration_views.ospf_view import (OSPFBasicView, OSPFRouterIdView,
                                                        OSPFPassiveInterfaceView, OSPFDefaultRouteView)
+from view.device_configuration_views.basic_settings_view import BasicSettingsView
 
 
 class ConfigSection(QWidget):
+    """
+    A widget representing a configuration section with a sidebar navigation tree and content stack.
+    """
 
     def __init__(self, section_items):
+        """
+        Initializes the navigation tree and the stacked widget for the configuration views.
+        """
         super().__init__()
         layout = QHBoxLayout(self)
 
@@ -111,6 +118,9 @@ class ConfigSection(QWidget):
         layout.addWidget(self.gray_window)
 
     def _on_item_clicked(self, item, column):
+        """
+        Handles navigation item clicks to switch content or expand categories.
+        """
         if item.childCount() > 0:
             item.setExpanded(not item.isExpanded())
         elif id(item) in self.widget_map:
@@ -118,13 +128,20 @@ class ConfigSection(QWidget):
 
 
 class DeviceConfigTab(QWidget):
+    """
+    Main tab widget for device configuration, containing Router, Switch, and Terminal sub-tabs.
+    """
     close_tab_signal = Signal()
 
     def __init__(self):
+        """
+        Initializes the configuration tab views and layouts.
+        """
         super().__init__()
         self.current_connection = None
         self.terminal_widget = None
 
+        self.base_settings_view = BasicSettingsView()
         self.ospf_view = OSPFBasicView()
         self.ospf_router_id_view = OSPFRouterIdView()
         self.ospf_passive_int_view = OSPFPassiveInterfaceView()
@@ -133,6 +150,9 @@ class DeviceConfigTab(QWidget):
         self._setup_ui()
 
     def _setup_ui(self):
+        """
+        Sets up the UI structure with System section expanded and others collapsed.
+        """
         layout = QVBoxLayout(self)
 
         top_bar = QHBoxLayout()
@@ -158,6 +178,9 @@ class DeviceConfigTab(QWidget):
         self.tabs = QTabWidget()
 
         router_items = {
+            "System": {
+                "Base Settings": self.base_settings_view
+            },
             "OSPF": {
                 "Basic Config": self.ospf_view,
                 "Router ID": self.ospf_router_id_view,
@@ -191,6 +214,14 @@ class DeviceConfigTab(QWidget):
         }
         self.router_section = ConfigSection(router_items)
 
+        self.router_section.nav_tree.collapseAll()
+        system_category = self.router_section.nav_tree.topLevelItem(0)
+        if system_category:
+            system_category.setExpanded(True)
+            if system_category.childCount() > 0:
+                self.router_section.nav_tree.setCurrentItem(system_category.child(0))
+                self.router_section.content_stack.setCurrentIndex(0)
+
         switch_items = {
             "VLANs": {
                 "Create/Delete": None,
@@ -213,6 +244,7 @@ class DeviceConfigTab(QWidget):
             }
         }
         self.switch_section = ConfigSection(switch_items)
+        self.switch_section.nav_tree.collapseAll()
 
         self.terminal_tab_container = QWidget()
         self.terminal_tab_layout = QVBoxLayout(self.terminal_tab_container)
@@ -243,6 +275,9 @@ class DeviceConfigTab(QWidget):
         layout.addWidget(self.tabs)
 
     def _on_tab_changed(self, index):
+        """
+        Manages the movement of the single terminal widget between different tabs.
+        """
         if not self.terminal_widget:
             return
 
@@ -260,18 +295,27 @@ class DeviceConfigTab(QWidget):
             self.terminal_widget.show()
 
     def create_new_terminal(self):
+        """
+        Recreates the terminal view for a fresh connection.
+        """
         self.cleanup_terminal()
         self.terminal_widget = TerminalView()
         self._on_tab_changed(self.tabs.currentIndex())
         return self.terminal_widget
 
     def cleanup_terminal(self):
+        """
+        Safely removes and deletes the terminal widget.
+        """
         if self.terminal_widget:
             self.terminal_widget.setParent(None)
             self.terminal_widget.deleteLater()
             self.terminal_widget = None
 
     def set_connection(self, data):
+        """
+        Updates the UI to reflect information about the current connection.
+        """
         self.current_connection = data
         name = data.get('name', '')
         host = data.get('host', '')
