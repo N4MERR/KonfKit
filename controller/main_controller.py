@@ -1,17 +1,28 @@
+"""
+Main application controller linking UI views, session managers, and configuration logic.
+"""
 from model.network_session_manager import NetworkSessionManager
 from model.terminal_model import TerminalModel
 from model.device_configuration_models.ospf_model import (OSPFBasicModel, OSPFRouterIdModel,
                                                           OSPFPassiveInterfaceModel, OSPFDefaultRouteModel)
 from model.device_configuration_models.basic_settings_model import BasicSettingsModel
+from model.device_configuration_models.telnet_model import TelnetModel
+from model.device_configuration_models.ssh_model import SSHModel
+
 from controller.tab_controllers.terminal_controller import TerminalController
 from controller.tab_controllers.connection_profile_controller import ConnectionProfileController
 from controller.tab_controllers.device_configuration_controllers.ospf_controller import OSPFController
-from controller.tab_controllers.device_configuration_controllers.basic_settings_controller import BasicSettingsController
+from controller.tab_controllers.device_configuration_controllers.basic_settings_controller import \
+    BasicSettingsController
+from controller.tab_controllers.device_configuration_controllers.telnet_controller import TelnetController
+from controller.tab_controllers.device_configuration_controllers.ssh_controller import SSHController
+
 
 class MainController:
     """
     Main application controller that initializes the session manager and sub-controllers.
     """
+
     def __init__(self, window, profile_model):
         """
         Initializes the main controller with window and profile models.
@@ -34,9 +45,36 @@ class MainController:
         )
 
         self.basic_settings_model = BasicSettingsModel(self.session_manager)
-        self.basic_settings_controller = BasicSettingsController(
-            self.window.device_config_tab.base_settings_view,
+
+        self.router_basic_settings_controller = BasicSettingsController(
+            self.window.device_config_tab.router_basic_settings,
             self.basic_settings_model
+        )
+        self.switch_basic_settings_controller = BasicSettingsController(
+            self.window.device_config_tab.switch_basic_settings,
+            self.basic_settings_model
+        )
+
+        self.telnet_model = TelnetModel(self.session_manager)
+
+        self.router_telnet_controller = TelnetController(
+            self.window.device_config_tab.router_telnet,
+            self.telnet_model
+        )
+        self.switch_telnet_controller = TelnetController(
+            self.window.device_config_tab.switch_telnet,
+            self.telnet_model
+        )
+
+        self.ssh_model = SSHModel(self.session_manager)
+
+        self.router_ssh_controller = SSHController(
+            self.window.device_config_tab.router_ssh,
+            self.ssh_model
+        )
+        self.switch_ssh_controller = SSHController(
+            self.window.device_config_tab.switch_ssh,
+            self.ssh_model
         )
 
         self.ospf_basic_model = OSPFBasicModel(self.session_manager)
