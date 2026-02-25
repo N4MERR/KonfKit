@@ -72,7 +72,7 @@ class ConfigSection(QWidget):
         self.splitter = QSplitter(Qt.Horizontal)
         self.splitter.setStyleSheet("QSplitter::handle { background: #444444; width: 2px; }")
 
-        self.restore_terminal_btn = QPushButton("◀", self.gray_window)
+        self.restore_terminal_btn = QPushButton("<", self.gray_window)
         self.restore_terminal_btn.setToolTip("Restore Terminal")
         self.restore_terminal_btn.setFixedWidth(20)
         self.restore_terminal_btn.setStyleSheet("""
@@ -83,7 +83,10 @@ class ConfigSection(QWidget):
                 border-right: none;
                 border-top-left-radius: 5px;
                 border-bottom-left-radius: 5px;
+                font-family: Arial, sans-serif;
+                font-size: 14px;
                 font-weight: bold;
+                padding-bottom: 2px;
             }
             QPushButton:hover { background-color: #3b3b3b; color: white; }
         """)
@@ -131,6 +134,8 @@ class ConfigSection(QWidget):
 
         self.splitter.addWidget(self.content_stack)
         self.splitter.addWidget(self.terminal_container)
+
+        self.splitter.setCollapsible(0, False)
 
         self.splitter.setStretchFactor(0, 1)
         self.splitter.setStretchFactor(1, 1)
