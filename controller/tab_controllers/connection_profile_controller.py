@@ -7,6 +7,7 @@ from view.connection_dialogs.telnet_connection_dialog import TelnetConnectionDia
 from view.progress_dialog import ProgressDialog
 from model.network_session_manager import NetworkSessionManager
 
+
 class ConnectionProfileController(QObject):
     """
     Controller managing connection profiles and testing connectivity via NetworkSessionManager.
@@ -30,7 +31,7 @@ class ConnectionProfileController(QObject):
         self.view.ssh_row.add_requested.connect(lambda: self.handle_add_with_protocol("SSH"))
         self.view.telnet_row.add_requested.connect(lambda: self.handle_add_with_protocol("Telnet"))
 
-        self.view.connect_profile_requested.connect(self.start_session)
+        self.view.connect_profile_requested.connect(self.handle_connect_profile)
         self.view.edit_profile_requested.connect(self.handle_edit_profile)
         self.view.delete_profile_requested.connect(self.handle_delete_profile)
 
@@ -62,7 +63,7 @@ class ConnectionProfileController(QObject):
             self.refresh_ui()
         elif result == 20:
             data = dialog.get_data()
-            self.start_session(data)
+            self.handle_connect_profile(data)
 
     def handle_edit_profile(self, data):
         """
@@ -99,7 +100,7 @@ class ConnectionProfileController(QObject):
             self.model.save_profile(new_data)
             self.refresh_ui()
         elif result == 20:
-            self.start_session(dialog.get_data())
+            self.handle_connect_profile(dialog.get_data())
 
     def handle_delete_profile(self, data):
         """
@@ -111,6 +112,45 @@ class ConnectionProfileController(QObject):
         if reply == QMessageBox.Yes:
             self.model.delete_profile(data['name'], data['device_type'])
             self.refresh_ui()
+
+    def handle_connect_profile(self, data):
+        """
+        Shows progress dialog and starts the connection process.
+        """
+        self.progress_window = ProgressDialog("Connecting to device...", self.view)
+
+        worker = Worker(self._perform_connection_task, data)
+        worker.signals.result.connect(self.on_connection_task_finished)
+        worker.signals.error.connect(lambda err: self.on_connection_task_finished((False, str(err[1]))))
+
+        self.threadpool.start(worker)
+        self.progress_window.exec()
+
+    def _perform_connection_task(self, data):
+        """
+        Executes a brief validation before passing data to the terminal callback.
+        """
+        temp_manager = NetworkSessionManager()
+        netmiko_settings = {k: v for k, v in data.items() if k != "name"}
+        success, msg = temp_manager.connect_device(netmiko_settings)
+        if success:
+            temp_manager.close_connection()
+            return True, data
+        return False, msg
+
+    def on_connection_task_finished(self, result):
+        """
+        Closes progress dialog and transitions to terminal session or shows raw error.
+        """
+        if self.progress_window:
+            self.progress_window.close()
+            self.progress_window = None
+
+        success, payload = result
+        if success:
+            self.start_session(payload)
+        else:
+            QMessageBox.critical(self.view, "Connection Failed", f"Connection failed: {payload}")
 
     def run_test_process(self, data, message):
         """
@@ -153,4 +193,4 @@ class ConnectionProfileController(QObject):
         if success:
             QMessageBox.information(self.view, "Success", message)
         else:
-            QMessageBox.critical(self.view, "Failed", message)
+            QMessageBox.critical(self.view, "Connection Failed", f"Connection failed: {message}")
