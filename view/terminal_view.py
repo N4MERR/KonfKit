@@ -109,12 +109,12 @@ class TerminalView(QWidget):
 
     def display_text(self, text):
         """
-        Writes received characters to the terminal buffer and updates input tracking.
+        Writes received characters to the terminal buffer, filtering out unprintable bell characters, and updates input tracking.
         """
         cursor = self.console_output.textCursor()
         cursor.movePosition(QTextCursor.End)
 
-        filtered_text = text.replace("\r\n", "\n").replace("\r", "")
+        filtered_text = text.replace("\r\n", "\n").replace("\r", "").replace("\x07", "")
 
         if "\x08" in filtered_text:
             for char in filtered_text:
