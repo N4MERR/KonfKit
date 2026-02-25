@@ -1,16 +1,20 @@
+"""
+OSPF configuration views with corrected data retrieval for validation and a unified container.
+"""
 from view.device_configuration_views.base_config_view import BaseConfigView
 from view.device_configuration_views.config_fields import (
     BaseConfigField, IPAddressField, NumberField
 )
 
+
 class OSPFBasicView(BaseConfigView):
     """
-    Controller handling execution requests for OSPF network advertisements.
+    View handling OSPF network advertisements.
     """
 
     def __init__(self):
         """
-        Initializes the OSPF network advertisement view and registers its fields.
+        Initializes the OSPF network advertisement view.
         """
         super().__init__()
 
@@ -41,12 +45,12 @@ class OSPFBasicView(BaseConfigView):
 
 class OSPFRouterIdView(BaseConfigView):
     """
-    Controller handling execution requests for OSPF Router ID.
+    View handling OSPF Router ID configuration.
     """
 
     def __init__(self):
         """
-        Initializes the OSPF Router ID view and registers its fields.
+        Initializes the OSPF Router ID view.
         """
         super().__init__()
 
@@ -69,12 +73,12 @@ class OSPFRouterIdView(BaseConfigView):
 
 class OSPFPassiveInterfaceView(BaseConfigView):
     """
-    Controller handling execution requests for OSPF passive interfaces.
+    View handling OSPF passive interfaces.
     """
 
     def __init__(self):
         """
-        Initializes the OSPF Passive Interface view and registers its fields.
+        Initializes the OSPF Passive Interface view.
         """
         super().__init__()
 
@@ -97,12 +101,12 @@ class OSPFPassiveInterfaceView(BaseConfigView):
 
 class OSPFDefaultRouteView(BaseConfigView):
     """
-    Controller handling execution requests for OSPF default route advertisement.
+    View handling OSPF default route advertisement.
     """
 
     def __init__(self):
         """
-        Initializes the OSPF Default Route view and registers its fields.
+        Initializes the OSPF Default Route view.
         """
         super().__init__()
 
@@ -120,3 +124,18 @@ class OSPFDefaultRouteView(BaseConfigView):
             "process_id": self.fields["process_id"].get_value(),
             "always": self.fields["always"].checkbox.isChecked()
         }
+
+
+class OSPFView:
+    """
+    Container class aggregating OSPF configuration subsections.
+    """
+
+    def __init__(self):
+        """
+        Initializes OSPF subsections.
+        """
+        self.basic_config = OSPFBasicView()
+        self.router_id = OSPFRouterIdView()
+        self.passive_interfaces = OSPFPassiveInterfaceView()
+        self.default_route = OSPFDefaultRouteView()
