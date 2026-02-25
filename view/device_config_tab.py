@@ -6,12 +6,12 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
                                QSpacerItem, QSizePolicy)
 from PySide6.QtCore import Signal, Qt
 
+from view.device_configuration_views.switch.vlan_view import VLANView
 from view.terminal_view import TerminalView
-from view.device_configuration_views.ospf_view import (OSPFBasicView, OSPFRouterIdView,
-                                                       OSPFPassiveInterfaceView, OSPFDefaultRouteView)
-from view.device_configuration_views.basic_settings_view import BasicSettingsView
-from view.device_configuration_views.telnet_view import TelnetView
-from view.device_configuration_views.ssh_view import SSHView
+from view.device_configuration_views.router.ospf_view import OSPFView
+from view.device_configuration_views.universal.basic_settings_view import BasicSettingsView
+from view.device_configuration_views.universal.telnet_view import TelnetView
+from view.device_configuration_views.universal.ssh_view import SSHView
 
 
 class ConfigSection(QWidget):
@@ -206,16 +206,15 @@ class DeviceConfigTab(QWidget):
         self.router_basic_settings = BasicSettingsView()
         self.switch_basic_settings = BasicSettingsView()
 
-        self.router_telnet = TelnetView()
-        self.switch_telnet = TelnetView()
+        self.router_telnet_view = TelnetView()
+        self.switch_telnet_view = TelnetView()
 
-        self.router_ssh = SSHView()
-        self.switch_ssh = SSHView()
+        self.router_ssh_view = SSHView()
+        self.switch_ssh_view = SSHView()
 
-        self.ospf_view = OSPFBasicView()
-        self.ospf_router_id_view = OSPFRouterIdView()
-        self.ospf_passive_int_view = OSPFPassiveInterfaceView()
-        self.ospf_default_route_view = OSPFDefaultRouteView()
+        self.ospf_view = OSPFView()
+
+        self.vlan_view = VLANView()
 
         self._setup_ui()
 
@@ -251,39 +250,20 @@ class DeviceConfigTab(QWidget):
             "System Setup": {
                 "General Settings": self.router_basic_settings
             },
-            "Remote Access": {
-                "Telnet": self.router_telnet,
-                "SSH": self.router_ssh
+            "SSH": {
+                "Global Settings": self.router_ssh_view.global_section,
+                "Authentication": self.router_ssh_view.auth_section,
+                "VTY Lines": self.router_ssh_view.vty_section
+            },
+            "Telnet": {
+                "Authentication": self.router_telnet_view.auth_section,
+                "VTY Lines": self.router_telnet_view.vty_section
             },
             "OSPF": {
-                "Basic Config": self.ospf_view,
-                "Router ID": self.ospf_router_id_view,
-                "Passive Interfaces": self.ospf_passive_int_view,
-                "Default Route": self.ospf_default_route_view
-            },
-            "Interfaces": {
-                "IPv4 Settings": None
-            },
-            "EIGRP": {
-                "Basic Config": None
-            },
-            "Static Routing": {
-                "IPv4 Routes": None
-            },
-            "NAT": {
-                "Static NAT": None,
-                "Dynamic NAT": None,
-                "PAT": None
-            },
-            "ACLs": {
-                "Standard": None,
-                "Extended": None
-            },
-            "DHCP": {
-                "Pool Settings": None
-            },
-            "HSRP": {
-                "Basic Config": None
+                "Basic Config": self.ospf_view.basic_config,
+                "Router ID": self.ospf_view.router_id,
+                "Passive Interfaces": self.ospf_view.passive_interfaces,
+                "Default Route": self.ospf_view.default_route
             }
         }
         self.router_section = ConfigSection(router_items)
@@ -300,28 +280,17 @@ class DeviceConfigTab(QWidget):
             "System Setup": {
                 "General Settings": self.switch_basic_settings
             },
-            "Remote Access": {
-                "Telnet": self.switch_telnet,
-                "SSH": self.switch_ssh
+            "SSH": {
+                "Global Settings": self.switch_ssh_view.global_section,
+                "Authentication": self.switch_ssh_view.auth_section,
+                "VTY Lines": self.switch_ssh_view.vty_section
             },
-            "VLANs": {
-                "Create/Delete": None,
-                "Assign Ports": None
+            "Telnet": {
+                "Authentication": self.switch_telnet_view.auth_section,
+                "VTY Lines": self.switch_telnet_view.vty_section
             },
-            "STP": {
-                "Root Bridge": None
-            },
-            "VTP": {
-                "Domain Settings": None
-            },
-            "Port Security": {
-                "Mac Address Config": None
-            },
-            "EtherChannel": {
-                "LACP Settings": None
-            },
-            "Interfaces": {
-                "Port Status": None
+            "VLAN": {
+                "VLAN Database": self.vlan_view
             }
         }
         self.switch_section = ConfigSection(switch_items)
