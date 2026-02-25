@@ -1,3 +1,6 @@
+"""
+Standardized controller for managing Cisco device configurations.
+"""
 from view.device_configuration_views.preview_dialog import PreviewDialog
 from view.progress_dialog import ProgressDialog
 
@@ -32,7 +35,11 @@ class BaseConfigController:
         """
         Processes the application of configuration data to the active device session.
         """
-        raise NotImplementedError
+        commands = self.model.generate_commands(**data)
+        if not commands:
+            return
+        self._show_progress("Applying configuration...")
+        self.model.session_manager.send_batch(commands)
 
     def handle_preview(self, data: dict):
         """
@@ -44,7 +51,6 @@ class BaseConfigController:
 
         preview_text = "\n".join(commands)
         dialog = PreviewDialog(preview_text, self.view)
-
         dialog.exec()
 
     def _show_progress(self, message="Processing..."):
