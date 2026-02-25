@@ -175,8 +175,7 @@ class NetworkSessionManager(QObject):
                     self.connection.enable()
 
                 self.connection.send_config_set(
-                    config_commands=cmds,
-                    enter_config_mode=True
+                    config_commands=cmds
                 )
         except Exception as e:
             logger.error(f"Command set failed: {e}")

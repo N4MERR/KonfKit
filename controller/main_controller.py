@@ -1,6 +1,3 @@
-"""
-Main application controller linking UI views, session managers, and configuration logic.
-"""
 from model.network_session_manager import NetworkSessionManager
 from model.terminal_model import TerminalModel
 from model.device_configuration_models.ospf_model import (OSPFBasicModel, OSPFRouterIdModel,
@@ -11,7 +8,9 @@ from model.device_configuration_models.ssh_model import SSHModel
 
 from controller.tab_controllers.terminal_controller import TerminalController
 from controller.tab_controllers.connection_profile_controller import ConnectionProfileController
-from controller.tab_controllers.device_configuration_controllers.ospf_controller import OSPFController
+from controller.tab_controllers.device_configuration_controllers.ospf_controller import (
+    OSPFBasicController, OSPFRouterIdController, OSPFPassiveInterfaceController, OSPFDefaultRouteController
+)
 from controller.tab_controllers.device_configuration_controllers.basic_settings_controller import \
     BasicSettingsController
 from controller.tab_controllers.device_configuration_controllers.telnet_controller import TelnetController
@@ -78,25 +77,25 @@ class MainController:
         )
 
         self.ospf_basic_model = OSPFBasicModel(self.session_manager)
-        self.ospf_basic_controller = OSPFController(
+        self.ospf_basic_controller = OSPFBasicController(
             self.window.device_config_tab.ospf_view,
             self.ospf_basic_model
         )
 
         self.ospf_router_id_model = OSPFRouterIdModel(self.session_manager)
-        self.ospf_router_id_controller = OSPFController(
+        self.ospf_router_id_controller = OSPFRouterIdController(
             self.window.device_config_tab.ospf_router_id_view,
             self.ospf_router_id_model
         )
 
         self.ospf_passive_int_model = OSPFPassiveInterfaceModel(self.session_manager)
-        self.ospf_passive_int_controller = OSPFController(
+        self.ospf_passive_int_controller = OSPFPassiveInterfaceController(
             self.window.device_config_tab.ospf_passive_int_view,
             self.ospf_passive_int_model
         )
 
         self.ospf_default_route_model = OSPFDefaultRouteModel(self.session_manager)
-        self.ospf_default_route_controller = OSPFController(
+        self.ospf_default_route_controller = OSPFDefaultRouteController(
             self.window.device_config_tab.ospf_default_route_view,
             self.ospf_default_route_model
         )

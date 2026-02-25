@@ -1,11 +1,15 @@
 from model.device_configuration_models.base_config_model import BaseConfigModel
 
 class BasicSettingsModel(BaseConfigModel):
-    def generate_commands(self, **kwargs) -> list[str]:
-        commands = ["configure terminal"]
+    """
+    Model for generating Cisco IOS commands for basic device settings.
+    """
 
-        if kwargs.get('encrypt_all'):
-            commands.append("service password-encryption")
+    def generate_commands(self, **kwargs) -> list[str]:
+        """
+        Generates Cisco CLI commands for hostname, secret, and banner based on enabled fields.
+        """
+        commands = ["configure terminal"]
 
         if kwargs.get('hostname_enabled') and kwargs.get('hostname'):
             commands.append(f"hostname {kwargs.get('hostname')}")
@@ -16,7 +20,4 @@ class BasicSettingsModel(BaseConfigModel):
         if kwargs.get('banner_enabled') and kwargs.get('banner'):
             commands.append(f"banner motd ^{kwargs.get('banner')}^")
 
-        if len(commands) <= 1:
-            return []
-
-        return commands
+        return commands if len(commands) > 1 else []

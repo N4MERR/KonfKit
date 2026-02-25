@@ -1,36 +1,30 @@
-"""
-Provides the model for generating SSH configuration commands.
-"""
 from model.device_configuration_models.base_config_model import BaseConfigModel
-
 
 class SSHModel(BaseConfigModel):
     """
-    Model handling the generation of IOS commands for SSH device management.
+    Model for generating Cisco IOS commands for SSH configuration.
     """
 
     def generate_commands(self, **kwargs) -> list[str]:
         """
-        Translates raw input data into a sequence of executable IOS SSH commands.
+        Generates Cisco CLI commands for SSH, domain name, and RSA keys based on enabled fields.
         """
-        commands = []
-        if kwargs.get("domain"):
-            commands.append(f"ip domain-name {kwargs['domain']}")
+        commands = ["configure terminal"]
 
-        if kwargs.get("rsa_size"):
-            commands.append(f"crypto key generate rsa modulus {kwargs['rsa_size']}")
+        if kwargs.get('domain_enabled') and kwargs.get('domain'):
+            commands.append(f"ip domain-name {kwargs.get('domain')}")
 
-        if kwargs.get("username") and kwargs.get("password"):
-            commands.append(f"username {kwargs['username']} privilege 15 secret {kwargs['password']}")
+        if kwargs.get('key_size_enabled') and kwargs.get('key_size'):
+            commands.append("crypto key generate rsa focus")
+            commands.append(f"{kwargs.get('key_size')}")
 
-        commands.append("ip ssh version 2")
+        if kwargs.get('version_enabled') and kwargs.get('version'):
+            commands.append(f"ip ssh version {kwargs.get('version')}")
 
-        commands.append(f"line vty {kwargs.get('vty_start', '0')} {kwargs.get('vty_end', '4')}")
-        commands.append("transport input ssh")
+        if kwargs.get('timeout_enabled') and kwargs.get('timeout'):
+            commands.append(f"ip ssh time-out {kwargs.get('timeout')}")
 
-        if kwargs.get("local_login"):
-            commands.append("login local")
-        else:
-            commands.append("login")
+        if kwargs.get('auth_retries_enabled') and kwargs.get('auth_retries'):
+            commands.append(f"ip ssh authentication-retries {kwargs.get('auth_retries')}")
 
-        return commands
+        return commands if len(commands) > 1 else []

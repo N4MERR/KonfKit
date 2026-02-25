@@ -1,121 +1,88 @@
-"""
-Base configuration view providing a unified layout for device settings.
-"""
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QFormLayout, QLabel, QScrollArea
-from PySide6.QtCore import Qt, QEvent
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QScrollArea
+from PySide6.QtCore import Signal
 
 
 class BaseConfigView(QWidget):
     """
-    Base class for configuration views providing a consistent layout and error highlighting mechanism.
+    Base view for all device configuration tabs.
     """
+    preview_config_signal = Signal(dict)
+    apply_config_signal = Signal(dict)
 
-    def __init__(self, title=None):
-        """
-        Initializes the base view with a scrollable area containing the form and buttons.
-        """
+    def __init__(self):
         super().__init__()
-        self.layout = QVBoxLayout(self)
-        self.layout.setContentsMargins(15, 15, 15, 15)
+        self.main_layout = QVBoxLayout(self)
+        self.main_layout.setContentsMargins(15, 15, 15, 15)
 
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
         self.scroll_content = QWidget()
-
-        self.scroll_layout = QVBoxLayout(self.scroll_content)
-        self.scroll_layout.setContentsMargins(20, 20, 20, 20)
-
-        self.form_layout = QFormLayout()
-        self.scroll_layout.addLayout(self.form_layout)
-
-        self.scroll_layout.addStretch()
+        self.form_layout = QVBoxLayout(self.scroll_content)
+        self.form_layout.setContentsMargins(20, 20, 20, 20)
+        self.form_layout.setSpacing(15)
 
         self.scroll_area.setWidget(self.scroll_content)
-        self.layout.addWidget(self.scroll_area)
+        self.main_layout.addWidget(self.scroll_area)
 
         self.button_layout = QHBoxLayout()
         self.preview_button = QPushButton("Preview")
         self.preview_button.setStyleSheet("background-color: #444444; color: white; padding: 8px 16px; border-radius: 4px;")
-
         self.apply_button = QPushButton("Apply")
         self.apply_button.setStyleSheet("background-color: #4fc1ff; color: black; font-weight: bold; padding: 8px 16px; border-radius: 4px;")
 
         self.button_layout.addStretch()
         self.button_layout.addWidget(self.preview_button)
         self.button_layout.addWidget(self.apply_button)
+        self.main_layout.addLayout(self.button_layout)
 
-        self.layout.addLayout(self.button_layout)
+        self.fields = {}
+        self.form_layout.addStretch(1)
 
-        self.field_widgets = {}
-        self.error_labels = {}
+        self.preview_button.clicked.connect(self._on_preview_clicked)
+        self.apply_button.clicked.connect(self._on_apply_clicked)
 
-    def add_input_field(self, label_text, widget, field_key=None):
+    def add_field(self, key, field_widget):
         """
-        Adds a labeled widget to the form layout and registers it for error highlighting.
+        Registers a field to the view.
         """
-        label = QLabel(label_text)
+        self.fields[key] = field_widget
+        self.form_layout.insertWidget(self.form_layout.count() - 1, field_widget)
+        return field_widget
 
-        if field_key:
-            field_container = QWidget()
-            field_layout = QVBoxLayout(field_container)
-            field_layout.setContentsMargins(0, 0, 0, 0)
-            field_layout.setSpacing(2)
-
-            field_layout.addWidget(widget)
-
-            error_label = QLabel()
-            error_label.setStyleSheet("color: #ff4c4c; font-size: 12px; font-weight: bold; margin-top: 2px;")
-            error_label.hide()
-            field_layout.addWidget(error_label)
-
-            self.form_layout.addRow(label, field_container)
-
-            self.field_widgets[field_key] = widget
-            self.error_labels[field_key] = error_label
-
-            widget.installEventFilter(self)
-        else:
-            self.form_layout.addRow(label, widget)
-
-    def eventFilter(self, source, event):
+    def clear_all_fields(self):
         """
-        Catches mouse click or focus events on input widgets to clear error highlights.
+        Resets all registered input fields.
         """
-        if event.type() == QEvent.Type.MouseButtonPress or event.type() == QEvent.Type.FocusIn:
-            for field_key, widget in self.field_widgets.items():
-                if source is widget:
-                    self.clear_field_highlight(field_key)
-                    break
-        return super().eventFilter(source, event)
+        for field in self.fields.values():
+            if hasattr(field, 'reset'):
+                field.reset()
 
-    def highlight_errors(self, errors: dict):
+    def get_data(self):
         """
-        Applies red styling and error messages below specific widgets based on the errors dictionary.
+        Returns data for active checkboxes.
         """
-        self.clear_highlights()
-        for field, message in errors.items():
-            if field in self.error_labels:
-                self.error_labels[field].setText(message)
-                self.error_labels[field].show()
-            if field in self.field_widgets:
-                self.field_widgets[field].setStyleSheet("border: 1px solid #ff4c4c; background-color: rgba(255, 76, 76, 0.1);")
+        return {k: f.get_value() for k, f in self.fields.items() if f.checkbox.isChecked()}
 
-    def clear_highlights(self):
+    def validate_all(self):
         """
-        Resets all widgets to their original visual state, removing error messages.
+        Validates every field in the view.
         """
-        for error_label in self.error_labels.values():
-            error_label.setText("")
-            error_label.hide()
-        for widget in self.field_widgets.values():
-            widget.setStyleSheet("")
+        is_valid = True
+        for field in self.fields.values():
+            if not field.validate():
+                is_valid = False
+        return is_valid
 
-    def clear_field_highlight(self, field_key):
+    def _on_preview_clicked(self):
         """
-        Clears the error highlight for a specific field.
+        Emits preview signal if valid.
         """
-        if field_key in self.error_labels:
-            self.error_labels[field_key].setText("")
-            self.error_labels[field_key].hide()
-        if field_key in self.field_widgets:
-            self.field_widgets[field_key].setStyleSheet("")
+        if self.validate_all():
+            self.preview_config_signal.emit(self.get_data())
+
+    def _on_apply_clicked(self):
+        """
+        Emits apply signal if valid.
+        """
+        if self.validate_all():
+            self.apply_config_signal.emit(self.get_data())
