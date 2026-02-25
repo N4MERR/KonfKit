@@ -1,3 +1,6 @@
+"""
+Manages network device sessions using Netmiko while streaming raw channel data to the UI.
+"""
 import threading
 import logging
 import time
@@ -6,7 +9,6 @@ from netmiko import ConnectHandler
 from PySide6.QtCore import QObject, Signal
 
 logger = logging.getLogger(__name__)
-
 
 class TerminalStream(io.BufferedIOBase):
     """
@@ -50,7 +52,6 @@ class TerminalStream(io.BufferedIOBase):
         Satisfies the BufferedIOBase interface.
         """
         pass
-
 
 class NetworkSessionManager(QObject):
     """
@@ -96,7 +97,6 @@ class NetworkSessionManager(QObject):
             return True, "Connection successful"
         except Exception as e:
             logger.error(f"Connection failed: {e}")
-            self.error_occurred.emit(f"Connection failed: {e}")
             return False, str(e)
 
     def _read_loop(self):
@@ -122,7 +122,7 @@ class NetworkSessionManager(QObject):
                         break
                 time.sleep(0.01)
             except Exception as e:
-                self._handle_disconnect(f"Read error: {str(e)}")
+                self._handle_disconnect(str(e))
                 break
 
     def send_raw(self, text):
@@ -136,7 +136,7 @@ class NetworkSessionManager(QObject):
                     return True
             except Exception as e:
                 logger.error(f"Failed to send raw input: {e}")
-                self.error_occurred.emit(f"Failed to send raw input: {e}")
+                self.error_occurred.emit(str(e))
                 return None
 
     def send_command(self, cmd):
@@ -149,7 +149,7 @@ class NetworkSessionManager(QObject):
                     return self.connection.send_command(cmd)
             except Exception as e:
                 logger.error(f"Command failed: {e}")
-                self.error_occurred.emit(f"Command failed: {e}")
+                self.error_occurred.emit(str(e))
                 return None
 
     def send_command_set(self, cmds):
@@ -164,24 +164,23 @@ class NetworkSessionManager(QObject):
 
     def _run_command_set_thread(self, cmds):
         """
-        Safely executes a set of configuration commands using the active connection lock.
+        Safely executes a set of configuration commands using the active connection lock and Netmiko state management.
         """
         try:
             with self._lock:
-                current_prompt = self.connection.find_prompt()
+                if self.connection.check_config_mode():
+                    self.connection.exit_config_mode()
 
                 if not self.connection.check_enable_mode():
-                    if "(" in current_prompt:
-                        self.connection.send_command("end")
                     self.connection.enable()
 
                 self.connection.send_config_set(
                     config_commands=cmds,
-                    enter_config_mode=False,
+                    enter_config_mode=True
                 )
         except Exception as e:
             logger.error(f"Command set failed: {e}")
-            self.error_occurred.emit(f"Command set failed: {e}")
+            self.error_occurred.emit(str(e))
         finally:
             self.batch_finished.emit()
 
@@ -205,7 +204,7 @@ class NetworkSessionManager(QObject):
                     self.connection.disconnect()
                 except Exception as e:
                     logger.error(f"Error during disconnect: {e}")
-                    self.error_occurred.emit(f"Error during disconnect: {e}")
+                    self.error_occurred.emit(str(e))
                 finally:
                     self.connection = None
             if self.session_logger:
