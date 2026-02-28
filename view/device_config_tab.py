@@ -1,6 +1,3 @@
-"""
-Main configuration view orchestrating router, switch, and terminal tab integration.
-"""
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
                                QLabel, QTabWidget, QTreeWidget, QTreeWidgetItem, QStackedWidget, QSplitter,
                                QSpacerItem, QSizePolicy)
@@ -31,65 +28,43 @@ class ConfigSection(QWidget):
         self.nav_tree = QTreeWidget()
         self.nav_tree.setHeaderHidden(True)
         self.nav_tree.setFixedWidth(250)
-
-        self.nav_tree.setStyleSheet("""
-            QTreeWidget {
-                background-color: transparent;
-                border: none;
-                border-right: 2px solid #444444;
-                outline: none;
-                show-decoration-selected: 0;
-            }
-            QTreeWidget:focus {
-                outline: none;
-            }
-            QTreeWidget::item {
-                min-height: 40px;
-                border-bottom: 1px solid #555555;
-                border-left: 4px solid transparent;
-                margin: 0px;
-                padding: 0px;
-                outline: none;
-            }
-            QTreeWidget::item:hover {
-                background-color: transparent;
-                border-bottom: 1px solid white;
-            }
-            QTreeWidget::item:selected {
-                background-color: #2d2d2d;
-                border-bottom: 1px solid #555555;
-                border-left: 4px solid #0078d4;
-                color: white;
-                outline: none;
-            }
-        """)
+        self.nav_tree.setStyleSheet(
+            "QTreeWidget { "
+            "background: transparent; "
+            "border: none; "
+            "border-right: 2px solid rgba(128, 128, 128, 0.2); "
+            "margin-right: 5px; "
+            "}"
+            "QTreeWidget::item:selected { "
+            "background-color: rgba(0, 120, 212, 0.2); "
+            "}"
+        )
 
         self.gray_window = QWidget()
+        self.gray_window.setObjectName("ConfigContentContainer")
+        self.gray_window.setStyleSheet("QWidget#ConfigContentContainer { background: transparent; }")
         self.gray_layout = QHBoxLayout(self.gray_window)
         self.gray_layout.setContentsMargins(0, 0, 0, 0)
         self.gray_layout.setSpacing(0)
 
         self.splitter = QSplitter(Qt.Horizontal)
-        self.splitter.setStyleSheet("QSplitter::handle { background: #444444; width: 2px; }")
+        self.splitter.setStyleSheet("QSplitter::handle { background-color: rgba(128, 128, 128, 0.2); width: 2px; }")
 
         self.restore_terminal_btn = QPushButton("<", self.gray_window)
         self.restore_terminal_btn.setToolTip("Restore Terminal")
         self.restore_terminal_btn.setFixedWidth(20)
-        self.restore_terminal_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #2b2b2b;
-                color: #4fc1ff;
-                border: 1px solid #444444;
-                border-right: none;
-                border-top-left-radius: 5px;
-                border-bottom-left-radius: 5px;
-                font-family: Arial, sans-serif;
-                font-size: 14px;
-                font-weight: bold;
-                padding-bottom: 2px;
-            }
-            QPushButton:hover { background-color: #3b3b3b; color: white; }
-        """)
+        self.restore_terminal_btn.setStyleSheet(
+            "QPushButton {"
+            "font-family: Arial, sans-serif;"
+            "font-size: 14px;"
+            "font-weight: bold;"
+            "padding-bottom: 2px;"
+            "background: transparent;"
+            "border: 2px solid #0078d4;"
+            "border-radius: 4px;"
+            "}"
+            "QPushButton:hover { background-color: rgba(0, 120, 212, 0.1); }"
+        )
         self.restore_terminal_btn.hide()
         self.restore_terminal_btn.clicked.connect(self._restore_terminal)
 
@@ -114,7 +89,7 @@ class ConfigSection(QWidget):
                     page = QWidget()
                     page_layout = QVBoxLayout(page)
                     title_label = QLabel(f"{section_name} - {sub_name} Configuration")
-                    title_label.setStyleSheet("font-size: 16pt; font-weight: bold;")
+                    title_label.setStyleSheet("font-size: 16pt; font-weight: bold; background: transparent;")
                     title_label.setAlignment(Qt.AlignCenter)
                     page_layout.addWidget(title_label)
                     page_layout.addStretch()
@@ -129,7 +104,7 @@ class ConfigSection(QWidget):
 
         self.terminal_container = QWidget()
         self.terminal_layout = QVBoxLayout(self.terminal_container)
-        self.terminal_layout.setContentsMargins(0, 0, 0, 38)
+        self.terminal_layout.setContentsMargins(5, 0, 0, 38)
         self.terminal_container.setMinimumWidth(0)
 
         self.splitter.addWidget(self.content_stack)
@@ -231,7 +206,7 @@ class DeviceConfigTab(QWidget):
 
         self.info_label = QLabel()
         self.info_label.setAlignment(Qt.AlignCenter)
-        self.info_label.setStyleSheet("font-size: 14pt; font-weight: bold; color: #0078d4;")
+        self.info_label.setStyleSheet("font-size: 14pt; font-weight: bold; background: transparent;")
 
         dummy_spacer = QWidget()
         dummy_spacer.setFixedSize(100, 30)
@@ -245,6 +220,7 @@ class DeviceConfigTab(QWidget):
         layout.addLayout(top_bar)
 
         self.tabs = QTabWidget()
+        self.tabs.setStyleSheet("QTabWidget::pane { border: 2px solid rgba(128, 128, 128, 0.2); border-radius: 6px; background: transparent; }")
 
         router_items = {
             "System Setup": {

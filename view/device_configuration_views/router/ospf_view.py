@@ -117,12 +117,12 @@ class OSPFDefaultRouteView(BaseConfigView):
 
     def get_data(self) -> dict:
         """
-        Retrieves data for OSPF default route advertisement.
+        Retrieves data for OSPF default route advertisement using the radio indicator.
         """
         return {
             "type": "default_route",
             "process_id": self.fields["process_id"].get_value(),
-            "always": self.fields["always"].checkbox.isChecked()
+            "always": self.fields["always"].radio.isChecked()
         }
 
 

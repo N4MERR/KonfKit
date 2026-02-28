@@ -5,9 +5,6 @@ from PySide6.QtCore import Qt
 class PreviewDialog(QDialog):
     """
     A modern, styled dialog designed to display configuration commands in a terminal-like interface.
-
-    This dialog provides a high-contrast preview of CLI commands and offers
-    the user the choice to proceed with the application or cancel.
     """
 
     def __init__(self, commands_text: str, parent=None):
@@ -22,16 +19,10 @@ class PreviewDialog(QDialog):
         self.main_layout = QVBoxLayout(self)
         self.main_layout.setSpacing(0)
         self.main_layout.setContentsMargins(15, 15, 15, 15)
-        self.setStyleSheet("background-color: #2b2b2b;")
 
         self.header_label = QLabel("Configuration Preview")
         self.header_label.setAlignment(Qt.AlignCenter)
-        self.header_label.setStyleSheet("""
-            color: #ffffff;
-            font-size: 13pt;
-            font-weight: bold;
-            padding-bottom: 10px;
-        """)
+        self.header_label.setStyleSheet("font-size: 13pt; font-weight: bold; padding-bottom: 10px; background: transparent;")
         self.main_layout.addWidget(self.header_label)
 
         self.console_output = QPlainTextEdit()
@@ -54,14 +45,13 @@ class PreviewDialog(QDialog):
 
         self.close_btn = QPushButton("Cancel")
         self.apply_btn = QPushButton("Apply Configuration")
+        self.apply_btn.setStyleSheet("font-weight: bold;")
 
         self.close_btn.setCursor(Qt.PointingHandCursor)
         self.apply_btn.setCursor(Qt.PointingHandCursor)
 
         self.close_btn.setMinimumHeight(35)
         self.apply_btn.setMinimumHeight(35)
-
-        self.apply_button_styles()
 
         self.close_btn.clicked.connect(self.reject)
         self.apply_btn.clicked.connect(self.accept)
@@ -74,52 +64,18 @@ class PreviewDialog(QDialog):
 
     def apply_terminal_style(self):
         """
-        Applies a dark terminal aesthetic to the QPlainTextEdit component.
+        Applies a terminal aesthetic to the QPlainTextEdit component inheriting system colors.
         """
-        self.console_output.setStyleSheet("""
-            QPlainTextEdit {
-                background-color: #121212;
-                color: #00ff00;
-                font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-                font-size: 10pt;
-                padding: 10px;
-                border: 1px solid #444444;
-                border-radius: 4px;
-            }
-        """)
-
-    def apply_button_styles(self):
-        """
-        Applies CSS styling to the dialog buttons for a consistent UI.
-        """
-        self.close_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #444444;
-                color: white;
-                border-radius: 4px;
-                padding: 5px 15px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #555555;
-            }
-        """)
-
-        self.apply_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #007acc;
-                color: white;
-                border-radius: 4px;
-                padding: 5px 20px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #0098ff;
-            }
-            QPushButton:pressed {
-                background-color: #005a9e;
-            }
-        """)
+        self.console_output.setStyleSheet(
+            "QPlainTextEdit { "
+            "font-family: 'Consolas', 'Monaco', 'Courier New', monospace; "
+            "font-size: 10pt; "
+            "padding: 10px; "
+            "border: 1px solid rgba(128, 128, 128, 0.3); "
+            "border-radius: 4px; "
+            "background: transparent; "
+            "}"
+        )
 
     def get_commands(self) -> str:
         """

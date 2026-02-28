@@ -3,7 +3,7 @@ Section for creating and naming VLANs with proper data retrieval.
 """
 from view.device_configuration_views.base_config_view import BaseConfigView
 from view.device_configuration_views.config_fields import (
-    BaseConfigField, NumberField, DropdownField, ToggleField
+    BaseConfigField, NumberField
 )
 
 class VLANView(BaseConfigView):
@@ -24,11 +24,11 @@ class VLANView(BaseConfigView):
 
     def get_data(self) -> dict:
         """
-        Retrieves data for VLAN configuration, ensuring mandatory fields are included.
+        Retrieves data for VLAN configuration using the radio indicator.
         """
         return {
             "type": "vlan",
             "vlan_id": self.fields["vlan_id"].get_value(),
             "vlan_name": self.fields["vlan_name"].get_value(),
-            "name_enabled": self.fields["vlan_name"].checkbox.isChecked()
+            "name_enabled": self.fields["vlan_name"].radio.isChecked()
         }

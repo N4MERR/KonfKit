@@ -9,12 +9,12 @@ from view.device_configuration_views.config_fields import (
 
 class SSHGlobalSection(BaseConfigView):
     """
-    View handling global SSH parameters like domain and RSA keys.
+    View handling global SSH parameters like domain, RSA keys, and protocol version.
     """
 
     def __init__(self):
         """
-        Initializes global SSH configuration fields.
+        Initializes global SSH configuration fields including version selection.
         """
         super().__init__()
 
@@ -22,6 +22,8 @@ class SSHGlobalSection(BaseConfigView):
         domain.set_error_message("Domain name cannot be empty.")
 
         self.add_field("key_size", DropdownField("RSA Key Size:", ["512", "1024", "2048", "4096"]))
+
+        self.add_field("ssh_version", DropdownField("SSH Version:", ["1", "2"]))
 
         timeout = self.add_field("timeout", NumberField("Timeout (seconds):"))
         timeout.set_error_message("Timeout must be a valid number.")
@@ -31,18 +33,20 @@ class SSHGlobalSection(BaseConfigView):
 
     def get_data(self) -> dict:
         """
-        Retrieves data for global SSH settings.
+        Retrieves data for global SSH settings using radio indicators.
         """
         return {
             "type": "ssh_global",
             "domain_name": self.fields["domain_name"].get_value(),
-            "domain_name_enabled": self.fields["domain_name"].checkbox.isChecked(),
+            "domain_name_enabled": self.fields["domain_name"].radio.isChecked(),
             "key_size": self.fields["key_size"].get_value(),
-            "key_size_enabled": self.fields["key_size"].checkbox.isChecked(),
+            "key_size_enabled": self.fields["key_size"].radio.isChecked(),
+            "ssh_version": self.fields["ssh_version"].get_value(),
+            "ssh_version_enabled": self.fields["ssh_version"].radio.isChecked(),
             "timeout": self.fields["timeout"].get_value(),
-            "timeout_enabled": self.fields["timeout"].checkbox.isChecked(),
+            "timeout_enabled": self.fields["timeout"].radio.isChecked(),
             "retries": self.fields["retries"].get_value(),
-            "retries_enabled": self.fields["retries"].checkbox.isChecked()
+            "retries_enabled": self.fields["retries"].radio.isChecked()
         }
 
 

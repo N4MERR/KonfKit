@@ -1,6 +1,3 @@
-"""
-Provides the interactive terminal UI component.
-"""
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QPlainTextEdit, QFrame
 from PySide6.QtCore import Signal, Qt
 from PySide6.QtGui import QTextCursor
@@ -8,7 +5,7 @@ from PySide6.QtGui import QTextCursor
 
 class TerminalView(QWidget):
     """
-    Terminal UI component providing interactive console output and keyboard capturing with a visible text cursor.
+    Terminal UI component providing interactive console output and keyboard capturing.
     """
     user_input_received = Signal(str)
 
@@ -40,20 +37,34 @@ class TerminalView(QWidget):
 
     def apply_style(self, enabled: bool):
         """
-        Updates terminal colors based on the active connection state.
+        Updates terminal styles to match the standard UI border style of the application.
         """
         if not enabled:
             self.console_output.setStyleSheet(
-                "background-color: #0d0d0d; color: #555555; font-family: 'Consolas', monospace; font-size: 10pt; padding: 5px;"
+                "QPlainTextEdit { "
+                "border: 1px solid rgba(128, 128, 128, 0.4); "
+                "border-radius: 8px; "
+                "font-family: 'Consolas', monospace; "
+                "font-size: 11pt; "
+                "padding: 8px; "
+                "background: transparent; "
+                "}"
             )
         else:
             self.console_output.setStyleSheet(
-                "background-color: #1e1e1e; color: #dcdcdc; font-family: 'Consolas', monospace; font-size: 10pt; padding: 5px;"
+                "QPlainTextEdit { "
+                "border: 2px solid #0078d4; "
+                "border-radius: 8px; "
+                "font-family: 'Consolas', monospace; "
+                "font-size: 11pt; "
+                "padding: 8px; "
+                "background: transparent; "
+                "}"
             )
 
     def eventFilter(self, obj, event):
         """
-        Intercepts key presses and mouse clicks for redirection to the controller and cursor management.
+        Intercepts key presses and mouse clicks for redirection to the controller.
         """
         if obj is self.console_output:
             if event.type() == event.Type.MouseButtonPress:
@@ -109,7 +120,7 @@ class TerminalView(QWidget):
 
     def display_text(self, text):
         """
-        Writes received characters to the terminal buffer, filtering out unprintable bell characters, and updates input tracking.
+        Writes received characters to the terminal buffer.
         """
         cursor = self.console_output.textCursor()
         cursor.movePosition(QTextCursor.End)
@@ -132,11 +143,11 @@ class TerminalView(QWidget):
 
     def display_system_message(self, message):
         """
-        Displays system status messages with specific formatting and a trailing newline.
+        Displays system status messages with specific formatting.
         """
         cursor = self.console_output.textCursor()
         cursor.movePosition(QTextCursor.End)
-        self.console_output.appendHtml(f"<b style='color: #4fc1ff;'>{message}</b>")
+        self.console_output.appendHtml(f"<b style='color: #0078d4;'>{message}</b>")
         cursor.movePosition(QTextCursor.End)
         cursor.insertText("\n")
         self._protection_point = self.console_output.textCursor().position()

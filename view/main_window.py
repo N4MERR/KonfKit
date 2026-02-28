@@ -5,7 +5,14 @@ from view.device_config_tab import DeviceConfigTab
 
 
 class MainWindow(QMainWindow):
+    """
+    Main application window containing the tabbed interface adapting to the system theme.
+    """
+
     def __init__(self):
+        """
+        Initializes the main window and its UI components.
+        """
         super().__init__()
         self.setWindowTitle("Cisco Management Tool")
 
@@ -28,6 +35,9 @@ class MainWindow(QMainWindow):
         self.showMaximized()
 
     def show_error(self, message):
+        """
+        Displays a critical error message box.
+        """
         msg = QMessageBox(self)
         msg.setIcon(QMessageBox.Critical)
         msg.setWindowTitle("System Error")
@@ -37,8 +47,14 @@ class MainWindow(QMainWindow):
         msg.exec()
 
     def show_device_config(self, connection_data):
+        """
+        Switches the view to the device configuration tab.
+        """
         self.device_config_tab.set_connection(connection_data)
         self.central_stack.setCurrentWidget(self.device_config_tab)
 
     def show_home(self):
+        """
+        Switches the view back to the main tab widget.
+        """
         self.central_stack.setCurrentWidget(self.main_tab_widget)

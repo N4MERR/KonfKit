@@ -3,7 +3,7 @@ General system settings view with corrected data retrieval for validation.
 """
 from view.device_configuration_views.base_config_view import BaseConfigView
 from view.device_configuration_views.config_fields import (
-    BaseConfigField, PasswordField, PasswordConfirmField, MultilineField, CheckboxField
+    BaseConfigField, PasswordField, PasswordConfirmField, MultilineField, RadioIndicatorField
 )
 
 class BasicSettingsView(BaseConfigView):
@@ -25,26 +25,26 @@ class BasicSettingsView(BaseConfigView):
         enable_sec = self.add_field("enable_secret", PasswordField("Enable Secret:", is_optional=True))
         self.add_field("confirm_secret", PasswordConfirmField("Confirm Secret:", enable_sec))
 
-        self.password_encryption = CheckboxField("Enable Service Password-Encryption")
+        self.password_encryption = RadioIndicatorField("Enable Service Password-Encryption")
         self.form_layout.insertWidget(self.form_layout.count() - 1, self.password_encryption)
 
         self.add_field("banner_motd", MultilineField("Banner MOTD:", is_optional=True))
 
     def get_data(self) -> dict:
         """
-        Retrieves data for basic settings based on active checkboxes.
+        Retrieves data for basic settings based on active radio indicators.
         """
         return {
             "type": "basic_settings",
             "hostname": self.fields["hostname"].get_value(),
-            "hostname_enabled": self.fields["hostname"].checkbox.isChecked(),
+            "hostname_enabled": self.fields["hostname"].radio.isChecked(),
             "domain_name": self.fields["domain_name"].get_value(),
-            "domain_name_enabled": self.fields["domain_name"].checkbox.isChecked(),
+            "domain_name_enabled": self.fields["domain_name"].radio.isChecked(),
             "enable_password": self.fields["enable_password"].get_value(),
-            "enable_password_enabled": self.fields["enable_password"].checkbox.isChecked(),
+            "enable_password_enabled": self.fields["enable_password"].radio.isChecked(),
             "enable_secret": self.fields["enable_secret"].get_value(),
-            "enable_secret_enabled": self.fields["enable_secret"].checkbox.isChecked(),
+            "enable_secret_enabled": self.fields["enable_secret"].radio.isChecked(),
             "banner_motd": self.fields["banner_motd"].get_value(),
-            "banner_motd_enabled": self.fields["banner_motd"].checkbox.isChecked(),
+            "banner_motd_enabled": self.fields["banner_motd"].radio.isChecked(),
             "password_encryption_enabled": self.password_encryption.isChecked()
         }

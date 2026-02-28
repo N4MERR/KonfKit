@@ -10,13 +10,30 @@ class BaseConfigView(QWidget):
     apply_config_signal = Signal(dict)
 
     def __init__(self):
+        """
+        Initializes the base configuration view layout without hardcoded OS theme colors.
+        """
         super().__init__()
         self.main_layout = QVBoxLayout(self)
         self.main_layout.setContentsMargins(15, 15, 15, 15)
 
+        self.setStyleSheet("""
+            QScrollArea {
+                border: none;
+                border-radius: 6px;
+            }
+            QLabel {
+                background: transparent;
+            }
+            QCheckBox {
+                background: transparent;
+            }
+        """)
+
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
         self.scroll_content = QWidget()
+        self.scroll_content.setObjectName("ScrollContent")
         self.form_layout = QVBoxLayout(self.scroll_content)
         self.form_layout.setContentsMargins(20, 20, 20, 20)
         self.form_layout.setSpacing(15)
@@ -26,9 +43,8 @@ class BaseConfigView(QWidget):
 
         self.button_layout = QHBoxLayout()
         self.preview_button = QPushButton("Preview")
-        self.preview_button.setStyleSheet("background-color: #444444; color: white; padding: 8px 16px; border-radius: 4px;")
         self.apply_button = QPushButton("Apply")
-        self.apply_button.setStyleSheet("background-color: #4fc1ff; color: black; font-weight: bold; padding: 8px 16px; border-radius: 4px;")
+        self.apply_button.setStyleSheet("font-weight: bold;")
 
         self.button_layout.addStretch()
         self.button_layout.addWidget(self.preview_button)
@@ -59,9 +75,12 @@ class BaseConfigView(QWidget):
 
     def get_data(self):
         """
-        Returns data for active checkboxes.
+        Returns data for active checkboxes or radios.
         """
-        return {k: f.get_value() for k, f in self.fields.items() if f.checkbox.isChecked()}
+        if hasattr(next(iter(self.fields.values())), 'checkbox'):
+            return {k: f.get_value() for k, f in self.fields.items() if f.checkbox.isChecked()}
+        else:
+            return {k: f.get_value() for k, f in self.fields.items() if f.radio.isChecked()}
 
     def validate_all(self):
         """

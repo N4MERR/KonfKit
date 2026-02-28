@@ -6,7 +6,7 @@ class SSHGlobalController(BaseConfigController):
     """
     def handle_apply(self, data: dict):
         """
-        Applies global SSH configuration batches.
+        Applies global SSH configuration batches including version.
         """
         commands = self.model.generate_commands(**data)
         if commands:
