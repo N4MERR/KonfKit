@@ -29,11 +29,11 @@ class AddConnectionCard(QPushButton):
         layout.setSpacing(5)
 
         plus_icon = QLabel("+")
-        plus_icon.setStyleSheet("font-size: 32px; font-weight: bold; background: transparent; border: none;")
+        plus_icon.setStyleSheet("QLabel { font-size: 32px; font-weight: bold; background: transparent; border: none; }")
         plus_icon.setAlignment(Qt.AlignCenter)
 
         text_label = QLabel(f"Add {protocol_name} connection")
-        text_label.setStyleSheet("font-size: 9pt; font-weight: bold; background: transparent; border: none;")
+        text_label.setStyleSheet("QLabel { font-size: 9pt; font-weight: bold; background: transparent; border: none; }")
         text_label.setAlignment(Qt.AlignCenter)
 
         layout.addWidget(plus_icon)
@@ -123,7 +123,7 @@ class ConnectionRow(QWidget):
         self.layout.setContentsMargins(0, 10, 0, 10)
 
         self.title_label = QLabel(title)
-        self.title_label.setStyleSheet("font-size: 11pt; font-weight: bold; background: transparent;")
+        self.title_label.setStyleSheet("QLabel { font-size: 11pt; font-weight: bold; background: transparent; }")
         self.layout.addWidget(self.title_label)
 
         self.nav_layout = QHBoxLayout()
@@ -131,12 +131,12 @@ class ConnectionRow(QWidget):
         self.left_btn = QPushButton("<")
         self.left_btn.setFixedSize(30, 120)
         self.left_btn.setCursor(Qt.PointingHandCursor)
-        self.left_btn.setStyleSheet("background: transparent; border: 1px solid rgba(128, 128, 128, 0.3); border-radius: 4px;")
+        self.left_btn.setStyleSheet("QPushButton { background: transparent; border: 1px solid rgba(128, 128, 128, 0.3); border-radius: 4px; }")
 
         self.right_btn = QPushButton(">")
         self.right_btn.setFixedSize(30, 120)
         self.right_btn.setCursor(Qt.PointingHandCursor)
-        self.right_btn.setStyleSheet("background: transparent; border: 1px solid rgba(128, 128, 128, 0.3); border-radius: 4px;")
+        self.right_btn.setStyleSheet("QPushButton { background: transparent; border: 1px solid rgba(128, 128, 128, 0.3); border-radius: 4px; }")
 
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
@@ -144,10 +144,12 @@ class ConnectionRow(QWidget):
         self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.scroll_area.setFixedHeight(140)
-        self.scroll_area.setStyleSheet("background: transparent; border: none;")
+        self.scroll_area.setObjectName("RowScrollArea")
+        self.scroll_area.setStyleSheet("QScrollArea#RowScrollArea { background: transparent; border: none; }")
 
         self.container = QWidget()
-        self.container.setStyleSheet("background: transparent; border: none;")
+        self.container.setObjectName("RowContainer")
+        self.container.setStyleSheet("QWidget#RowContainer { background: transparent; border: none; }")
         self.container_layout = QHBoxLayout(self.container)
         self.container_layout.setContentsMargins(5, 5, 5, 5)
         self.container_layout.setSpacing(15)
@@ -262,7 +264,7 @@ class ConnectionManagerTab(QWidget):
         line = QFrame()
         line.setFrameShape(QFrame.HLine)
         line.setFrameShadow(QFrame.Plain)
-        line.setStyleSheet("border-bottom: 2px dashed rgba(128, 128, 128, 0.2); max-height: 2px; background: transparent;")
+        line.setStyleSheet("QFrame { border-bottom: 2px dashed rgba(128, 128, 128, 0.2); max-height: 2px; background: transparent; }")
         return line
 
     def update_list(self, all_connections):

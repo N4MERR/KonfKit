@@ -27,16 +27,19 @@ class ConfigSection(QWidget):
 
         self.nav_tree = QTreeWidget()
         self.nav_tree.setHeaderHidden(True)
-        self.nav_tree.setFixedWidth(250)
+        self.nav_tree.setFixedWidth(220)
         self.nav_tree.setStyleSheet(
             "QTreeWidget { "
             "background: transparent; "
             "border: none; "
-            "border-right: 2px solid rgba(128, 128, 128, 0.2); "
+            "border-right: 1px solid rgba(128, 128, 128, 0.2); "
             "margin-right: 5px; "
+            "font-size: 10pt; "
             "}"
+            "QTreeWidget::item { padding: 4px; }"
             "QTreeWidget::item:selected { "
-            "background-color: rgba(0, 120, 212, 0.2); "
+            "background-color: rgba(0, 120, 212, 0.15); "
+            "border-radius: 3px; "
             "}"
         )
 
@@ -48,20 +51,20 @@ class ConfigSection(QWidget):
         self.gray_layout.setSpacing(0)
 
         self.splitter = QSplitter(Qt.Horizontal)
-        self.splitter.setStyleSheet("QSplitter::handle { background-color: rgba(128, 128, 128, 0.2); width: 2px; }")
+        self.splitter.setStyleSheet("QSplitter::handle { background-color: rgba(128, 128, 128, 0.2); width: 1px; }")
 
         self.restore_terminal_btn = QPushButton("<", self.gray_window)
         self.restore_terminal_btn.setToolTip("Restore Terminal")
-        self.restore_terminal_btn.setFixedWidth(20)
+        self.restore_terminal_btn.setFixedWidth(18)
         self.restore_terminal_btn.setStyleSheet(
             "QPushButton {"
             "font-family: Arial, sans-serif;"
-            "font-size: 14px;"
+            "font-size: 12px;"
             "font-weight: bold;"
-            "padding-bottom: 2px;"
+            "padding-bottom: 1px;"
             "background: transparent;"
-            "border: 2px solid #0078d4;"
-            "border-radius: 4px;"
+            "border: 1px solid #0078d4;"
+            "border-radius: 3px;"
             "}"
             "QPushButton:hover { background-color: rgba(0, 120, 212, 0.1); }"
         )
@@ -69,7 +72,7 @@ class ConfigSection(QWidget):
         self.restore_terminal_btn.clicked.connect(self._restore_terminal)
 
         self.content_stack = QStackedWidget()
-        self.content_stack.setMinimumWidth(450)
+        self.content_stack.setMinimumWidth(400)
         self.widget_map = {}
 
         for section_name, subsections in section_items.items():
@@ -78,7 +81,7 @@ class ConfigSection(QWidget):
 
             font = self.font()
             font.setBold(True)
-            font.setPointSize(11)
+            font.setPointSize(10)
             top_item.setFont(0, font)
 
             for sub_name, widget in subsections.items():
@@ -89,7 +92,7 @@ class ConfigSection(QWidget):
                     page = QWidget()
                     page_layout = QVBoxLayout(page)
                     title_label = QLabel(f"{section_name} - {sub_name} Configuration")
-                    title_label.setStyleSheet("font-size: 16pt; font-weight: bold; background: transparent;")
+                    title_label.setStyleSheet("font-size: 14pt; font-weight: bold; background: transparent;")
                     title_label.setAlignment(Qt.AlignCenter)
                     page_layout.addWidget(title_label)
                     page_layout.addStretch()
@@ -127,7 +130,7 @@ class ConfigSection(QWidget):
         """
         super().resizeEvent(event)
         btn_w = self.restore_terminal_btn.width()
-        btn_h = 60
+        btn_h = 50
         self.restore_terminal_btn.setGeometry(
             self.gray_window.width() - btn_w,
             (self.gray_window.height() - btn_h) // 2,
@@ -200,16 +203,22 @@ class DeviceConfigTab(QWidget):
         layout = QVBoxLayout(self)
 
         top_bar = QHBoxLayout()
+        top_bar.setContentsMargins(5, 5, 5, 5)
+
         self.close_btn = QPushButton("Close")
-        self.close_btn.setFixedSize(100, 30)
+        self.close_btn.setFixedSize(85, 28)
+        self.close_btn.setStyleSheet(
+            "QPushButton { background-color: #d32f2f; color: white; font-weight: bold; font-size: 9pt; border-radius: 4px; border: none; } "
+            "QPushButton:hover { background-color: #b71c1c; }"
+        )
         self.close_btn.clicked.connect(self.close_tab_signal.emit)
 
         self.info_label = QLabel()
         self.info_label.setAlignment(Qt.AlignCenter)
-        self.info_label.setStyleSheet("font-size: 14pt; font-weight: bold; background: transparent;")
+        self.info_label.setStyleSheet("font-size: 13pt; font-weight: bold; background: transparent;")
 
         dummy_spacer = QWidget()
-        dummy_spacer.setFixedSize(100, 30)
+        dummy_spacer.setFixedSize(85, 28)
 
         top_bar.addWidget(self.close_btn)
         top_bar.addStretch()
@@ -220,7 +229,72 @@ class DeviceConfigTab(QWidget):
         layout.addLayout(top_bar)
 
         self.tabs = QTabWidget()
-        self.tabs.setStyleSheet("QTabWidget::pane { border: 2px solid rgba(128, 128, 128, 0.2); border-radius: 6px; background: transparent; }")
+        self.tabs.setStyleSheet("""
+            QTabWidget::pane { 
+                border: 1px solid rgba(128, 128, 128, 0.2); 
+                border-radius: 4px; 
+                background: transparent; 
+            }
+            QTabBar::tab {
+                height: 30px;
+                width: 120px;
+                font-size: 10pt;
+                font-weight: bold;
+                margin-top: 2px;
+                margin-right: 1px;
+                margin-left: 1px;
+                border-top-left-radius: 4px;
+                border-top-right-radius: 4px;
+                border: 1px solid rgba(128, 128, 128, 0.3);
+            }
+            QTabBar::tab:selected {
+                background-color: rgba(0, 120, 212, 0.1);
+                border: 1px solid #0078d4;
+                border-bottom: none;
+            }
+            QTabBar::tab:hover:!selected {
+                background-color: rgba(0, 120, 212, 0.05);
+            }
+
+            QPushButton[text="Preview"] {
+                background-color: #6c757d; 
+                color: white; 
+                font-weight: bold; 
+                border-radius: 4px; 
+                border: none; 
+                min-height: 28px;
+                min-width: 90px;
+            }
+            QPushButton[text="Preview"]:hover {
+                background-color: #5a6268;
+            }
+
+            QPushButton[text="Apply"] {
+                background-color: #0078d4; 
+                color: white; 
+                font-weight: bold; 
+                border-radius: 4px; 
+                border: none; 
+                min-height: 28px;
+                min-width: 90px;
+            }
+            QPushButton[text="Apply"]:hover {
+                background-color: #005a9e;
+            }
+
+            QPushButton[text="Apply Configuration"] {
+                background-color: #0078d4; 
+                color: white; 
+                font-weight: bold; 
+                border-radius: 4px; 
+                border: none; 
+                min-height: 28px;
+                min-width: 130px;
+            }
+            QPushButton[text="Apply Configuration"]:hover {
+                background-color: #005a9e;
+            }
+        """)
 
         router_items = {
             "System Setup": {
@@ -290,8 +364,8 @@ class DeviceConfigTab(QWidget):
         self.terminal_inner_layout = QVBoxLayout(self.terminal_inner_container)
         self.terminal_inner_layout.setContentsMargins(0, 0, 0, 0)
         self.terminal_inner_container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        self.terminal_inner_container.setMinimumWidth(900)
-        self.terminal_inner_container.setMaximumWidth(1200)
+        self.terminal_inner_container.setMinimumWidth(800)
+        self.terminal_inner_container.setMaximumWidth(1100)
 
         self.terminal_centering_wrapper.addWidget(self.terminal_inner_container)
         self.terminal_centering_wrapper.addItem(self.right_spacer)

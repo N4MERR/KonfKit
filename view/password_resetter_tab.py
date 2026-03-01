@@ -56,6 +56,10 @@ class PasswordResetTab(QWidget):
         self.serial_line_input.setPlaceholderText("Select COM Port...")
         self.refresh_ports_button = QPushButton("Refresh")
         self.refresh_ports_button.setFixedSize(70, 24)
+        self.refresh_ports_button.setStyleSheet(
+            "QPushButton { background-color: #6c757d; color: white; border-radius: 4px; border: none; font-weight: bold; } "
+            "QPushButton:hover { background-color: #5a6268; }"
+        )
 
         port_hbox = QHBoxLayout()
         port_hbox.addWidget(self.serial_line_input)
@@ -84,6 +88,10 @@ class PasswordResetTab(QWidget):
         connect_hbox.addStretch()
         self.connect_button = QPushButton("Connect")
         self.connect_button.setFixedSize(100, 28)
+        self.connect_button.setStyleSheet(
+            "QPushButton { background-color: #0078d4; color: white; font-weight: bold; border-radius: 4px; border: none; } "
+            "QPushButton:hover { background-color: #005a9e; }"
+        )
         connect_hbox.addWidget(self.connect_button)
         left_vbox.addLayout(connect_hbox)
 
@@ -147,11 +155,21 @@ class PasswordResetTab(QWidget):
         self.stop_button = QPushButton("STOP")
         self.stop_button.setFixedSize(100, 40)
         self.stop_button.setEnabled(False)
+        self.stop_button.setStyleSheet(
+            "QPushButton { background-color: #d32f2f; color: white; font-weight: bold; border-radius: 4px; border: none; } "
+            "QPushButton:hover { background-color: #b71c1c; } "
+            "QPushButton:disabled { background-color: rgba(211, 47, 47, 0.4); }"
+        )
 
         self.confirm_button = QPushButton("START")
         self.confirm_button.setFixedSize(100, 40)
         self.confirm_button.setEnabled(False)
         self.confirm_button.setToolTip("Please connect to a device first")
+        self.confirm_button.setStyleSheet(
+            "QPushButton { background-color: #28a745; color: white; font-weight: bold; border-radius: 4px; border: none; } "
+            "QPushButton:hover { background-color: #218838; } "
+            "QPushButton:disabled { background-color: rgba(40, 167, 69, 0.4); }"
+        )
 
         buttons_container.addWidget(self.stop_button)
         buttons_container.addWidget(self.confirm_button)

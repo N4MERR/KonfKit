@@ -44,8 +44,16 @@ class PreviewDialog(QDialog):
         self.button_layout.setSpacing(10)
 
         self.close_btn = QPushButton("Cancel")
-        self.apply_btn = QPushButton("Apply Configuration")
-        self.apply_btn.setStyleSheet("font-weight: bold;")
+        self.apply_btn = QPushButton("Apply")
+
+        self.close_btn.setStyleSheet(
+            "QPushButton { background-color: #d32f2f; color: white; font-weight: bold; border-radius: 4px; border: none; padding: 0px 15px; } "
+            "QPushButton:hover { background-color: #b71c1c; }"
+        )
+        self.apply_btn.setStyleSheet(
+            "QPushButton { background-color: #0078d4; color: white; font-weight: bold; border-radius: 4px; border: none; padding: 0px 15px; } "
+            "QPushButton:hover { background-color: #005a9e; }"
+        )
 
         self.close_btn.setCursor(Qt.PointingHandCursor)
         self.apply_btn.setCursor(Qt.PointingHandCursor)
@@ -68,11 +76,11 @@ class PreviewDialog(QDialog):
         """
         self.console_output.setStyleSheet(
             "QPlainTextEdit { "
-            "font-family: 'Consolas', 'Monaco', 'Courier New', monospace; "
-            "font-size: 10pt; "
-            "padding: 10px; "
-            "border: 1px solid rgba(128, 128, 128, 0.3); "
-            "border-radius: 4px; "
+            "border: 1px solid rgba(128, 128, 128, 0.4); "
+            "border-radius: 8px; "
+            "font-family: 'Consolas', monospace; "
+            "font-size: 11pt; "
+            "padding: 8px; "
             "background: transparent; "
             "}"
         )
