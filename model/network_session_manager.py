@@ -17,15 +17,27 @@ class TerminalStream(io.BufferedIOBase):
     """
 
     def __init__(self, signal):
+        """
+        Initializes the terminal stream with the target UI signal.
+        """
         self.signal = signal
 
     def writable(self):
+        """
+        Indicates that the stream supports writing.
+        """
         return True
 
     def readable(self):
+        """
+        Indicates that the stream does not support reading.
+        """
         return False
 
     def write(self, b):
+        """
+        Decodes incoming bytes, cleans up invalid characters, and emits them to the UI.
+        """
         if not b:
             return 0
 
@@ -38,6 +50,9 @@ class TerminalStream(io.BufferedIOBase):
         return len(b)
 
     def flush(self):
+        """
+        Satisfies the stream interface requirement without performing any action.
+        """
         pass
 
 
@@ -51,6 +66,9 @@ class NetworkSessionManager(QObject):
     batch_finished = Signal()
 
     def __init__(self):
+        """
+        Initializes the session manager with default disconnected states.
+        """
         super().__init__()
         self.connection = None
         self._receiving = False
@@ -92,7 +110,7 @@ class NetworkSessionManager(QObject):
 
     def _read_loop(self):
         """
-        Background loop that safely reads channel data and actively polls connection health while suppressing socket errors.
+        Background loop that safely reads channel data and actively polls connection health without polluting the CLI.
         """
         last_alive_check = time.time()
         while self._receiving:
@@ -108,8 +126,15 @@ class NetworkSessionManager(QObject):
                     current_time = time.time()
                     if current_time - last_alive_check > 3.0:
                         try:
-                            if not self.connection.is_alive():
-                                raise ConnectionError("Connection dead")
+                            if hasattr(self.connection.remote_conn, "get_transport"):
+                                transport = self.connection.remote_conn.get_transport()
+                                if transport:
+                                    transport.send_ignore()
+                                    if not transport.is_active():
+                                        raise ConnectionError("Connection dead")
+                            else:
+                                if not self.connection.is_alive():
+                                    raise ConnectionError("Connection dead")
                         except (Exception, OSError, EOFError):
                             raise ConnectionError("Socket unresponsive")
 
@@ -137,12 +162,20 @@ class NetworkSessionManager(QObject):
 
     def send_raw(self, text):
         """
-        Sends raw text to the device through the active connection.
+        Sends raw text to the device through the active connection without duplicating it in the session log.
         """
         if self.connection and self._receiving:
             try:
                 with self._lock:
+                    log_backup = getattr(self.connection, 'session_log', None)
+                    if hasattr(self.connection, 'session_log'):
+                        self.connection.session_log = None
+
                     self.connection.write_channel(text)
+
+                    if hasattr(self.connection, 'session_log'):
+                        self.connection.session_log = log_backup
+
                     return True
             except Exception as e:
                 error_msg = str(e).split('\n')[0].strip()
@@ -178,11 +211,16 @@ class NetworkSessionManager(QObject):
         """
         try:
             with self._lock:
-                alive = False
+                alive = True
                 try:
-                    alive = self.connection.is_alive()
+                    if hasattr(self.connection.remote_conn, "get_transport"):
+                        transport = self.connection.remote_conn.get_transport()
+                        if transport and not transport.is_active():
+                            alive = False
+                    else:
+                        alive = self.connection.is_alive()
                 except Exception:
-                    pass
+                    alive = False
 
                 if not alive:
                     raise ConnectionError("Connection closed by remote host.")
