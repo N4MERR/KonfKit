@@ -14,6 +14,9 @@ class ConnectionProfileController(QObject):
     """
 
     def __init__(self, view, model, terminal_callback):
+        """
+        Initializes the controller with view, model, and the callback to start a terminal session.
+        """
         super().__init__()
         self.view = view
         self.model = model
@@ -115,46 +118,13 @@ class ConnectionProfileController(QObject):
 
     def handle_connect_profile(self, data):
         """
-        Shows progress dialog and starts the connection process.
+        Passes the connection data to the main controller to establish the session directly.
         """
-        self.progress_window = ProgressDialog("Connecting to device...", self.view)
-
-        worker = Worker(self._perform_connection_task, data)
-        worker.signals.result.connect(self.on_connection_task_finished)
-        worker.signals.error.connect(lambda err: self.on_connection_task_finished((False, str(err[1]))))
-
-        self.threadpool.start(worker)
-        self.progress_window.exec()
-
-    def _perform_connection_task(self, data):
-        """
-        Executes a brief validation before passing data to the terminal callback.
-        """
-        temp_manager = NetworkSessionManager()
-        netmiko_settings = {k: v for k, v in data.items() if k != "name"}
-        success, msg = temp_manager.connect_device(netmiko_settings)
-        if success:
-            temp_manager.close_connection()
-            return True, data
-        return False, msg
-
-    def on_connection_task_finished(self, result):
-        """
-        Closes progress dialog and transitions to terminal session or shows raw error.
-        """
-        if self.progress_window:
-            self.progress_window.close()
-            self.progress_window = None
-
-        success, payload = result
-        if success:
-            self.start_session(payload)
-        else:
-            QMessageBox.critical(self.view, "Connection Failed", f"Connection failed: {payload}")
+        self.start_session(data)
 
     def run_test_process(self, data, message):
         """
-        Starts a background worker to test the network connection.
+        Starts a background worker to test the network connection for the dialogs.
         """
         self.progress_window = ProgressDialog(message, self.view)
 
@@ -167,7 +137,7 @@ class ConnectionProfileController(QObject):
 
     def _perform_test(self, data):
         """
-        Internal method executed by the worker to attempt a Netmiko connection.
+        Internal method executed by the worker to attempt a Netmiko connection test.
         """
         temp_manager = NetworkSessionManager()
         netmiko_settings = {k: v for k, v in data.items() if k != "name"}

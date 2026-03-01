@@ -170,7 +170,7 @@ class MainController:
         self.session_manager.close_connection()
         self.window.show_home()
 
-    def _start_async_connection(self, settings, message, is_reconnect=False):
+    def _start_async_connection(self, settings, message, is_reconnect=False, connection_data=None):
         """
         Internal method to spawn a QThread worker and safely show an active progress dialog.
         """
@@ -182,11 +182,17 @@ class MainController:
         self.worker = ConnectionWorker(self.session_manager, settings)
 
         def on_finished(success, error_message):
+            """
+            Handles the completion of the connection task and updates UI state.
+            """
             if self.progress:
                 self.progress.close()
                 self.progress = None
 
             if success:
+                if connection_data and not is_reconnect:
+                    self.window.show_device_config(connection_data)
+                    self.terminal_controller.reset_view()
                 self.window.device_config_tab.set_connection_status(True)
                 self.terminal_model.start_reading()
             else:
@@ -232,9 +238,6 @@ class MainController:
         Initiates a device connection without freezing the UI.
         """
         self.current_connection_data = connection_data
-        self.window.show_device_config(connection_data)
-        self.terminal_controller.reset_view()
-
         netmiko_settings = {k: v for k, v in connection_data.items() if k != "name"}
         name = connection_data.get('name', 'Device')
-        self._start_async_connection(netmiko_settings, f"Connecting to {name}...")
+        self._start_async_connection(netmiko_settings, f"Connecting to {name}...", is_reconnect=False, connection_data=connection_data)
