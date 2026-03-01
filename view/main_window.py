@@ -38,13 +38,7 @@ class MainWindow(QMainWindow):
         """
         Displays a critical error message box.
         """
-        msg = QMessageBox(self)
-        msg.setIcon(QMessageBox.Critical)
-        msg.setWindowTitle("System Error")
-        msg.setText("An operation failed.")
-        msg.setInformativeText(message)
-        msg.setStandardButtons(QMessageBox.Ok)
-        msg.exec()
+        QMessageBox.critical(self, "System Error", f"An operation failed.\n\n{message}")
 
     def show_device_config(self, connection_data):
         """

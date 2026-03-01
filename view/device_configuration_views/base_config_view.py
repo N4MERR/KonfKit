@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QScrollArea
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton
 from PySide6.QtCore import Signal
 
 
@@ -11,35 +11,23 @@ class BaseConfigView(QWidget):
 
     def __init__(self):
         """
-        Initializes the base configuration view layout without hardcoded OS theme colors.
+        Initializes the base configuration view layout without scroll areas.
         """
         super().__init__()
         self.main_layout = QVBoxLayout(self)
-        self.main_layout.setContentsMargins(15, 15, 15, 15)
+        self.main_layout.setContentsMargins(0, 0, 0, 0)
+        self.main_layout.setSpacing(10)
 
-        self.setStyleSheet("""
-            QScrollArea {
-                border: none;
-                border-radius: 6px;
-            }
-            QLabel {
-                background: transparent;
-            }
-            QCheckBox {
-                background: transparent;
-            }
-        """)
+        self.setStyleSheet(
+            "QLabel { background: transparent; }"
+            "QCheckBox { background: transparent; }"
+        )
 
-        self.scroll_area = QScrollArea()
-        self.scroll_area.setWidgetResizable(True)
-        self.scroll_content = QWidget()
-        self.scroll_content.setObjectName("ScrollContent")
-        self.form_layout = QVBoxLayout(self.scroll_content)
-        self.form_layout.setContentsMargins(20, 20, 20, 20)
+        self.form_layout = QVBoxLayout()
+        self.form_layout.setContentsMargins(0, 0, 0, 0)
         self.form_layout.setSpacing(15)
 
-        self.scroll_area.setWidget(self.scroll_content)
-        self.main_layout.addWidget(self.scroll_area)
+        self.main_layout.addLayout(self.form_layout)
 
         self.button_layout = QHBoxLayout()
         self.preview_button = QPushButton("Preview")
@@ -49,10 +37,11 @@ class BaseConfigView(QWidget):
         self.button_layout.addStretch()
         self.button_layout.addWidget(self.preview_button)
         self.button_layout.addWidget(self.apply_button)
-        self.main_layout.addLayout(self.button_layout)
 
         self.fields = {}
         self.form_layout.addStretch(1)
+
+        self.main_layout.addLayout(self.button_layout)
 
         self.preview_button.clicked.connect(self._on_preview_clicked)
         self.apply_button.clicked.connect(self._on_apply_clicked)
@@ -77,10 +66,16 @@ class BaseConfigView(QWidget):
         """
         Returns data for active checkboxes or radios.
         """
-        if hasattr(next(iter(self.fields.values())), 'checkbox'):
+        if not self.fields:
+            return {}
+
+        first_field = next(iter(self.fields.values()))
+        if hasattr(first_field, 'checkbox'):
             return {k: f.get_value() for k, f in self.fields.items() if f.checkbox.isChecked()}
-        else:
+        elif hasattr(first_field, 'radio'):
             return {k: f.get_value() for k, f in self.fields.items() if f.radio.isChecked()}
+        else:
+            return {k: f.get_value() for k, f in self.fields.items()}
 
     def validate_all(self):
         """
@@ -88,7 +83,7 @@ class BaseConfigView(QWidget):
         """
         is_valid = True
         for field in self.fields.values():
-            if not field.validate():
+            if hasattr(field, 'validate') and not field.validate():
                 is_valid = False
         return is_valid
 
