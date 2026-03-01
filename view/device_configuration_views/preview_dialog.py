@@ -47,11 +47,11 @@ class PreviewDialog(QDialog):
         self.apply_btn = QPushButton("Apply")
 
         self.close_btn.setStyleSheet(
-            "QPushButton { background-color: #d32f2f; color: white; font-weight: bold; border-radius: 4px; border: none; padding: 0px 15px; } "
+            "QPushButton { background-color: #d32f2f; color: white; font-weight: bold; border-radius: 4px; border: none; padding: 8px 15px; } "
             "QPushButton:hover { background-color: #b71c1c; }"
         )
         self.apply_btn.setStyleSheet(
-            "QPushButton { background-color: #0078d4; color: white; font-weight: bold; border-radius: 4px; border: none; padding: 0px 15px; } "
+            "QPushButton { background-color: #0078d4; color: white; font-weight: bold; border-radius: 4px; border: none; padding: 8px 15px; } "
             "QPushButton:hover { background-color: #005a9e; }"
         )
 

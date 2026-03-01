@@ -230,33 +230,52 @@ class DeviceConfigTab(QWidget):
         self.reconnect_btn = QPushButton("Reconnect")
         self.reconnect_btn.setFixedSize(85, 28)
         self.reconnect_btn.setStyleSheet(
-            "QPushButton { background-color: #f57c00; color: white; font-weight: bold; font-size: 9pt; border-radius: 4px; border: none; } "
-            "QPushButton:hover { background-color: #ef6c00; }"
+            "QPushButton { background-color: #0078d4; color: white; font-weight: bold; font-size: 9pt; border-radius: 4px; border: none; } "
+            "QPushButton:hover { background-color: #005a9e; }"
         )
         self.reconnect_btn.clicked.connect(self.reconnect_signal.emit)
         self.reconnect_btn.hide()
+
+        left_button_layout = QHBoxLayout()
+        left_button_layout.setContentsMargins(0, 0, 0, 0)
+        left_button_layout.setSpacing(5)
+        left_button_layout.addWidget(self.close_btn)
+        left_button_layout.addWidget(self.reconnect_btn)
+
+        self.connection_label = QLabel()
+        self.connection_label.setAlignment(Qt.AlignCenter)
+        self.connection_label.setStyleSheet("font-size: 13pt; font-weight: bold; color: #0078d4; background: transparent;")
 
         self.led_indicator = QLabel()
         self.led_indicator.setFixedSize(14, 14)
         self.led_indicator.setStyleSheet("background-color: transparent; border-radius: 7px;")
 
-        self.info_label = QLabel()
-        self.info_label.setAlignment(Qt.AlignCenter)
-        self.info_label.setStyleSheet("font-size: 13pt; font-weight: bold; background: transparent;")
+        self.status_label = QLabel()
+        self.status_label.setAlignment(Qt.AlignCenter)
+        self.status_label.setStyleSheet("font-size: 11pt; font-weight: bold; background: transparent;")
 
-        status_layout = QHBoxLayout()
-        status_layout.addWidget(self.led_indicator)
-        status_layout.addWidget(self.info_label)
-        status_layout.setAlignment(Qt.AlignCenter)
-        status_layout.setSpacing(8)
+        center_status_layout = QVBoxLayout()
+        center_status_layout.setSpacing(4)
+
+        connection_row = QHBoxLayout()
+        connection_row.setAlignment(Qt.AlignCenter)
+        connection_row.addWidget(self.connection_label)
+
+        status_row = QHBoxLayout()
+        status_row.setAlignment(Qt.AlignCenter)
+        status_row.addWidget(self.led_indicator)
+        status_row.addWidget(self.status_label)
+        status_row.setSpacing(8)
+
+        center_status_layout.addLayout(connection_row)
+        center_status_layout.addLayout(status_row)
 
         dummy_spacer = QWidget()
-        dummy_spacer.setFixedSize(85, 28)
+        dummy_spacer.setFixedSize(175, 28)
 
-        top_bar.addWidget(self.close_btn)
-        top_bar.addWidget(self.reconnect_btn)
+        top_bar.addLayout(left_button_layout)
         top_bar.addStretch()
-        top_bar.addLayout(status_layout)
+        top_bar.addLayout(center_status_layout)
         top_bar.addStretch()
         top_bar.addWidget(dummy_spacer)
 
@@ -291,8 +310,8 @@ class DeviceConfigTab(QWidget):
             }
 
             QPushButton[text="Preview"] {
-                background-color: #6c757d; 
-                color: white; 
+                background-color: #ffe066; 
+                color: black; 
                 font-weight: bold; 
                 border-radius: 4px; 
                 border: none; 
@@ -300,10 +319,11 @@ class DeviceConfigTab(QWidget):
                 min-width: 90px;
             }
             QPushButton[text="Preview"]:hover {
-                background-color: #5a6268;
+                background-color: #ffd54f;
             }
             QPushButton[text="Preview"]:disabled {
-                background-color: #a0a0a0;
+                background-color: #e0e0e0;
+                color: #a0a0a0;
             }
 
             QPushButton[text="Apply"] {
@@ -470,18 +490,23 @@ class DeviceConfigTab(QWidget):
 
         name = self.current_connection.get('name', '')
         host = self.current_connection.get('host', '')
-        protocol = self.current_connection.get('protocol', 'Unknown')
         display_name = name if name else host
 
+        self.connection_label.setText(f"Connected to: {display_name}")
+
         if is_connected:
-            self.led_indicator.setStyleSheet("background-color: #4CAF50; border-radius: 7px; border: 1px solid #388E3C;")
-            self.info_label.setText(f"Connected to: {display_name} ({protocol})")
-            self.info_label.setStyleSheet("font-size: 13pt; font-weight: bold; color: #4CAF50; background: transparent;")
+            self.led_indicator.setStyleSheet(
+                "background-color: #4CAF50; border-radius: 7px; border: 1px solid #388E3C;")
+            self.status_label.setText("Status: Connected")
+            self.status_label.setStyleSheet(
+                "font-size: 11pt; font-weight: bold; color: #4CAF50; background: transparent;")
             self.reconnect_btn.hide()
         else:
-            self.led_indicator.setStyleSheet("background-color: #F44336; border-radius: 7px; border: 1px solid #D32F2F;")
-            self.info_label.setText(f"Disconnected from: {display_name} ({protocol})")
-            self.info_label.setStyleSheet("font-size: 13pt; font-weight: bold; color: #F44336; background: transparent;")
+            self.led_indicator.setStyleSheet(
+                "background-color: #F44336; border-radius: 7px; border: 1px solid #D32F2F;")
+            self.status_label.setText("Status: Disconnected")
+            self.status_label.setStyleSheet(
+                "font-size: 11pt; font-weight: bold; color: #F44336; background: transparent;")
             self.reconnect_btn.show()
 
         for btn in self.findChildren(QPushButton):

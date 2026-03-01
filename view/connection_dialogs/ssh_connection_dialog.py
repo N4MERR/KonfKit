@@ -1,48 +1,42 @@
-from PySide6.QtWidgets import QLineEdit
-from view.connection_dialogs.base_connection_dialog import BaseConnectionDialog
-
+import re
+from PySide6.QtWidgets import QLineEdit, QMessageBox
+from .base_connection_dialog import BaseConnectionDialog
 
 class SSHConnectionDialog(BaseConnectionDialog):
-    """
-    Dialog specifically for creating and editing SSH connection profiles.
-    """
+    def __init__(self, parent=None):
+        super().__init__("Add SSH Connection", parent)
 
-    def __init__(self, parent=None, profile_data=None):
-        """
-        Initializes the SSH connection dialog.
-        """
-        super().__init__(parent, profile_data, "SSH")
+    def _add_specific_fields(self):
+        self.ip_input = QLineEdit()
+        self.port_input = QLineEdit("22")
+        self.user_input = QLineEdit()
+        self.pass_input = QLineEdit()
+        self.pass_input.setEchoMode(QLineEdit.EchoMode.Password)
 
-    def _setup_specific_fields(self):
-        """
-        Adds SSH-specific fields including username, password, and enable secret.
-        """
-        self.username_input = QLineEdit()
-        if self.profile_data:
-            self.username_input.setText(self.profile_data.get("username", ""))
-        self.form_layout.addRow("Username:", self.username_input)
+        self.form.addRow("IP Address:", self.ip_input)
+        self.form.addRow("SSH Port:", self.port_input)
+        self.form.addRow("Username:", self.user_input)
+        self.form.addRow("Password:", self.pass_input)
 
-        self.password_input = QLineEdit()
-        self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
-        if self.profile_data:
-            self.password_input.setText(self.profile_data.get("password", ""))
-        self.form_layout.addRow("Password:", self.password_input)
+    def is_valid_ip(self, ip):
+        pattern = r"^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$"
+        if not re.match(pattern, ip):
+            return False
+        return all(0 <= int(part) <= 255 for part in ip.split('.'))
 
-        self.secret_input = QLineEdit()
-        self.secret_input.setEchoMode(QLineEdit.EchoMode.Password)
-        if self.profile_data:
-            self.secret_input.setText(self.profile_data.get("secret", ""))
-        self.form_layout.addRow("Enable Secret:", self.secret_input)
+    def _validate_specific(self):
+        if not self.is_valid_ip(self.ip_input.text().strip()):
+            QMessageBox.warning(self, "Error", "Valid IP Address is required.")
+            return False
+        return True
 
-    def get_connection_data(self):
-        """
-        Retrieves the configured SSH connection parameters without background keepalives.
-        """
-        data = super().get_connection_data()
-        data.update({
-            "username": self.username_input.text().strip(),
-            "password": self.password_input.text(),
-            "secret": self.secret_input.text(),
+    def get_data(self):
+        return {
+            "name": self.name_input.text().strip(),
             "device_type": "cisco_ios",
-        })
-        return data
+            "host": self.ip_input.text().strip(),
+            "port": int(self.port_input.text() or 22),
+            "username": self.user_input.text().strip(),
+            "password": self.pass_input.text(),
+            "secret": self.secret_input.text().strip()
+        }

@@ -21,6 +21,34 @@ class MainWindow(QMainWindow):
 
         self.main_tab_widget = QTabWidget()
 
+        self.main_tab_widget.setStyleSheet("""
+            QTabWidget::pane { 
+                border: 1px solid rgba(128, 128, 128, 0.2); 
+                border-radius: 4px; 
+                background: transparent; 
+            }
+            QTabBar::tab {
+                height: 30px;
+                width: 155px;
+                font-size: 10pt;
+                font-weight: bold;
+                margin-top: 2px;
+                margin-right: 1px;
+                margin-left: 1px;
+                border-top-left-radius: 4px;
+                border-top-right-radius: 4px;
+                border: 1px solid rgba(128, 128, 128, 0.3);
+            }
+            QTabBar::tab:selected {
+                background-color: rgba(0, 120, 212, 0.1);
+                border: 1px solid #0078d4;
+                border-bottom: none;
+            }
+            QTabBar::tab:hover:!selected {
+                background-color: rgba(0, 120, 212, 0.05);
+            }
+        """)
+
         self.password_reset_tab = PasswordResetTab()
         self.connection_manager_tab = ConnectionManagerTab()
 
