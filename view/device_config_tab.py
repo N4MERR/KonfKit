@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
                                QLabel, QTabWidget, QTreeWidget, QTreeWidgetItem, QStackedWidget, QSplitter,
-                               QSpacerItem, QSizePolicy)
+                               QSpacerItem, QSizePolicy, QGroupBox, QScrollArea)
 from PySide6.QtCore import Signal, Qt
 
 from view.device_configuration_views.switch.vlan_view import VLANView
@@ -77,28 +77,43 @@ class ConfigSection(QWidget):
 
         for section_name, subsections in section_items.items():
             top_item = QTreeWidgetItem(self.nav_tree, [section_name])
-            top_item.setFlags(top_item.flags() & ~Qt.ItemIsSelectable)
 
             font = self.font()
             font.setBold(True)
             font.setPointSize(10)
             top_item.setFont(0, font)
 
-            for sub_name, widget in subsections.items():
-                sub_item = QTreeWidgetItem(top_item, [sub_name])
-                if widget is not None:
-                    self.content_stack.addWidget(widget)
-                else:
-                    page = QWidget()
-                    page_layout = QVBoxLayout(page)
-                    title_label = QLabel(f"{section_name} - {sub_name} Configuration")
-                    title_label.setStyleSheet("font-size: 14pt; font-weight: bold; background: transparent;")
-                    title_label.setAlignment(Qt.AlignCenter)
-                    page_layout.addWidget(title_label)
-                    page_layout.addStretch()
-                    self.content_stack.addWidget(page)
+            scroll_area = QScrollArea()
+            scroll_area.setWidgetResizable(True)
+            scroll_area.setStyleSheet("QScrollArea { border: none; background: transparent; }")
 
-                self.widget_map[id(sub_item)] = self.content_stack.count() - 1
+            page_widget = QWidget()
+            page_layout = QVBoxLayout(page_widget)
+            page_layout.setContentsMargins(15, 15, 15, 15)
+            page_layout.setSpacing(20)
+
+            for sub_name, widget in subsections.items():
+                group_box = QGroupBox(sub_name)
+                group_box.setStyleSheet(
+                    "QGroupBox { font-size: 11pt; font-weight: bold; border: 1px solid rgba(128, 128, 128, 0.4); border-radius: 6px; margin-top: 10px; padding-top: 15px; }"
+                    "QGroupBox::title { subcontrol-origin: margin; subcontrol-position: top left; padding: 0 5px; left: 10px; }"
+                )
+                group_layout = QVBoxLayout(group_box)
+                group_layout.setContentsMargins(10, 15, 10, 10)
+
+                if widget is not None:
+                    group_layout.addWidget(widget)
+                else:
+                    empty_label = QLabel(f"No configuration available for {sub_name}")
+                    group_layout.addWidget(empty_label)
+
+                page_layout.addWidget(group_box)
+
+            page_layout.addStretch()
+            scroll_area.setWidget(page_widget)
+
+            self.content_stack.addWidget(scroll_area)
+            self.widget_map[id(top_item)] = self.content_stack.count() - 1
 
         self.nav_tree.itemClicked.connect(self._on_item_clicked)
 
@@ -140,11 +155,9 @@ class ConfigSection(QWidget):
 
     def _on_item_clicked(self, item, column):
         """
-        Handles navigation item clicks to switch content or expand categories.
+        Handles navigation item clicks to switch content.
         """
-        if item.childCount() > 0:
-            item.setExpanded(not item.isExpanded())
-        elif id(item) in self.widget_map:
+        if id(item) in self.widget_map:
             self.content_stack.setCurrentIndex(self.widget_map[id(item)])
 
     def _on_splitter_moved(self, pos, index):
@@ -172,6 +185,7 @@ class DeviceConfigTab(QWidget):
     Main tab widget for device configuration, containing Router, Switch, and Terminal sub-tabs.
     """
     close_tab_signal = Signal()
+    reconnect_signal = Signal()
 
     def __init__(self):
         """
@@ -213,16 +227,36 @@ class DeviceConfigTab(QWidget):
         )
         self.close_btn.clicked.connect(self.close_tab_signal.emit)
 
+        self.reconnect_btn = QPushButton("Reconnect")
+        self.reconnect_btn.setFixedSize(85, 28)
+        self.reconnect_btn.setStyleSheet(
+            "QPushButton { background-color: #f57c00; color: white; font-weight: bold; font-size: 9pt; border-radius: 4px; border: none; } "
+            "QPushButton:hover { background-color: #ef6c00; }"
+        )
+        self.reconnect_btn.clicked.connect(self.reconnect_signal.emit)
+        self.reconnect_btn.hide()
+
+        self.led_indicator = QLabel()
+        self.led_indicator.setFixedSize(14, 14)
+        self.led_indicator.setStyleSheet("background-color: transparent; border-radius: 7px;")
+
         self.info_label = QLabel()
         self.info_label.setAlignment(Qt.AlignCenter)
         self.info_label.setStyleSheet("font-size: 13pt; font-weight: bold; background: transparent;")
+
+        status_layout = QHBoxLayout()
+        status_layout.addWidget(self.led_indicator)
+        status_layout.addWidget(self.info_label)
+        status_layout.setAlignment(Qt.AlignCenter)
+        status_layout.setSpacing(8)
 
         dummy_spacer = QWidget()
         dummy_spacer.setFixedSize(85, 28)
 
         top_bar.addWidget(self.close_btn)
+        top_bar.addWidget(self.reconnect_btn)
         top_bar.addStretch()
-        top_bar.addWidget(self.info_label)
+        top_bar.addLayout(status_layout)
         top_bar.addStretch()
         top_bar.addWidget(dummy_spacer)
 
@@ -268,6 +302,9 @@ class DeviceConfigTab(QWidget):
             QPushButton[text="Preview"]:hover {
                 background-color: #5a6268;
             }
+            QPushButton[text="Preview"]:disabled {
+                background-color: #a0a0a0;
+            }
 
             QPushButton[text="Apply"] {
                 background-color: #0078d4; 
@@ -281,6 +318,9 @@ class DeviceConfigTab(QWidget):
             QPushButton[text="Apply"]:hover {
                 background-color: #005a9e;
             }
+            QPushButton[text="Apply"]:disabled {
+                background-color: #a0a0a0;
+            }
 
             QPushButton[text="Apply Configuration"] {
                 background-color: #0078d4; 
@@ -293,6 +333,9 @@ class DeviceConfigTab(QWidget):
             }
             QPushButton[text="Apply Configuration"]:hover {
                 background-color: #005a9e;
+            }
+            QPushButton[text="Apply Configuration"]:disabled {
+                background-color: #a0a0a0;
             }
         """)
 
@@ -318,13 +361,11 @@ class DeviceConfigTab(QWidget):
         }
         self.router_section = ConfigSection(router_items)
 
-        self.router_section.nav_tree.collapseAll()
         router_system_category = self.router_section.nav_tree.topLevelItem(0)
         if router_system_category:
-            router_system_category.setExpanded(True)
-            if router_system_category.childCount() > 0:
-                self.router_section.nav_tree.setCurrentItem(router_system_category.child(0))
-                self.router_section.content_stack.setCurrentIndex(0)
+            router_system_category.setSelected(True)
+            self.router_section.nav_tree.setCurrentItem(router_system_category)
+            self.router_section.content_stack.setCurrentIndex(0)
 
         switch_items = {
             "System Setup": {
@@ -345,13 +386,11 @@ class DeviceConfigTab(QWidget):
         }
         self.switch_section = ConfigSection(switch_items)
 
-        self.switch_section.nav_tree.collapseAll()
         switch_system_category = self.switch_section.nav_tree.topLevelItem(0)
         if switch_system_category:
-            switch_system_category.setExpanded(True)
-            if switch_system_category.childCount() > 0:
-                self.switch_section.nav_tree.setCurrentItem(switch_system_category.child(0))
-                self.switch_section.content_stack.setCurrentIndex(0)
+            switch_system_category.setSelected(True)
+            self.switch_section.nav_tree.setCurrentItem(switch_system_category)
+            self.switch_section.content_stack.setCurrentIndex(0)
 
         self.terminal_tab_container = QWidget()
         self.terminal_tab_layout = QVBoxLayout(self.terminal_tab_container)
@@ -419,8 +458,32 @@ class DeviceConfigTab(QWidget):
         Updates the UI to reflect information about the current connection.
         """
         self.current_connection = data
-        name = data.get('name', '')
-        host = data.get('host', '')
-        protocol = data.get('protocol', '')
+        self.set_connection_status(True)
+
+    def set_connection_status(self, is_connected):
+        """
+        Updates the visual status indicator, toggles the reconnect button, and disables action buttons
+        while allowing the input fields to remain editable.
+        """
+        if not self.current_connection:
+            return
+
+        name = self.current_connection.get('name', '')
+        host = self.current_connection.get('host', '')
+        protocol = self.current_connection.get('protocol', 'Unknown')
         display_name = name if name else host
-        self.info_label.setText(f"Connected to: {display_name} ({protocol})")
+
+        if is_connected:
+            self.led_indicator.setStyleSheet("background-color: #4CAF50; border-radius: 7px; border: 1px solid #388E3C;")
+            self.info_label.setText(f"Connected to: {display_name} ({protocol})")
+            self.info_label.setStyleSheet("font-size: 13pt; font-weight: bold; color: #4CAF50; background: transparent;")
+            self.reconnect_btn.hide()
+        else:
+            self.led_indicator.setStyleSheet("background-color: #F44336; border-radius: 7px; border: 1px solid #D32F2F;")
+            self.info_label.setText(f"Disconnected from: {display_name} ({protocol})")
+            self.info_label.setStyleSheet("font-size: 13pt; font-weight: bold; color: #F44336; background: transparent;")
+            self.reconnect_btn.show()
+
+        for btn in self.findChildren(QPushButton):
+            if btn.text() in ["Apply", "Preview", "Apply Configuration"]:
+                btn.setEnabled(is_connected)
