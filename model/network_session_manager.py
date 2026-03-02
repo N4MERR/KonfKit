@@ -3,7 +3,7 @@ import logging
 import time
 import io
 from netmiko import ConnectHandler
-from netmiko.exceptions import NetmikoTimeoutException, NetmikoAuthenticationException
+from netmiko.exceptions import NetmikoTimeoutException, NetmikoAuthenticationException, ConfigInvalidException
 from PySide6.QtCore import QObject, Signal
 
 logging.getLogger("paramiko").setLevel(logging.CRITICAL)
@@ -232,8 +232,12 @@ class NetworkSessionManager(QObject):
                     self.connection.enable()
 
                 self.connection.send_config_set(
-                    config_commands=cmds
+                    config_commands=cmds,
+                    error_pattern=r"% (Invalid|Incomplete|Ambiguous)"
                 )
+
+        except ConfigInvalidException:
+            self.error_occurred.emit("Device rejected one or more configuration commands.")
         except Exception as e:
             error_msg = str(e).split('\n')[0].strip()
             self.error_occurred.emit(error_msg)
