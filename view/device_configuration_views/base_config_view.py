@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QCheckBox
 from PySide6.QtCore import Signal
 
 
@@ -11,7 +11,7 @@ class BaseConfigView(QWidget):
 
     def __init__(self):
         """
-        Initializes the base configuration view layout without scroll areas.
+        Initializes the base configuration view layout with a write memory toggle and action buttons.
         """
         super().__init__()
         self.main_layout = QVBoxLayout(self)
@@ -30,10 +30,14 @@ class BaseConfigView(QWidget):
         self.main_layout.addLayout(self.form_layout)
 
         self.button_layout = QHBoxLayout()
+
+        self.write_memory_cb = QCheckBox("Write Memory")
+
         self.preview_button = QPushButton("Preview")
         self.apply_button = QPushButton("Apply")
         self.apply_button.setStyleSheet("font-weight: bold;")
 
+        self.button_layout.addWidget(self.write_memory_cb)
         self.button_layout.addStretch()
         self.button_layout.addWidget(self.preview_button)
         self.button_layout.addWidget(self.apply_button)
@@ -89,14 +93,18 @@ class BaseConfigView(QWidget):
 
     def _on_preview_clicked(self):
         """
-        Emits preview signal if valid.
+        Emits preview signal with an injected write memory flag if valid.
         """
         if self.validate_all():
-            self.preview_config_signal.emit(self.get_data())
+            data = self.get_data()
+            data["_write_memory"] = self.write_memory_cb.isChecked()
+            self.preview_config_signal.emit(data)
 
     def _on_apply_clicked(self):
         """
-        Emits apply signal if valid.
+        Emits apply signal with an injected write memory flag if valid.
         """
         if self.validate_all():
-            self.apply_config_signal.emit(self.get_data())
+            data = self.get_data()
+            data["_write_memory"] = self.write_memory_cb.isChecked()
+            self.apply_config_signal.emit(data)

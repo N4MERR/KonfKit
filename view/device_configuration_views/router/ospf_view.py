@@ -1,9 +1,7 @@
-"""
-OSPF configuration views with corrected data retrieval for validation and a unified container.
-"""
+from PySide6.QtWidgets import QCheckBox
 from view.device_configuration_views.base_config_view import BaseConfigView
 from view.device_configuration_views.config_fields import (
-    BaseConfigField, IPAddressField, NumberField
+    BaseConfigField, IPAddressField, WildcardMaskField, RangedNumberField, InterfaceField
 )
 
 
@@ -14,21 +12,17 @@ class OSPFBasicView(BaseConfigView):
 
     def __init__(self):
         """
-        Initializes the OSPF network advertisement view.
+        Initializes the OSPF network advertisement view with strict parameters.
         """
         super().__init__()
 
-        process_id = self.add_field("process_id", NumberField("Process ID:"))
-        process_id.set_error_message("Process ID must be a valid number.")
+        self.add_field("process_id", RangedNumberField("Process ID (1-65535):", 1, 65535, is_optional=False))
+        self.add_field("network", IPAddressField("Network:", is_optional=False))
+        self.add_field("wildcard_mask", WildcardMaskField("Wildcard Mask:", is_optional=False))
+        self.add_field("area", RangedNumberField("Area:", 0, 2147483647, is_optional=False))
 
-        network = self.add_field("network", IPAddressField("Network:"))
-        network.set_error_message("Invalid IPv4 network address.")
-
-        wildcard = self.add_field("wildcard_mask", IPAddressField("Wildcard Mask:"))
-        wildcard.set_error_message("Invalid wildcard mask format.")
-
-        area = self.add_field("area", NumberField("Area:"))
-        area.set_error_message("Area must be a valid number.")
+        self.write_memory_cb = QCheckBox("Write Memory")
+        self.button_layout.insertWidget(0, self.write_memory_cb)
 
     def get_data(self) -> dict:
         """
@@ -39,7 +33,8 @@ class OSPFBasicView(BaseConfigView):
             "process_id": self.fields["process_id"].get_value(),
             "network": self.fields["network"].get_value(),
             "wildcard_mask": self.fields["wildcard_mask"].get_value(),
-            "area": self.fields["area"].get_value()
+            "area": self.fields["area"].get_value(),
+            "_write_memory": self.write_memory_cb.isChecked()
         }
 
 
@@ -50,15 +45,15 @@ class OSPFRouterIdView(BaseConfigView):
 
     def __init__(self):
         """
-        Initializes the OSPF Router ID view.
+        Initializes the OSPF Router ID view with strict parameters.
         """
         super().__init__()
 
-        process_id = self.add_field("process_id", NumberField("Process ID:"))
-        process_id.set_error_message("Process ID must be a valid number.")
+        self.add_field("process_id", RangedNumberField("Process ID (1-65535):", 1, 65535, is_optional=False))
+        self.add_field("router_id", IPAddressField("Router ID:", is_optional=False))
 
-        router_id = self.add_field("router_id", IPAddressField("Router ID:"))
-        router_id.set_error_message("Router ID must be a valid IPv4 address.")
+        self.write_memory_cb = QCheckBox("Write Memory")
+        self.button_layout.insertWidget(0, self.write_memory_cb)
 
     def get_data(self) -> dict:
         """
@@ -67,7 +62,8 @@ class OSPFRouterIdView(BaseConfigView):
         return {
             "type": "router_id",
             "process_id": self.fields["process_id"].get_value(),
-            "router_id": self.fields["router_id"].get_value()
+            "router_id": self.fields["router_id"].get_value(),
+            "_write_memory": self.write_memory_cb.isChecked()
         }
 
 
@@ -78,15 +74,15 @@ class OSPFPassiveInterfaceView(BaseConfigView):
 
     def __init__(self):
         """
-        Initializes the OSPF Passive Interface view.
+        Initializes the OSPF Passive Interface view with strict parameters.
         """
         super().__init__()
 
-        process_id = self.add_field("process_id", NumberField("Process ID:"))
-        process_id.set_error_message("Process ID must be a valid number.")
+        self.add_field("process_id", RangedNumberField("Process ID (1-65535):", 1, 65535, is_optional=False))
+        self.add_field("interface_name", InterfaceField("Interface Name:", is_optional=False))
 
-        interface = self.add_field("interface_name", BaseConfigField("Interface Name:"))
-        interface.set_error_message("Interface name cannot be empty.")
+        self.write_memory_cb = QCheckBox("Write Memory")
+        self.button_layout.insertWidget(0, self.write_memory_cb)
 
     def get_data(self) -> dict:
         """
@@ -95,7 +91,8 @@ class OSPFPassiveInterfaceView(BaseConfigView):
         return {
             "type": "passive_interface",
             "process_id": self.fields["process_id"].get_value(),
-            "interface_name": self.fields["interface_name"].get_value()
+            "interface_name": self.fields["interface_name"].get_value(),
+            "_write_memory": self.write_memory_cb.isChecked()
         }
 
 
@@ -106,14 +103,15 @@ class OSPFDefaultRouteView(BaseConfigView):
 
     def __init__(self):
         """
-        Initializes the OSPF Default Route view.
+        Initializes the OSPF Default Route view with strict parameters.
         """
         super().__init__()
 
-        process_id = self.add_field("process_id", NumberField("Process ID:"))
-        process_id.set_error_message("Process ID must be a valid number.")
-
+        self.add_field("process_id", RangedNumberField("Process ID (1-65535):", 1, 65535, is_optional=False))
         self.add_field("always", BaseConfigField("Always originate:", is_optional=True))
+
+        self.write_memory_cb = QCheckBox("Write Memory")
+        self.button_layout.insertWidget(0, self.write_memory_cb)
 
     def get_data(self) -> dict:
         """
@@ -122,7 +120,8 @@ class OSPFDefaultRouteView(BaseConfigView):
         return {
             "type": "default_route",
             "process_id": self.fields["process_id"].get_value(),
-            "always": self.fields["always"].radio.isChecked()
+            "always": self.fields["always"].radio.isChecked(),
+            "_write_memory": self.write_memory_cb.isChecked()
         }
 
 

@@ -7,7 +7,7 @@ from model.device_configuration_models.router.ospf_model import (OSPFBasicModel,
                                                                  OSPFPassiveInterfaceModel, OSPFDefaultRouteModel)
 from model.device_configuration_models.universal.basic_settings_model import BasicSettingsModel
 from model.device_configuration_models.universal.telnet_model import TelnetAuthModel, TelnetVtyModel
-from model.device_configuration_models.universal.ssh_model import SSHGlobalModel, SSHAuthModel, SSHVtyModel
+from model.device_configuration_models.universal.ssh_model import SSHModel
 
 from controller.tab_controllers.terminal_controller import TerminalController
 from controller.tab_controllers.connection_profile_controller import ConnectionProfileController
@@ -97,34 +97,32 @@ class MainController:
             self.telnet_vty_model
         )
 
-        self.ssh_global_model = SSHGlobalModel(self.session_manager)
-        self.ssh_auth_model = SSHAuthModel(self.session_manager)
-        self.ssh_vty_model = SSHVtyModel(self.session_manager)
+        self.ssh_model = SSHModel(self.session_manager)
 
         self.router_ssh_global_controller = BaseConfigController(
             self.window.device_config_tab.router_ssh_view.global_section,
-            self.ssh_global_model
+            self.ssh_model
         )
         self.router_ssh_auth_controller = BaseConfigController(
             self.window.device_config_tab.router_ssh_view.auth_section,
-            self.ssh_auth_model
+            self.ssh_model
         )
         self.router_ssh_vty_controller = BaseConfigController(
             self.window.device_config_tab.router_ssh_view.vty_section,
-            self.ssh_vty_model
+            self.ssh_model
         )
 
         self.switch_ssh_global_controller = BaseConfigController(
             self.window.device_config_tab.switch_ssh_view.global_section,
-            self.ssh_global_model
+            self.ssh_model
         )
         self.switch_ssh_auth_controller = BaseConfigController(
             self.window.device_config_tab.switch_ssh_view.auth_section,
-            self.ssh_auth_model
+            self.ssh_model
         )
         self.switch_ssh_vty_controller = BaseConfigController(
             self.window.device_config_tab.switch_ssh_view.vty_section,
-            self.ssh_vty_model
+            self.ssh_model
         )
 
         self.ospf_basic_model = OSPFBasicModel(self.session_manager)

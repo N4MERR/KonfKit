@@ -272,6 +272,54 @@ class IPAddressField(BaseConfigField):
         return InputValidator.is_valid_ip(value)
 
 
+class SubnetMaskField(BaseConfigField):
+    """
+    Field validated for contiguous subnet mask format.
+    """
+
+    def _run_validation(self, value):
+        """
+        Validates if the input is a valid subnet mask.
+        """
+        return InputValidator.is_valid_mask(value)
+
+
+class WildcardMaskField(BaseConfigField):
+    """
+    Field validated for contiguous wildcard mask format.
+    """
+
+    def _run_validation(self, value):
+        """
+        Validates if the input is a valid wildcard mask.
+        """
+        return InputValidator.is_valid_wildcard_mask(value)
+
+
+class MacAddressField(BaseConfigField):
+    """
+    Field validated for standard Cisco MAC address formats.
+    """
+
+    def _run_validation(self, value):
+        """
+        Validates if the input is a valid MAC address.
+        """
+        return InputValidator.is_valid_mac_address(value)
+
+
+class InterfaceField(BaseConfigField):
+    """
+    Field validated for standard Cisco interface names.
+    """
+
+    def _run_validation(self, value):
+        """
+        Validates if the input is a valid interface name.
+        """
+        return InputValidator.is_valid_interface_name(value)
+
+
 class NumberField(BaseConfigField):
     """
     Field validated for numeric input.
@@ -282,6 +330,27 @@ class NumberField(BaseConfigField):
         Validates if the input is a valid number.
         """
         return InputValidator.is_valid_number(value)
+
+
+class RangedNumberField(BaseConfigField):
+    """
+    Field validated for numeric input within a specific range.
+    """
+
+    def __init__(self, label_text, min_val, max_val, is_optional=False, parent=None):
+        """
+        Initializes the ranged number field with minimum and maximum constraints.
+        """
+        self.min_val = min_val
+        self.max_val = max_val
+        super().__init__(label_text, is_optional, parent)
+        self.set_error_message(f"Value must be between {self.min_val} and {self.max_val}")
+
+    def _run_validation(self, value):
+        """
+        Validates if the input is a number within the defined range.
+        """
+        return InputValidator.is_in_range(value, self.min_val, self.max_val)
 
 
 class PasswordField(BaseConfigField):

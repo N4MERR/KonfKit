@@ -1,5 +1,6 @@
 from model.device_configuration_models.base_config_model import BaseConfigModel
 
+
 class BasicSettingsModel(BaseConfigModel):
     """
     Model for generating Cisco IOS commands for basic device settings.
@@ -9,7 +10,8 @@ class BasicSettingsModel(BaseConfigModel):
         """
         Generates Cisco CLI commands for hostname, secret, and banner based on enabled fields.
         """
-        commands = ["configure terminal"]
+        commands = []
+        write_memory = kwargs.pop("_write_memory", False)
 
         if kwargs.get('hostname_enabled') and kwargs.get('hostname'):
             commands.append(f"hostname {kwargs.get('hostname')}")
@@ -29,4 +31,7 @@ class BasicSettingsModel(BaseConfigModel):
         if kwargs.get('password_encryption_enabled'):
             commands.append("service password-encryption")
 
-        return commands if len(commands) > 1 else []
+        if write_memory:
+            commands.append("do write memory")
+
+        return commands

@@ -1,32 +1,26 @@
-from view.device_configuration_views.base_config_view import BaseConfigView
-from view.device_configuration_views.config_fields import (
-    BaseConfigField, NumberField
-)
+from model.device_configuration_models.base_config_model import BaseConfigModel
 
 
-class VLANView(BaseConfigView):
+class VLANModel(BaseConfigModel):
     """
-    View for creating and naming VLANs.
+    Model handling the logic for generating Cisco IOS commands for VLAN setup.
     """
 
-    def __init__(self):
+    def generate_commands(self, **kwargs) -> list[str]:
         """
-        Initializes the VLAN view and registers input fields.
+        Generates Cisco CLI commands for creating VLANs and assigning optional names.
         """
-        super().__init__()
-        vlan_id = self.add_field("vlan_id", NumberField("VLAN ID:"))
-        vlan_id.set_error_message("Enter a valid VLAN ID (1-4094).")
+        commands = []
+        write_memory = kwargs.pop("_write_memory", False)
 
-        vlan_name = self.add_field("vlan_name", BaseConfigField("VLAN Name:", is_optional=True))
-        vlan_name.set_error_message("Name cannot be empty if enabled.")
+        vlan_id = kwargs.get("vlan_id")
+        if vlan_id:
+            commands.append(f"vlan {vlan_id}")
+            if kwargs.get("name_enabled") and kwargs.get("vlan_name"):
+                commands.append(f"name {kwargs.get('vlan_name')}")
+            commands.append("exit")
 
-    def get_data(self):
-        """
-        Returns the data dictionary for VLAN configuration.
-        """
-        return {
-            "type": "vlan",
-            "vlan_id": self.fields["vlan_id"].get_value(),
-            "vlan_name": self.fields["vlan_name"].get_value(),
-            "name_enabled": self.fields["vlan_name"].checkbox.isChecked()
-        }
+        if write_memory:
+            commands.append("do write memory")
+
+        return commands

@@ -1,5 +1,6 @@
 from model.device_configuration_models.base_config_model import BaseConfigModel
 
+
 class OSPFBasicModel(BaseConfigModel):
     """
     Model for generating Cisco IOS commands for OSPF network advertisements.
@@ -9,19 +10,23 @@ class OSPFBasicModel(BaseConfigModel):
         """
         Generates OSPF network commands using process_id, network, wildcard, and area keys.
         """
+        commands = []
+        write_memory = kwargs.pop("_write_memory", False)
+
         process_id = kwargs.get("process_id")
         network = kwargs.get("network")
         wildcard = kwargs.get("wildcard_mask")
         area = kwargs.get("area")
 
-        if not process_id or not network or not wildcard or area is None:
-            return []
+        if process_id and network and wildcard and area is not None:
+            commands.append(f"router ospf {process_id}")
+            commands.append(f"network {network} {wildcard} area {area}")
 
-        return [
-            "configure terminal",
-            f"router ospf {process_id}",
-            f"network {network} {wildcard} area {area}"
-        ]
+        if write_memory:
+            commands.append("do write memory")
+
+        return commands
+
 
 class OSPFRouterIdModel(BaseConfigModel):
     """
@@ -32,17 +37,21 @@ class OSPFRouterIdModel(BaseConfigModel):
         """
         Generates OSPF router-id command.
         """
+        commands = []
+        write_memory = kwargs.pop("_write_memory", False)
+
         process_id = kwargs.get("process_id")
         router_id = kwargs.get("router_id")
 
-        if not process_id or not router_id:
-            return []
+        if process_id and router_id:
+            commands.append(f"router ospf {process_id}")
+            commands.append(f"router-id {router_id}")
 
-        return [
-            "configure terminal",
-            f"router ospf {process_id}",
-            f"router-id {router_id}"
-        ]
+        if write_memory:
+            commands.append("do write memory")
+
+        return commands
+
 
 class OSPFPassiveInterfaceModel(BaseConfigModel):
     """
@@ -53,17 +62,21 @@ class OSPFPassiveInterfaceModel(BaseConfigModel):
         """
         Generates OSPF passive-interface command.
         """
+        commands = []
+        write_memory = kwargs.pop("_write_memory", False)
+
         process_id = kwargs.get("process_id")
         interface = kwargs.get("interface_name")
 
-        if not process_id or not interface:
-            return []
+        if process_id and interface:
+            commands.append(f"router ospf {process_id}")
+            commands.append(f"passive-interface {interface}")
 
-        return [
-            "configure terminal",
-            f"router ospf {process_id}",
-            f"passive-interface {interface}"
-        ]
+        if write_memory:
+            commands.append("do write memory")
+
+        return commands
+
 
 class OSPFDefaultRouteModel(BaseConfigModel):
     """
@@ -74,18 +87,20 @@ class OSPFDefaultRouteModel(BaseConfigModel):
         """
         Generates OSPF default-information originate command.
         """
+        commands = []
+        write_memory = kwargs.pop("_write_memory", False)
+
         process_id = kwargs.get("process_id")
         always = kwargs.get("always", False)
 
-        if not process_id:
-            return []
+        if process_id:
+            command = "default-information originate"
+            if always:
+                command += " always"
+            commands.append(f"router ospf {process_id}")
+            commands.append(command)
 
-        command = "default-information originate"
-        if always:
-            command += " always"
+        if write_memory:
+            commands.append("do write memory")
 
-        return [
-            "configure terminal",
-            f"router ospf {process_id}",
-            command
-        ]
+        return commands

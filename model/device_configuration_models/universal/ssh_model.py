@@ -1,63 +1,50 @@
 from model.device_configuration_models.base_config_model import BaseConfigModel
 
 
-class SSHGlobalModel(BaseConfigModel):
+class SSHModel(BaseConfigModel):
     """
-    Model for generating Cisco IOS commands for global SSH parameters.
-    """
-
-    def generate_commands(self, **kwargs) -> list[str]:
-        """
-        Generates commands for domain name, RSA keys, SSH version, timeout, and retries.
-        """
-        commands = ["configure terminal"]
-
-        if kwargs.get('domain_name_enabled') and kwargs.get('domain_name'):
-            commands.append(f"ip domain-name {kwargs.get('domain_name')}")
-
-        if kwargs.get('key_size_enabled') and kwargs.get('key_size'):
-            commands.append(f"crypto key generate rsa modulus {kwargs.get('key_size')}")
-
-        if kwargs.get('ssh_version_enabled') and kwargs.get('ssh_version'):
-            commands.append(f"ip ssh version {kwargs.get('ssh_version')}")
-
-        if kwargs.get('timeout_enabled') and kwargs.get('timeout'):
-            commands.append(f"ip ssh time-out {kwargs.get('timeout')}")
-
-        if kwargs.get('retries_enabled') and kwargs.get('retries'):
-            commands.append(f"ip ssh authentication-retries {kwargs.get('retries')}")
-
-        return commands if len(commands) > 1 else []
-
-
-class SSHAuthModel(BaseConfigModel):
-    """
-    Model for generating Cisco IOS commands for local SSH authentication.
+    Model handling the logic for generating Cisco IOS commands for all SSH configuration sections.
     """
 
-    def generate_commands(self, **kwargs) -> list[str]:
+    def generate_commands(self, **data):
         """
-        Generates commands for creating a local username and secret password.
+        Transforms validated user input dictionaries into a list of Cisco configuration commands based on the section type.
         """
-        commands = ["configure terminal"]
-        if kwargs.get('login_name') and kwargs.get('login_password'):
-            commands.append(f"username {kwargs.get('login_name')} secret {kwargs.get('login_password')}")
-        return commands if len(commands) > 1 else []
+        commands = []
+        write_memory = data.pop("_write_memory", False)
+        config_type = data.get("type")
 
+        if config_type == "ssh_global":
+            if data.get("hostname"):
+                commands.append(f"hostname {data.get('hostname')}")
 
-class SSHVtyModel(BaseConfigModel):
-    """
-    Model for generating Cisco IOS commands for VTY line access.
-    """
+            if data.get("domain_name"):
+                commands.append(f"ip domain-name {data.get('domain_name')}")
 
-    def generate_commands(self, **kwargs) -> list[str]:
-        """
-        Generates commands for VTY range, local login, and SSH transport.
-        """
-        commands = ["configure terminal"]
-        if kwargs.get('vty_enabled'):
-            commands.append(f"line vty {kwargs.get('vty_start')} {kwargs.get('vty_end')}")
-            commands.append("login local")
-            commands.append("transport input ssh")
-            commands.append("exit")
-        return commands if len(commands) > 1 else []
+            if data.get("rsa_modulus"):
+                commands.append(f"crypto key generate rsa modulus {data.get('rsa_modulus')}")
+
+            if data.get("ssh_version"):
+                commands.append(f"ip ssh version {data.get('ssh_version')}")
+
+            if data.get("ssh_timeout_enabled") and data.get("ssh_timeout"):
+                commands.append(f"ip ssh time-out {data.get('ssh_timeout')}")
+
+            if data.get("ssh_retries_enabled") and data.get("ssh_retries"):
+                commands.append(f"ip ssh authentication-retries {data.get('ssh_retries')}")
+
+        elif config_type == "ssh_auth":
+            if data.get("login_name") and data.get("login_password"):
+                commands.append(f"username {data.get('login_name')} privilege 15 secret {data.get('login_password')}")
+
+        elif config_type == "ssh_vty":
+            if data.get("vty_enabled"):
+                commands.append(f"line vty {data.get('vty_start')} {data.get('vty_end')}")
+                commands.append("login local")
+                commands.append("transport input ssh")
+                commands.append("exit")
+
+        if write_memory:
+            commands.append("do write memory")
+
+        return commands

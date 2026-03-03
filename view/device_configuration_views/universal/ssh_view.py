@@ -1,110 +1,117 @@
-"""
-SSH configuration views updated to match the existing UI style of OSPF and Basic Settings.
-"""
+from PySide6.QtWidgets import QCheckBox
 from view.device_configuration_views.base_config_view import BaseConfigView
 from view.device_configuration_views.config_fields import (
-    BaseConfigField, NumberField, DropdownField, PasswordField, RangeField
+    BaseConfigField,
+    DropdownField,
+    PasswordField,
+    PasswordConfirmField,
+    RangedNumberField,
+    RangeField
 )
 
 
 class SSHGlobalSection(BaseConfigView):
     """
-    View handling global SSH parameters like domain, RSA keys, and protocol version.
+    View handling global SSH parameters like hostname, domain, RSA keys, and protocol version.
     """
 
     def __init__(self):
         """
-        Initializes global SSH configuration fields including version selection.
+        Initializes global SSH configuration fields with strict input validation and a write memory toggle.
         """
         super().__init__()
 
-        domain = self.add_field("domain_name", BaseConfigField("Domain Name:"))
-        domain.set_error_message("Domain name cannot be empty.")
+        self.add_field("hostname", BaseConfigField("Hostname:", is_optional=False))
+        self.add_field("domain_name", BaseConfigField("Domain Name:", is_optional=False))
+        self.add_field("rsa_modulus", DropdownField("RSA Key Modulus:", ["1024", "2048", "4096"], is_optional=False))
+        self.add_field("ssh_version", DropdownField("SSH Version:", ["2", "1"], is_optional=False))
+        self.add_field("ssh_timeout", RangedNumberField("SSH Timeout (1-120 seconds):", 1, 120, is_optional=True))
+        self.add_field("ssh_retries", RangedNumberField("Authentication Retries (1-5):", 1, 5, is_optional=True))
 
-        self.add_field("key_size", DropdownField("RSA Key Size:", ["512", "1024", "2048", "4096"]))
-
-        self.add_field("ssh_version", DropdownField("SSH Version:", ["1", "2"]))
-
-        timeout = self.add_field("timeout", NumberField("Timeout (seconds):"))
-        timeout.set_error_message("Timeout must be a valid number.")
-
-        retries = self.add_field("retries", NumberField("Authentication Retries:"))
-        retries.set_error_message("Retries must be a valid number.")
+        self.write_memory_cb = QCheckBox("Write Memory")
+        self.button_layout.insertWidget(0, self.write_memory_cb)
 
     def get_data(self) -> dict:
         """
-        Retrieves data for global SSH settings using radio indicators.
+        Retrieves data for global SSH settings including optional field states and the write memory flag.
         """
         return {
             "type": "ssh_global",
+            "hostname": self.fields["hostname"].get_value(),
             "domain_name": self.fields["domain_name"].get_value(),
-            "domain_name_enabled": self.fields["domain_name"].radio.isChecked(),
-            "key_size": self.fields["key_size"].get_value(),
-            "key_size_enabled": self.fields["key_size"].radio.isChecked(),
+            "rsa_modulus": self.fields["rsa_modulus"].get_value(),
             "ssh_version": self.fields["ssh_version"].get_value(),
-            "ssh_version_enabled": self.fields["ssh_version"].radio.isChecked(),
-            "timeout": self.fields["timeout"].get_value(),
-            "timeout_enabled": self.fields["timeout"].radio.isChecked(),
-            "retries": self.fields["retries"].get_value(),
-            "retries_enabled": self.fields["retries"].radio.isChecked()
+            "ssh_timeout": self.fields["ssh_timeout"].get_value(),
+            "ssh_timeout_enabled": self.fields["ssh_timeout"].radio.isChecked(),
+            "ssh_retries": self.fields["ssh_retries"].get_value(),
+            "ssh_retries_enabled": self.fields["ssh_retries"].radio.isChecked(),
+            "_write_memory": self.write_memory_cb.isChecked()
         }
 
 
 class SSHAuthSection(BaseConfigView):
     """
-    View handling mandatory local SSH user authentication.
+    View handling mandatory local SSH user authentication setup.
     """
 
     def __init__(self):
         """
-        Initializes mandatory login name and password fields.
+        Initializes login name, password, and password confirmation fields along with a write memory toggle.
         """
         super().__init__()
 
-        login_name = self.add_field("login_name", BaseConfigField("Login Name:", is_optional=False))
-        login_name.set_error_message("Login name is required.")
+        self.add_field("login_name", BaseConfigField("Username:", is_optional=False))
+        pwd_field = self.add_field("login_password", PasswordField("Password:", is_optional=False))
+        self.add_field("login_password_confirm",
+                       PasswordConfirmField("Confirm Password:", pwd_field, is_optional=False))
 
-        login_pwd = self.add_field("login_password", PasswordField("Login Password:", is_optional=False))
-        login_pwd.set_error_message("Login password is required.")
+        self.write_memory_cb = QCheckBox("Write Memory")
+        self.button_layout.insertWidget(0, self.write_memory_cb)
 
     def get_data(self) -> dict:
         """
-        Retrieves local authentication data.
+        Retrieves local authentication data and the write memory flag.
         """
         return {
             "type": "ssh_auth",
             "login_name": self.fields["login_name"].get_value(),
-            "login_password": self.fields["login_password"].get_value()
+            "login_password": self.fields["login_password"].get_value(),
+            "_write_memory": self.write_memory_cb.isChecked()
         }
 
 
 class SSHVtySection(BaseConfigView):
     """
-    View handling SSH access configuration for VTY lines.
+    View handling SSH access configuration mapping to VTY lines.
     """
 
     def __init__(self):
         """
-        Initializes VTY range fields.
+        Initializes VTY range fields and the write memory toggle.
         """
         super().__init__()
+
         self.vty_range = RangeField("VTY Line Range:", "vty_start", "vty_end", self)
         self.form_layout.insertWidget(self.form_layout.count() - 1, self.vty_range)
 
+        self.write_memory_cb = QCheckBox("Write Memory")
+        self.button_layout.insertWidget(0, self.write_memory_cb)
+
     def get_data(self) -> dict:
         """
-        Retrieves VTY line configuration data.
+        Retrieves VTY line configuration bounds and the write memory flag.
         """
         return {
             "type": "ssh_vty",
             "vty_start": self.vty_range.start_field.text(),
             "vty_end": self.vty_range.end_field.text(),
-            "vty_enabled": bool(self.vty_range.start_field.text().strip() and self.vty_range.end_field.text().strip())
+            "vty_enabled": bool(self.vty_range.start_field.text().strip() and self.vty_range.end_field.text().strip()),
+            "_write_memory": self.write_memory_cb.isChecked()
         }
 
     def validate_all(self) -> bool:
         """
-        Performs validation on standard fields and the VTY range.
+        Performs validation on standard view fields and the specialized VTY range field.
         """
         return super().validate_all() and self.vty_range.validate()
 

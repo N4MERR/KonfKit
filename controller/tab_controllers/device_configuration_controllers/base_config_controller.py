@@ -30,21 +30,40 @@ class BaseConfigController:
 
     def handle_apply(self, data: dict):
         """
-        Processes the application of configuration data to the active device session.
+        Processes the application of configuration data to the active device session and appends memory write if requested.
         """
-        commands = self.model.generate_commands(**data)
+        write_memory = data.pop("_write_memory", False)
+
+        if hasattr(self.model, 'generate_config'):
+            commands = self.model.generate_config(data)
+        else:
+            commands = self.model.generate_commands(**data)
+
         if not commands:
             return
+
+        if write_memory:
+            commands.append("do write memory")
+
         self._show_progress("Applying configuration...")
         self.model.session_manager.send_command_set(commands)
 
     def handle_preview(self, data: dict):
         """
-        Generates commands from the model and displays them in a preview dialog.
+        Generates commands from the model, appends memory write if requested, and displays them in a preview dialog.
         """
-        commands = self.model.generate_commands(**data)
+        write_memory = data.pop("_write_memory", False)
+
+        if hasattr(self.model, 'generate_config'):
+            commands = self.model.generate_config(data)
+        else:
+            commands = self.model.generate_commands(**data)
+
         if not commands:
             return
+
+        if write_memory:
+            commands.append("do write memory")
 
         preview_text = "\n".join(commands)
         dialog = PreviewDialog(preview_text, self.view)
