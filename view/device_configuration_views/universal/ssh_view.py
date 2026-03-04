@@ -8,7 +8,7 @@ from view.device_configuration_views.config_fields.range_field import RangeField
 
 class SSHConnectionSection(BaseConfigView):
     """
-    View handling global SSH parameters like hostname, domain, RSA keys, and protocol version.
+    View handling global SSH parameters like hostname, domain, RSA keys, protocol version, and VTY lines.
     """
 
     def __init__(self):
@@ -24,6 +24,9 @@ class SSHConnectionSection(BaseConfigView):
         self.add_field("ssh_timeout", RangedNumberField("SSH Timeout (1-120 seconds):", 1, 120, is_optional=True))
         self.add_field("ssh_retries", RangedNumberField("Authentication Retries (1-5):", 1, 5, is_optional=True))
 
+        self.vty_range = RangeField("VTY Line Range:", "vty_start", "vty_end", self, is_optional=False)
+        self.form_layout.insertWidget(self.form_layout.count() - 1, self.vty_range)
+
     def get_data(self) -> dict:
         """
         Retrieves data for global SSH settings including optional field states and the write memory flag.
@@ -38,8 +41,17 @@ class SSHConnectionSection(BaseConfigView):
             "ssh_timeout_enabled": self.fields["ssh_timeout"].radio.isChecked(),
             "ssh_retries": self.fields["ssh_retries"].get_value(),
             "ssh_retries_enabled": self.fields["ssh_retries"].radio.isChecked(),
+            "vty_start": self.vty_range.start_field.text(),
+            "vty_end": self.vty_range.end_field.text(),
+            "vty_enabled": bool(self.vty_range.start_field.text().strip() and self.vty_range.end_field.text().strip()),
             "_write_memory": self.write_memory_cb.isChecked()
         }
+
+    def validate_all(self) -> bool:
+        """
+        Performs validation on standard view fields and the specialized VTY range field.
+        """
+        return super().validate_all() and self.vty_range.validate()
 
 class SSHLoginSection(BaseConfigView):
     """
@@ -53,6 +65,7 @@ class SSHLoginSection(BaseConfigView):
         super().__init__()
 
         self.add_field("login_name", BaseConfigField("Username:", is_optional=False))
+        self.add_field("privilege", RangedNumberField("Privilege (0-15):", 0, 15, is_optional=False))
         pwd_field = self.add_field("login_password", PasswordField("Password:", is_optional=False))
         self.add_field("login_password_confirm",
                        PasswordConfirmField("Confirm Password:", pwd_field, is_optional=False))
@@ -64,41 +77,10 @@ class SSHLoginSection(BaseConfigView):
         return {
             "type": "ssh_auth",
             "login_name": self.fields["login_name"].get_value(),
+            "privilege": self.fields["privilege"].get_value(),
             "login_password": self.fields["login_password"].get_value(),
             "_write_memory": self.write_memory_cb.isChecked()
         }
-
-class SSHVtySection(BaseConfigView):
-    """
-    View handling SSH access configuration mapping to VTY lines.
-    """
-
-    def __init__(self):
-        """
-        Initializes VTY range fields and the write memory toggle.
-        """
-        super().__init__()
-
-        self.vty_range = RangeField("VTY Line Range:", "vty_start", "vty_end", self)
-        self.form_layout.insertWidget(self.form_layout.count() - 1, self.vty_range)
-
-    def get_data(self) -> dict:
-        """
-        Retrieves VTY line configuration bounds and the write memory flag.
-        """
-        return {
-            "type": "ssh_vty",
-            "vty_start": self.vty_range.start_field.text(),
-            "vty_end": self.vty_range.end_field.text(),
-            "vty_enabled": bool(self.vty_range.start_field.text().strip() and self.vty_range.end_field.text().strip()),
-            "_write_memory": self.write_memory_cb.isChecked()
-        }
-
-    def validate_all(self) -> bool:
-        """
-        Performs validation on standard view fields and the specialized VTY range field.
-        """
-        return super().validate_all() and self.vty_range.validate()
 
 class SSHView:
     """
@@ -111,4 +93,3 @@ class SSHView:
         """
         self.global_section = SSHConnectionSection()
         self.auth_section = SSHLoginSection()
-        self.vty_section = SSHVtySection()
