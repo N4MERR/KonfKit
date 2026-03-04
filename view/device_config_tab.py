@@ -10,6 +10,7 @@ from view.device_configuration_views.router.dhcp_view import DHCPView
 from view.device_configuration_views.universal.basic_settings_view import BasicSettingsView
 from view.device_configuration_views.universal.telnet_view import TelnetView
 from view.device_configuration_views.universal.ssh_view import SSHView
+from view.device_configuration_views.router.router_interface_view import RouterInterfaceView
 
 
 class ConfigSection(QWidget):
@@ -205,6 +206,8 @@ class DeviceConfigTab(QWidget):
         self.router_ssh_view = SSHView()
         self.switch_ssh_view = SSHView()
 
+        self.router_interface_view = RouterInterfaceView()
+
         self.ospf_view = OSPFView()
         self.dhcp_view = DHCPView()
 
@@ -365,6 +368,10 @@ class DeviceConfigTab(QWidget):
             "System Setup": {
                 "General Settings": self.router_basic_settings
             },
+            "Interfaces": {
+                "Physical Interfaces": self.router_interface_view.physical,
+                "Subinterfaces": self.router_interface_view.subinterface
+            },
             "SSH": {
                 "SSH Connection": self.router_ssh_view.global_section,
                 "SSH Login": self.router_ssh_view.auth_section
@@ -513,5 +520,5 @@ class DeviceConfigTab(QWidget):
             self.reconnect_btn.show()
 
         for btn in self.findChildren(QPushButton):
-            if btn.text() in ["Apply", "Preview", "Apply Configuration"]:
+            if btn.text() in ["Apply", "Preview", "Apply Configuration", "Load Interfaces"]:
                 btn.setEnabled(is_connected)

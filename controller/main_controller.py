@@ -1,5 +1,8 @@
 from PySide6.QtWidgets import QMessageBox, QApplication
 from PySide6.QtCore import QThread, Signal
+
+from controller.tab_controllers.device_configuration_controllers.router_interface_controller import \
+    RouterInterfaceController
 from view.progress_dialog import ProgressDialog
 from model.network_session_manager import NetworkSessionManager
 from model.terminal_model import TerminalModel
@@ -10,6 +13,7 @@ from model.device_configuration_models.switch.vlan_model import VLANModel
 from model.device_configuration_models.universal.basic_settings_model import BasicSettingsModel
 from model.device_configuration_models.universal.telnet_model import TelnetModel
 from model.device_configuration_models.universal.ssh_model import SSHModel
+from model.device_configuration_models.router.router_interface_model import RouterInterfaceModel
 
 from controller.tab_controllers.terminal_controller import TerminalController
 from controller.tab_controllers.connection_profile_controller import ConnectionProfileController
@@ -116,6 +120,17 @@ class MainController:
         self.switch_ssh_auth_controller = BaseConfigController(
             self.window.device_config_tab.switch_ssh_view.auth_section,
             self.ssh_model.auth_section
+        )
+
+        self.router_interface_model = RouterInterfaceModel(self.session_manager)
+
+        self.router_physical_interface_controller = RouterInterfaceController(
+            self.window.device_config_tab.router_interface_view.physical,
+            self.router_interface_model.physical
+        )
+        self.router_subinterface_controller = RouterInterfaceController(
+            self.window.device_config_tab.router_interface_view.subinterface,
+            self.router_interface_model.subinterface
         )
 
         self.ospf_basic_model = OSPFBasicModel(self.session_manager)
@@ -243,4 +258,5 @@ class MainController:
         self.current_connection_data = connection_data
         netmiko_settings = {k: v for k, v in connection_data.items() if k != "name"}
         name = connection_data.get('name', 'Device')
-        self._start_async_connection(netmiko_settings, f"Connecting to {name}...", is_reconnect=False, connection_data=connection_data)
+        self._start_async_connection(netmiko_settings, f"Connecting to {name}...", is_reconnect=False,
+                                     connection_data=connection_data)
