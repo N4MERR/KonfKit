@@ -6,6 +6,7 @@ from PySide6.QtCore import Signal, Qt
 from view.device_configuration_views.switch.vlan_view import VLANView
 from view.terminal_view import TerminalView
 from view.device_configuration_views.router.ospf_view import OSPFView
+from view.device_configuration_views.router.dhcp_view import DHCPView
 from view.device_configuration_views.universal.basic_settings_view import BasicSettingsView
 from view.device_configuration_views.universal.telnet_view import TelnetView
 from view.device_configuration_views.universal.ssh_view import SSHView
@@ -205,6 +206,7 @@ class DeviceConfigTab(QWidget):
         self.switch_ssh_view = SSHView()
 
         self.ospf_view = OSPFView()
+        self.dhcp_view = DHCPView()
 
         self.vlan_view = VLANView()
 
@@ -371,6 +373,9 @@ class DeviceConfigTab(QWidget):
             "Telnet": {
                 "Authentication": self.router_telnet_view.auth_section,
                 "VTY Lines": self.router_telnet_view.vty_section
+            },
+            "DHCP": {
+                "DHCP Server": self.dhcp_view
             },
             "OSPF": {
                 "Basic Config": self.ospf_view.basic_config,
