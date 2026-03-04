@@ -1,9 +1,10 @@
 from PySide6.QtWidgets import QCheckBox
 from view.device_configuration_views.base_config_view import BaseConfigView
-from view.device_configuration_views.config_fields import (
-    BaseConfigField, IPAddressField, WildcardMaskField, RangedNumberField, InterfaceField
-)
-
+from view.device_configuration_views.config_fields.base_config_field import BaseConfigField
+from view.device_configuration_views.config_fields.ip_address_field import IPAddressField
+from view.device_configuration_views.config_fields.wildcard_mask_field import WildcardMaskField
+from view.device_configuration_views.config_fields.ranged_number_field import RangedNumberField
+from view.device_configuration_views.config_fields.interface_field import InterfaceField
 
 class OSPFBasicView(BaseConfigView):
     """
@@ -37,7 +38,6 @@ class OSPFBasicView(BaseConfigView):
             "_write_memory": self.write_memory_cb.isChecked()
         }
 
-
 class OSPFRouterIdView(BaseConfigView):
     """
     View handling OSPF Router ID configuration.
@@ -65,7 +65,6 @@ class OSPFRouterIdView(BaseConfigView):
             "router_id": self.fields["router_id"].get_value(),
             "_write_memory": self.write_memory_cb.isChecked()
         }
-
 
 class OSPFPassiveInterfaceView(BaseConfigView):
     """
@@ -95,7 +94,6 @@ class OSPFPassiveInterfaceView(BaseConfigView):
             "_write_memory": self.write_memory_cb.isChecked()
         }
 
-
 class OSPFDefaultRouteView(BaseConfigView):
     """
     View handling OSPF default route advertisement.
@@ -123,7 +121,6 @@ class OSPFDefaultRouteView(BaseConfigView):
             "always": self.fields["always"].radio.isChecked(),
             "_write_memory": self.write_memory_cb.isChecked()
         }
-
 
 class OSPFView:
     """

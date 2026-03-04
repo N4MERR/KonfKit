@@ -1,9 +1,8 @@
 from PySide6.QtWidgets import QCheckBox
 from view.device_configuration_views.base_config_view import BaseConfigView
-from view.device_configuration_views.config_fields import (
-    BaseConfigField, PasswordField, RangeField
-)
-
+from view.device_configuration_views.config_fields.base_config_field import BaseConfigField
+from view.device_configuration_views.config_fields.password_field import PasswordField
+from view.device_configuration_views.config_fields.range_field import RangeField
 
 class TelnetAuthSection(BaseConfigView):
     """
@@ -32,7 +31,6 @@ class TelnetAuthSection(BaseConfigView):
             "login_password": self.fields["login_password"].get_value(),
             "_write_memory": self.write_memory_cb.isChecked()
         }
-
 
 class TelnetVtySection(BaseConfigView):
     """
@@ -68,7 +66,6 @@ class TelnetVtySection(BaseConfigView):
         Performs validation on standard fields and the VTY range.
         """
         return super().validate_all() and self.vty_range.validate()
-
 
 class TelnetView:
     """
