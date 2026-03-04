@@ -1,14 +1,11 @@
 from PySide6.QtWidgets import QCheckBox
 from view.device_configuration_views.base_config_view import BaseConfigView
-from view.device_configuration_views.config_fields import (
-    BaseConfigField,
-    DropdownField,
-    PasswordField,
-    PasswordConfirmField,
-    RangedNumberField,
-    RangeField
-)
-
+from view.device_configuration_views.config_fields.base_config_field import BaseConfigField
+from view.device_configuration_views.config_fields.dropdown_field import DropdownField
+from view.device_configuration_views.config_fields.password_field import PasswordField
+from view.device_configuration_views.config_fields.password_confirm_field import PasswordConfirmField
+from view.device_configuration_views.config_fields.ranged_number_field import RangedNumberField
+from view.device_configuration_views.config_fields.range_field import RangeField
 
 class SSHGlobalSection(BaseConfigView):
     """
@@ -48,7 +45,6 @@ class SSHGlobalSection(BaseConfigView):
             "_write_memory": self.write_memory_cb.isChecked()
         }
 
-
 class SSHAuthSection(BaseConfigView):
     """
     View handling mandatory local SSH user authentication setup.
@@ -78,7 +74,6 @@ class SSHAuthSection(BaseConfigView):
             "login_password": self.fields["login_password"].get_value(),
             "_write_memory": self.write_memory_cb.isChecked()
         }
-
 
 class SSHVtySection(BaseConfigView):
     """
@@ -114,7 +109,6 @@ class SSHVtySection(BaseConfigView):
         Performs validation on standard view fields and the specialized VTY range field.
         """
         return super().validate_all() and self.vty_range.validate()
-
 
 class SSHView:
     """

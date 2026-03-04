@@ -1,6 +1,5 @@
 import re
 
-
 class InputValidator:
     """
     Provides static methods for validating various network-related input strings.
@@ -65,3 +64,10 @@ class InputValidator:
         """
         pattern = r"^[A-Za-z]+[\s]?\d+(/\d+)*(\.\d+)?$"
         return bool(re.match(pattern, value))
+
+    @staticmethod
+    def is_not_empty(value: str) -> bool:
+        """
+        Validates that the string is not empty or just whitespace.
+        """
+        return bool(value and value.strip())

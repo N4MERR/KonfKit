@@ -5,6 +5,8 @@ from model.network_session_manager import NetworkSessionManager
 from model.terminal_model import TerminalModel
 from model.device_configuration_models.router.ospf_model import (OSPFBasicModel, OSPFRouterIdModel,
                                                                  OSPFPassiveInterfaceModel, OSPFDefaultRouteModel)
+from model.device_configuration_models.router.dhcp_model import DHCPModel
+from model.device_configuration_models.switch.vlan_model import VLANModel
 from model.device_configuration_models.universal.basic_settings_model import BasicSettingsModel
 from model.device_configuration_models.universal.telnet_model import TelnetAuthModel, TelnetVtyModel
 from model.device_configuration_models.universal.ssh_model import SSHModel
@@ -147,6 +149,18 @@ class MainController:
         self.ospf_default_route_controller = BaseConfigController(
             self.window.device_config_tab.ospf_view.default_route,
             self.ospf_default_route_model
+        )
+
+        self.dhcp_model = DHCPModel(self.session_manager)
+        self.dhcp_controller = BaseConfigController(
+            self.window.device_config_tab.dhcp_view,
+            self.dhcp_model
+        )
+
+        self.vlan_model = VLANModel(self.session_manager)
+        self.vlan_controller = BaseConfigController(
+            self.window.device_config_tab.vlan_view,
+            self.vlan_model
         )
 
         self._setup_connections()
