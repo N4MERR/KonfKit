@@ -8,7 +8,7 @@ from model.device_configuration_models.router.ospf_model import (OSPFBasicModel,
 from model.device_configuration_models.router.dhcp_model import DHCPModel
 from model.device_configuration_models.switch.vlan_model import VLANModel
 from model.device_configuration_models.universal.basic_settings_model import BasicSettingsModel
-from model.device_configuration_models.universal.telnet_model import TelnetAuthModel, TelnetVtyModel
+from model.device_configuration_models.universal.telnet_model import TelnetModel
 from model.device_configuration_models.universal.ssh_model import SSHModel
 
 from controller.tab_controllers.terminal_controller import TerminalController
@@ -78,53 +78,44 @@ class MainController:
             self.basic_settings_model
         )
 
-        self.telnet_auth_model = TelnetAuthModel(self.session_manager)
-        self.telnet_vty_model = TelnetVtyModel(self.session_manager)
+        self.telnet_model = TelnetModel(self.session_manager)
 
-        self.router_telnet_auth_controller = BaseConfigController(
-            self.window.device_config_tab.router_telnet_view.auth_section,
-            self.telnet_auth_model
+        self.router_telnet_connection_controller = BaseConfigController(
+            self.window.device_config_tab.router_telnet_view.connection_section,
+            self.telnet_model.connection_section
         )
-        self.router_telnet_vty_controller = BaseConfigController(
-            self.window.device_config_tab.router_telnet_view.vty_section,
-            self.telnet_vty_model
+        self.router_telnet_login_controller = BaseConfigController(
+            self.window.device_config_tab.router_telnet_view.login_section,
+            self.telnet_model.login_section
         )
 
-        self.switch_telnet_auth_controller = BaseConfigController(
-            self.window.device_config_tab.switch_telnet_view.auth_section,
-            self.telnet_auth_model
+        self.switch_telnet_connection_controller = BaseConfigController(
+            self.window.device_config_tab.switch_telnet_view.connection_section,
+            self.telnet_model.connection_section
         )
-        self.switch_telnet_vty_controller = BaseConfigController(
-            self.window.device_config_tab.switch_telnet_view.vty_section,
-            self.telnet_vty_model
+        self.switch_telnet_login_controller = BaseConfigController(
+            self.window.device_config_tab.switch_telnet_view.login_section,
+            self.telnet_model.login_section
         )
 
         self.ssh_model = SSHModel(self.session_manager)
 
         self.router_ssh_global_controller = BaseConfigController(
             self.window.device_config_tab.router_ssh_view.global_section,
-            self.ssh_model
+            self.ssh_model.global_section
         )
         self.router_ssh_auth_controller = BaseConfigController(
             self.window.device_config_tab.router_ssh_view.auth_section,
-            self.ssh_model
-        )
-        self.router_ssh_vty_controller = BaseConfigController(
-            self.window.device_config_tab.router_ssh_view.vty_section,
-            self.ssh_model
+            self.ssh_model.auth_section
         )
 
         self.switch_ssh_global_controller = BaseConfigController(
             self.window.device_config_tab.switch_ssh_view.global_section,
-            self.ssh_model
+            self.ssh_model.global_section
         )
         self.switch_ssh_auth_controller = BaseConfigController(
             self.window.device_config_tab.switch_ssh_view.auth_section,
-            self.ssh_model
-        )
-        self.switch_ssh_vty_controller = BaseConfigController(
-            self.window.device_config_tab.switch_ssh_view.vty_section,
-            self.ssh_model
+            self.ssh_model.auth_section
         )
 
         self.ospf_basic_model = OSPFBasicModel(self.session_manager)
