@@ -367,12 +367,11 @@ class DeviceConfigTab(QWidget):
             },
             "SSH": {
                 "SSH Connection": self.router_ssh_view.global_section,
-                "SSH Login": self.router_ssh_view.auth_section,
-                "VTY Lines": self.router_ssh_view.vty_section
+                "SSH Login": self.router_ssh_view.auth_section
             },
             "Telnet": {
-                "Authentication": self.router_telnet_view.auth_section,
-                "VTY Lines": self.router_telnet_view.vty_section
+                "Telnet Connection": self.router_telnet_view.connection_section,
+                "Telnet Login": self.router_telnet_view.login_section
             },
             "DHCP": {
                 "DHCP Server": self.dhcp_view
@@ -398,12 +397,11 @@ class DeviceConfigTab(QWidget):
             },
             "SSH": {
                 "Global Settings": self.switch_ssh_view.global_section,
-                "Authentication": self.switch_ssh_view.auth_section,
-                "VTY Lines": self.switch_ssh_view.vty_section
+                "Authentication": self.switch_ssh_view.auth_section
             },
             "Telnet": {
-                "Authentication": self.switch_telnet_view.auth_section,
-                "VTY Lines": self.switch_telnet_view.vty_section
+                "Telnet Connection": self.switch_telnet_view.connection_section,
+                "Telnet Login": self.switch_telnet_view.login_section
             },
             "VLAN": {
                 "VLAN Database": self.vlan_view
