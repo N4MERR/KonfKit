@@ -1,36 +1,14 @@
 from view.device_configuration_views.base_config_view import BaseConfigView
 from view.device_configuration_views.config_fields.base_config_field import BaseConfigField
 from view.device_configuration_views.config_fields.password_field import PasswordField
+from view.device_configuration_views.config_fields.password_confirm_field import PasswordConfirmField
+from view.device_configuration_views.config_fields.ranged_number_field import RangedNumberField
 from view.device_configuration_views.config_fields.range_field import RangeField
 
-class TelnetAuthSection(BaseConfigView):
+
+class TelnetConnectionSection(BaseConfigView):
     """
-    View handling local user credentials for Telnet access.
-    """
-
-    def __init__(self):
-        """
-        Initializes mandatory login name, password fields, and the write memory toggle.
-        """
-        super().__init__()
-
-        self.add_field("login_name", BaseConfigField("Login Name:", is_optional=False))
-        self.add_field("login_password", PasswordField("Login Password:", is_optional=False))
-
-    def get_data(self) -> dict:
-        """
-        Retrieves Telnet authentication data and the write memory flag.
-        """
-        return {
-            "type": "telnet_auth",
-            "login_name": self.fields["login_name"].get_value(),
-            "login_password": self.fields["login_password"].get_value(),
-            "_write_memory": self.write_memory_cb.isChecked()
-        }
-
-class TelnetVtySection(BaseConfigView):
-    """
-    View handling line transport and protocol for Telnet.
+    View handling line transport and VTY lines for Telnet.
     """
 
     def __init__(self):
@@ -39,7 +17,7 @@ class TelnetVtySection(BaseConfigView):
         """
         super().__init__()
 
-        self.vty_range = RangeField("VTY Line Range:", "vty_start", "vty_end", self)
+        self.vty_range = RangeField("VTY Line Range:", "vty_start", "vty_end", self, is_optional=False)
         self.form_layout.insertWidget(self.form_layout.count() - 1, self.vty_range)
 
     def get_data(self) -> dict:
@@ -47,7 +25,7 @@ class TelnetVtySection(BaseConfigView):
         Retrieves Telnet VTY configuration data and the write memory flag.
         """
         return {
-            "type": "telnet_vty",
+            "type": "telnet_connection",
             "vty_start": self.vty_range.start_field.text(),
             "vty_end": self.vty_range.end_field.text(),
             "vty_enabled": bool(self.vty_range.start_field.text().strip() and self.vty_range.end_field.text().strip()),
@@ -60,6 +38,37 @@ class TelnetVtySection(BaseConfigView):
         """
         return super().validate_all() and self.vty_range.validate()
 
+
+class TelnetLoginSection(BaseConfigView):
+    """
+    View handling local user credentials for Telnet access.
+    """
+
+    def __init__(self):
+        """
+        Initializes mandatory login name, privilege, password fields, and the write memory toggle.
+        """
+        super().__init__()
+
+        self.add_field("login_name", BaseConfigField("Username:", is_optional=False))
+        self.add_field("privilege", RangedNumberField("Privilege (0-15):", 0, 15, is_optional=False))
+        pwd_field = self.add_field("login_password", PasswordField("Password:", is_optional=False))
+        self.add_field("login_password_confirm",
+                       PasswordConfirmField("Confirm Password:", pwd_field, is_optional=False))
+
+    def get_data(self) -> dict:
+        """
+        Retrieves Telnet authentication data and the write memory flag.
+        """
+        return {
+            "type": "telnet_login",
+            "login_name": self.fields["login_name"].get_value(),
+            "privilege": self.fields["privilege"].get_value(),
+            "login_password": self.fields["login_password"].get_value(),
+            "_write_memory": self.write_memory_cb.isChecked()
+        }
+
+
 class TelnetView:
     """
     Container aggregating independent Telnet configuration sections.
@@ -69,5 +78,5 @@ class TelnetView:
         """
         Instantiates specific Telnet configuration views.
         """
-        self.auth_section = TelnetAuthSection()
-        self.vty_section = TelnetVtySection()
+        self.connection_section = TelnetConnectionSection()
+        self.login_section = TelnetLoginSection()
