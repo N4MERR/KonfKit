@@ -5,11 +5,12 @@ class RangeField(QWidget):
     Groups two numeric inputs on a single line for ranges (e.g., VTY lines).
     """
 
-    def __init__(self, label_text, start_key, end_key, parent_view, parent=None):
+    def __init__(self, label_text, start_key, end_key, parent_view, is_optional=False, parent=None):
         """
         Initializes the range field.
         """
         super().__init__(parent)
+        self.is_optional = is_optional
         self.layout = QVBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
 
@@ -44,8 +45,14 @@ class RangeField(QWidget):
         Validates the range inputs.
         """
         s, e = self.start_field.text(), self.end_field.text()
-        if not (s.strip() or e.strip()):
+        if not s.strip() and not e.strip():
+            if not self.is_optional:
+                self.highlight_error("Both values are required.")
+                return False
             return True
+        if not s.strip() or not e.strip():
+            self.highlight_error("Both start and end values must be provided.")
+            return False
         if not (s.isdigit() and e.isdigit()):
             self.highlight_error("Both values must be numbers.")
             return False
