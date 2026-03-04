@@ -1,4 +1,3 @@
-from PySide6.QtWidgets import QCheckBox
 from view.device_configuration_views.base_config_view import BaseConfigView
 from view.device_configuration_views.config_fields.base_config_field import BaseConfigField
 from view.device_configuration_views.config_fields.ip_address_field import IPAddressField
@@ -21,9 +20,6 @@ class OSPFBasicView(BaseConfigView):
         self.add_field("network", IPAddressField("Network:", is_optional=False))
         self.add_field("wildcard_mask", WildcardMaskField("Wildcard Mask:", is_optional=False))
         self.add_field("area", RangedNumberField("Area:", 0, 2147483647, is_optional=False))
-
-        self.write_memory_cb = QCheckBox("Write Memory")
-        self.button_layout.insertWidget(0, self.write_memory_cb)
 
     def get_data(self) -> dict:
         """
@@ -52,9 +48,6 @@ class OSPFRouterIdView(BaseConfigView):
         self.add_field("process_id", RangedNumberField("Process ID (1-65535):", 1, 65535, is_optional=False))
         self.add_field("router_id", IPAddressField("Router ID:", is_optional=False))
 
-        self.write_memory_cb = QCheckBox("Write Memory")
-        self.button_layout.insertWidget(0, self.write_memory_cb)
-
     def get_data(self) -> dict:
         """
         Retrieves data for OSPF Router ID configuration.
@@ -80,9 +73,6 @@ class OSPFPassiveInterfaceView(BaseConfigView):
         self.add_field("process_id", RangedNumberField("Process ID (1-65535):", 1, 65535, is_optional=False))
         self.add_field("interface_name", InterfaceField("Interface Name:", is_optional=False))
 
-        self.write_memory_cb = QCheckBox("Write Memory")
-        self.button_layout.insertWidget(0, self.write_memory_cb)
-
     def get_data(self) -> dict:
         """
         Retrieves data for OSPF passive interface configuration.
@@ -107,9 +97,6 @@ class OSPFDefaultRouteView(BaseConfigView):
 
         self.add_field("process_id", RangedNumberField("Process ID (1-65535):", 1, 65535, is_optional=False))
         self.add_field("always", BaseConfigField("Always originate:", is_optional=True))
-
-        self.write_memory_cb = QCheckBox("Write Memory")
-        self.button_layout.insertWidget(0, self.write_memory_cb)
 
     def get_data(self) -> dict:
         """

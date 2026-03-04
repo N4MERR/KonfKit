@@ -1,4 +1,3 @@
-from PySide6.QtWidgets import QCheckBox
 from view.device_configuration_views.base_config_view import BaseConfigView
 from view.device_configuration_views.config_fields.base_config_field import BaseConfigField
 from view.device_configuration_views.config_fields.password_field import PasswordField
@@ -17,9 +16,6 @@ class TelnetAuthSection(BaseConfigView):
 
         self.add_field("login_name", BaseConfigField("Login Name:", is_optional=False))
         self.add_field("login_password", PasswordField("Login Password:", is_optional=False))
-
-        self.write_memory_cb = QCheckBox("Write Memory")
-        self.button_layout.insertWidget(0, self.write_memory_cb)
 
     def get_data(self) -> dict:
         """
@@ -45,9 +41,6 @@ class TelnetVtySection(BaseConfigView):
 
         self.vty_range = RangeField("VTY Line Range:", "vty_start", "vty_end", self)
         self.form_layout.insertWidget(self.form_layout.count() - 1, self.vty_range)
-
-        self.write_memory_cb = QCheckBox("Write Memory")
-        self.button_layout.insertWidget(0, self.write_memory_cb)
 
     def get_data(self) -> dict:
         """

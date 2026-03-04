@@ -366,8 +366,8 @@ class DeviceConfigTab(QWidget):
                 "General Settings": self.router_basic_settings
             },
             "SSH": {
-                "Global Settings": self.router_ssh_view.global_section,
-                "Authentication": self.router_ssh_view.auth_section,
+                "SSH Connection": self.router_ssh_view.global_section,
+                "SSH Login": self.router_ssh_view.auth_section,
                 "VTY Lines": self.router_ssh_view.vty_section
             },
             "Telnet": {

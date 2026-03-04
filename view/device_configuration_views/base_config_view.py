@@ -29,15 +29,16 @@ class BaseConfigView(QWidget):
 
         self.main_layout.addLayout(self.form_layout)
 
-        self.button_layout = QHBoxLayout()
-
         self.write_memory_cb = QCheckBox("Write Memory")
+        self.checkbox_layout = QHBoxLayout()
+        self.checkbox_layout.addStretch()
+        self.checkbox_layout.addWidget(self.write_memory_cb)
 
+        self.button_layout = QHBoxLayout()
         self.preview_button = QPushButton("Preview")
         self.apply_button = QPushButton("Apply")
         self.apply_button.setStyleSheet("font-weight: bold;")
 
-        self.button_layout.addWidget(self.write_memory_cb)
         self.button_layout.addStretch()
         self.button_layout.addWidget(self.preview_button)
         self.button_layout.addWidget(self.apply_button)
@@ -45,6 +46,7 @@ class BaseConfigView(QWidget):
         self.fields = {}
         self.form_layout.addStretch(1)
 
+        self.main_layout.addLayout(self.checkbox_layout)
         self.main_layout.addLayout(self.button_layout)
 
         self.preview_button.clicked.connect(self._on_preview_clicked)

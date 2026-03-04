@@ -1,4 +1,3 @@
-from PySide6.QtWidgets import QCheckBox
 from view.device_configuration_views.base_config_view import BaseConfigView
 from view.device_configuration_views.config_fields.base_config_field import BaseConfigField
 from view.device_configuration_views.config_fields.dropdown_field import DropdownField
@@ -7,7 +6,7 @@ from view.device_configuration_views.config_fields.password_confirm_field import
 from view.device_configuration_views.config_fields.ranged_number_field import RangedNumberField
 from view.device_configuration_views.config_fields.range_field import RangeField
 
-class SSHGlobalSection(BaseConfigView):
+class SSHConnectionSection(BaseConfigView):
     """
     View handling global SSH parameters like hostname, domain, RSA keys, and protocol version.
     """
@@ -24,9 +23,6 @@ class SSHGlobalSection(BaseConfigView):
         self.add_field("ssh_version", DropdownField("SSH Version:", ["2", "1"], is_optional=False))
         self.add_field("ssh_timeout", RangedNumberField("SSH Timeout (1-120 seconds):", 1, 120, is_optional=True))
         self.add_field("ssh_retries", RangedNumberField("Authentication Retries (1-5):", 1, 5, is_optional=True))
-
-        self.write_memory_cb = QCheckBox("Write Memory")
-        self.button_layout.insertWidget(0, self.write_memory_cb)
 
     def get_data(self) -> dict:
         """
@@ -45,7 +41,7 @@ class SSHGlobalSection(BaseConfigView):
             "_write_memory": self.write_memory_cb.isChecked()
         }
 
-class SSHAuthSection(BaseConfigView):
+class SSHLoginSection(BaseConfigView):
     """
     View handling mandatory local SSH user authentication setup.
     """
@@ -60,9 +56,6 @@ class SSHAuthSection(BaseConfigView):
         pwd_field = self.add_field("login_password", PasswordField("Password:", is_optional=False))
         self.add_field("login_password_confirm",
                        PasswordConfirmField("Confirm Password:", pwd_field, is_optional=False))
-
-        self.write_memory_cb = QCheckBox("Write Memory")
-        self.button_layout.insertWidget(0, self.write_memory_cb)
 
     def get_data(self) -> dict:
         """
@@ -88,9 +81,6 @@ class SSHVtySection(BaseConfigView):
 
         self.vty_range = RangeField("VTY Line Range:", "vty_start", "vty_end", self)
         self.form_layout.insertWidget(self.form_layout.count() - 1, self.vty_range)
-
-        self.write_memory_cb = QCheckBox("Write Memory")
-        self.button_layout.insertWidget(0, self.write_memory_cb)
 
     def get_data(self) -> dict:
         """
@@ -119,6 +109,6 @@ class SSHView:
         """
         Instantiates specific SSH configuration views.
         """
-        self.global_section = SSHGlobalSection()
-        self.auth_section = SSHAuthSection()
+        self.global_section = SSHConnectionSection()
+        self.auth_section = SSHLoginSection()
         self.vty_section = SSHVtySection()
