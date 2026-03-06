@@ -7,8 +7,7 @@ from controller.tab_controllers.device_configuration_controllers.router_interfac
 from view.progress_dialog import ProgressDialog
 from model.network_session_manager import NetworkSessionManager
 from model.terminal_model import TerminalModel
-from model.device_configuration_models.router.ospf_model import (OSPFBasicModel, OSPFRouterIdModel,
-                                                                 OSPFPassiveInterfaceModel, OSPFDefaultRouteModel)
+from model.device_configuration_models.router.ospf_model import OSPFModel
 from model.device_configuration_models.router.dhcp_model import DHCPModel
 from model.device_configuration_models.switch.vlan_model import VLANModel
 from model.device_configuration_models.universal.basic_settings_model import BasicSettingsModel
@@ -134,28 +133,21 @@ class MainController:
             self.router_interface_model.subinterface
         )
 
-        self.ospf_basic_model = OSPFBasicModel(self.session_manager)
+        self.ospf_model = OSPFModel(self.session_manager)
+
         self.ospf_basic_controller = BaseConfigController(
             self.window.device_config_tab.ospf_view.basic_config,
-            self.ospf_basic_model
+            self.ospf_model.area_model
         )
 
-        self.ospf_router_id_model = OSPFRouterIdModel(self.session_manager)
         self.ospf_router_id_controller = BaseConfigController(
             self.window.device_config_tab.ospf_view.router_id,
-            self.ospf_router_id_model
+            self.ospf_model.router_id_model
         )
 
-        self.ospf_passive_int_model = OSPFPassiveInterfaceModel(self.session_manager)
         self.ospf_passive_int_controller = BaseConfigController(
             self.window.device_config_tab.ospf_view.passive_interfaces,
-            self.ospf_passive_int_model
-        )
-
-        self.ospf_default_route_model = OSPFDefaultRouteModel(self.session_manager)
-        self.ospf_default_route_controller = BaseConfigController(
-            self.window.device_config_tab.ospf_view.default_route,
-            self.ospf_default_route_model
+            self.ospf_model.passive_interface_model
         )
 
         self.dhcp_model = DHCPModel(self.session_manager)

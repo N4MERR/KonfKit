@@ -218,7 +218,6 @@ class DeviceConfigTab(QWidget):
                 "Basic Config": self.ospf_view.basic_config,
                 "Router ID": self.ospf_view.router_id,
                 "Passive Interfaces": self.ospf_view.passive_interfaces,
-                "Default Route": self.ospf_view.default_route
             }
         }
         self.router_section = ConfigSection(router_items)

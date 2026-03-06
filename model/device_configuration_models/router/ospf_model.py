@@ -1,7 +1,7 @@
 from model.device_configuration_models.base_config_model import BaseConfigModel
 
 
-class OSPFBasicModel(BaseConfigModel):
+class OSPFAreaModel(BaseConfigModel):
     """
     Model for generating Cisco IOS commands for OSPF network advertisements.
     """
@@ -77,30 +77,16 @@ class OSPFPassiveInterfaceModel(BaseConfigModel):
 
         return commands
 
-
-class OSPFDefaultRouteModel(BaseConfigModel):
+class OSPFModel:
     """
-    Model for generating Cisco IOS commands for OSPF default route origination.
+    Wrapper model aggregating physical and subinterface configuration logic.
     """
 
-    def generate_commands(self, **kwargs) -> list[str]:
+    def __init__(self, session_manager):
         """
-        Generates OSPF default-information originate command.
+        Initializes specific interface configuration models.
         """
-        commands = []
-        write_memory = kwargs.pop("_write_memory", False)
+        self.passive_interface_model = OSPFPassiveInterfaceModel(session_manager)
+        self.router_id_model = OSPFRouterIdModel(session_manager)
+        self.area_model = OSPFAreaModel(session_manager)
 
-        process_id = kwargs.get("process_id")
-        always = kwargs.get("always", False)
-
-        if process_id:
-            command = "default-information originate"
-            if always:
-                command += " always"
-            commands.append(f"router ospf {process_id}")
-            commands.append(command)
-
-        if write_memory:
-            commands.append("do write memory")
-
-        return commands

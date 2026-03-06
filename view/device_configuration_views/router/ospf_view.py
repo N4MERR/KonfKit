@@ -84,31 +84,6 @@ class OSPFPassiveInterfaceView(BaseConfigView):
             "_write_memory": self.write_memory_cb.isChecked()
         }
 
-class OSPFDefaultRouteView(BaseConfigView):
-    """
-    View handling OSPF default route advertisement.
-    """
-
-    def __init__(self):
-        """
-        Initializes the OSPF Default Route view with strict parameters.
-        """
-        super().__init__()
-
-        self.add_field("process_id", RangedNumberField("Process ID (1-65535):", 1, 65535, is_optional=False))
-        self.add_field("always", BaseConfigField("Always originate:", is_optional=True))
-
-    def get_data(self) -> dict:
-        """
-        Retrieves data for OSPF default route advertisement using the radio indicator.
-        """
-        return {
-            "type": "default_route",
-            "process_id": self.fields["process_id"].get_value(),
-            "always": self.fields["always"].radio.isChecked(),
-            "_write_memory": self.write_memory_cb.isChecked()
-        }
-
 class OSPFView:
     """
     Container class aggregating OSPF configuration subsections.
@@ -121,4 +96,3 @@ class OSPFView:
         self.basic_config = OSPFBasicView()
         self.router_id = OSPFRouterIdView()
         self.passive_interfaces = OSPFPassiveInterfaceView()
-        self.default_route = OSPFDefaultRouteView()
