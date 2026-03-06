@@ -5,7 +5,7 @@ from view.device_configuration_views.input_fields.password_confirm_field import 
 from view.device_configuration_views.input_fields.multiline_field import MultilineField
 from view.device_configuration_views.input_fields.radio_indicator_field import RadioIndicatorField
 
-class BasicSettingsView(BaseConfigView):
+class SystemSettingsView(BaseConfigView):
     """
     View for basic device configuration like hostname and domain name incorporating memory writing options.
     """

@@ -1,7 +1,7 @@
 from model.device_configuration_models.base_config_model import BaseConfigModel
 
 
-class BasicSettingsModel(BaseConfigModel):
+class SystemSettingsModel(BaseConfigModel):
     """
     Model for generating Cisco IOS commands for basic device settings.
     """
