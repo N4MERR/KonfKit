@@ -1,7 +1,7 @@
 from view.device_configuration_views.base_config_view import BaseConfigView
-from view.device_configuration_views.config_fields.base_config_field import BaseConfigField
-from view.device_configuration_views.config_fields.ip_address_field import IPAddressField
-from view.device_configuration_views.config_fields.subnet_mask_field import SubnetMaskField
+from view.device_configuration_views.input_fields.base_input_field import BaseConfigField
+from view.device_configuration_views.input_fields.ip_address_field import IPAddressField
+from view.device_configuration_views.input_fields.subnet_mask_field import SubnetMaskField
 
 
 class DHCPPoolView(BaseConfigView):

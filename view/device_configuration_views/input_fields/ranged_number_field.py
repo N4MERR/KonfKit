@@ -1,4 +1,4 @@
-from .base_config_field import BaseConfigField
+from .base_input_field import BaseConfigField
 from utils.input_validator import InputValidator
 
 class RangedNumberField(BaseConfigField):

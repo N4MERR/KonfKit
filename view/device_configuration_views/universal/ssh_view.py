@@ -1,10 +1,10 @@
 from view.device_configuration_views.base_config_view import BaseConfigView
-from view.device_configuration_views.config_fields.base_config_field import BaseConfigField
-from view.device_configuration_views.config_fields.dropdown_field import DropdownField
-from view.device_configuration_views.config_fields.password_field import PasswordField
-from view.device_configuration_views.config_fields.password_confirm_field import PasswordConfirmField
-from view.device_configuration_views.config_fields.ranged_number_field import RangedNumberField
-from view.device_configuration_views.config_fields.range_field import RangeField
+from view.device_configuration_views.input_fields.base_input_field import BaseConfigField
+from view.device_configuration_views.input_fields.dropdown_field import DropdownField
+from view.device_configuration_views.input_fields.password_field import PasswordField
+from view.device_configuration_views.input_fields.password_confirm_field import PasswordConfirmField
+from view.device_configuration_views.input_fields.ranged_number_field import RangedNumberField
+from view.device_configuration_views.input_fields.range_field import RangeField
 
 class SSHConnectionSection(BaseConfigView):
     """

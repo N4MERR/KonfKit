@@ -1,9 +1,9 @@
 from view.device_configuration_views.base_config_view import BaseConfigView
-from view.device_configuration_views.config_fields.base_config_field import BaseConfigField
-from view.device_configuration_views.config_fields.password_field import PasswordField
-from view.device_configuration_views.config_fields.password_confirm_field import PasswordConfirmField
-from view.device_configuration_views.config_fields.multiline_field import MultilineField
-from view.device_configuration_views.config_fields.radio_indicator_field import RadioIndicatorField
+from view.device_configuration_views.input_fields.base_input_field import BaseConfigField
+from view.device_configuration_views.input_fields.password_field import PasswordField
+from view.device_configuration_views.input_fields.password_confirm_field import PasswordConfirmField
+from view.device_configuration_views.input_fields.multiline_field import MultilineField
+from view.device_configuration_views.input_fields.radio_indicator_field import RadioIndicatorField
 
 class BasicSettingsView(BaseConfigView):
     """

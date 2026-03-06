@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import QRadioButton
-from .base_config_field import BaseConfigField
+from .base_input_field import BaseConfigField
 
 class ToggleField(BaseConfigField):
     """
