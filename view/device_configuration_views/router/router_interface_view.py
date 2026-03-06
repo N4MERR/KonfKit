@@ -2,7 +2,6 @@ from PySide6.QtWidgets import QPushButton
 from PySide6.QtCore import Signal
 from view.device_configuration_views.base_config_view import BaseConfigView
 from view.device_configuration_views.input_fields.dropdown_field import DropdownField
-from view.device_configuration_views.input_fields.base_input_field import BaseConfigField
 from view.device_configuration_views.input_fields.ip_address_field import IPAddressField
 from view.device_configuration_views.input_fields.subnet_mask_field import SubnetMaskField
 from view.device_configuration_views.input_fields.number_field import NumberField
@@ -84,14 +83,12 @@ class RouterSubinterfaceView(BaseRouterInterfaceView):
         """
         super().__init__()
 
-        self.add_field("subinterface_id", NumberField("Subinterface ID (e.g., 10):", is_optional=False))
+        self.add_field("subinterface_id", NumberField("Subinterface ID:", is_optional=False))
         self.add_field("vlan_id", NumberField("VLAN ID (dot1Q):", is_optional=False))
 
         self.add_field("ip_address", IPAddressField("IP Address:", is_optional=True))
         self.add_field("subnet_mask", SubnetMaskField("Subnet Mask:", is_optional=False))
 
-        self.enable_interface = RadioIndicatorField("Enable Interface (no shutdown)")
-        self.form_layout.insertWidget(self.form_layout.count() - 1, self.enable_interface)
 
     def get_data(self) -> dict:
         """
@@ -105,7 +102,6 @@ class RouterSubinterfaceView(BaseRouterInterfaceView):
             "ip_address": self.fields["ip_address"].get_value(),
             "ip_enabled": self.fields["ip_address"].radio.isChecked(),
             "subnet_mask": self.fields["subnet_mask"].get_value(),
-            "enable_interface": self.enable_interface.isChecked(),
             "_write_memory": self.write_memory_cb.isChecked()
         }
 
