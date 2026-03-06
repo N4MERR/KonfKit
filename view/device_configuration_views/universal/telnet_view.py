@@ -6,7 +6,7 @@ from view.device_configuration_views.input_fields.ranged_number_field import Ran
 from view.device_configuration_views.input_fields.range_field import RangeField
 
 
-class TelnetConnectionSection(BaseConfigView):
+class TelnetConnectionView(BaseConfigView):
     """
     View handling line transport and VTY lines for Telnet.
     """
@@ -39,7 +39,7 @@ class TelnetConnectionSection(BaseConfigView):
         return super().validate_all() and self.vty_range.validate()
 
 
-class TelnetLoginSection(BaseConfigView):
+class TelnetLoginView(BaseConfigView):
     """
     View handling local user credentials for Telnet access.
     """
@@ -78,5 +78,5 @@ class TelnetView:
         """
         Instantiates specific Telnet configuration views.
         """
-        self.connection_section = TelnetConnectionSection()
-        self.login_section = TelnetLoginSection()
+        self.connection_section = TelnetConnectionView()
+        self.login_section = TelnetLoginView()

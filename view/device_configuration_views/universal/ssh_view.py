@@ -6,7 +6,7 @@ from view.device_configuration_views.input_fields.password_confirm_field import 
 from view.device_configuration_views.input_fields.ranged_number_field import RangedNumberField
 from view.device_configuration_views.input_fields.range_field import RangeField
 
-class SSHConnectionSection(BaseConfigView):
+class SSHConnectionView(BaseConfigView):
     """
     View handling global SSH parameters like hostname, domain, RSA keys, protocol version, and VTY lines.
     """
@@ -53,7 +53,7 @@ class SSHConnectionSection(BaseConfigView):
         """
         return super().validate_all() and self.vty_range.validate()
 
-class SSHLoginSection(BaseConfigView):
+class SSHLoginView(BaseConfigView):
     """
     View handling mandatory local SSH user authentication setup.
     """
@@ -91,5 +91,5 @@ class SSHView:
         """
         Instantiates specific SSH configuration views.
         """
-        self.global_section = SSHConnectionSection()
-        self.auth_section = SSHLoginSection()
+        self.global_section = SSHConnectionView()
+        self.auth_section = SSHLoginView()
