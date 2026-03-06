@@ -3,6 +3,7 @@ from PySide6.QtCore import QThread, Signal
 
 from controller.tab_controllers.device_configuration_controllers.router_interface_controller import \
     RouterInterfaceController
+
 from view.progress_dialog import ProgressDialog
 from model.network_session_manager import NetworkSessionManager
 from model.terminal_model import TerminalModel
@@ -28,7 +29,7 @@ class ConnectionWorker(QThread):
 
     def __init__(self, session_manager, settings):
         """
-        Initializes the connection worker.
+        Initializes the connection worker with session management and device settings.
         """
         super().__init__()
         self.session_manager = session_manager
@@ -44,12 +45,12 @@ class ConnectionWorker(QThread):
 
 class MainController:
     """
-    Main application controller that initializes the session manager and sub-controllers.
+    Main application controller that coordinates between models and views while managing sub-controllers.
     """
 
     def __init__(self, window, profile_model):
         """
-        Initializes the main controller with window and profile models.
+        Initializes the session manager and all sub-controllers for different device configurations.
         """
         self.window = window
         self.profile_model = profile_model
@@ -158,9 +159,14 @@ class MainController:
         )
 
         self.dhcp_model = DHCPModel(self.session_manager)
-        self.dhcp_controller = BaseConfigController(
-            self.window.device_config_tab.dhcp_view,
-            self.dhcp_model
+
+        self.dhcp_pool_controller = BaseConfigController(
+            self.window.device_config_tab.dhcp_view.pool_view,
+            self.dhcp_model.dhcp_pool
+        )
+        self.dhcp_excluded_controller = BaseConfigController(
+            self.window.device_config_tab.dhcp_view.excluded_view,
+            self.dhcp_model.dhcp_excluded
         )
 
         self.vlan_model = VLANModel(self.session_manager)

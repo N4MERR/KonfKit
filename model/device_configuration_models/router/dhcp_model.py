@@ -1,100 +1,76 @@
-import re
 from model.device_configuration_models.base_config_model import BaseConfigModel
 
-class DHCPModel(BaseConfigModel):
+
+class DHCPPoolModel(BaseConfigModel):
     """
-    Handles parsing and specific row-level command generation for DHCP configurations.
+    Model for generating Cisco IOS commands for DHCP pool configuration.
     """
 
-    def fetch_and_parse_config(self) -> dict:
+    def generate_commands(self, **kwargs) -> list[str]:
         """
-        Parses the running config to extract current DHCP status.
+        Generates commands for creating and configuring a DHCP pool.
         """
-        raw_output = self.session_manager.send_command("show running-config | section dhcp")
-        parsed_data = {"excluded_addresses": [], "pools": {}}
+        commands = []
 
-        excl_regex = re.compile(r"ip dhcp excluded-address ([\d\.]+)(?:\s+([\d\.]+))?")
-        pool_regex = re.compile(r"ip dhcp pool (\S+)")
-        net_regex = re.compile(r"network ([\d\.]+ [\d\.]+)")
-        gw_regex = re.compile(r"default-router ([\d\.]+)")
+        pool_name = kwargs.get("pool_name")
+        network = kwargs.get("network")
+        mask = kwargs.get("mask")
+        gateway = kwargs.get("gateway")
+        dns = kwargs.get("dns")
+        domain = kwargs.get("domain_name")
 
-        current_pool = None
-        for line in raw_output.splitlines():
-            line = line.strip()
+        if pool_name:
+            commands.append(f"ip dhcp pool {pool_name}")
+            if network and mask:
+                commands.append(f" network {network} {mask}")
+            if gateway:
+                commands.append(f" default-router {gateway}")
+            if dns:
+                commands.append(f" dns-server {dns}")
+            if domain:
+                commands.append(f" domain-name {domain}")
+            commands.append(" exit")
 
-            excl_match = excl_regex.search(line)
-            if excl_match:
-                parsed_data["excluded_addresses"].append(excl_match.groups())
-                continue
+        if kwargs.get("_write_memory"):
+            commands.append("do write memory")
 
-            pool_match = pool_regex.search(line)
-            if pool_match:
-                current_pool = pool_match.group(1)
-                parsed_data["pools"][current_pool] = {"network": "", "default_router": ""}
-                continue
-
-            if current_pool:
-                net_match = net_regex.search(line)
-                if net_match:
-                    parsed_data["pools"][current_pool]["network"] = net_match.group(1)
-
-                gw_match = gw_regex.search(line)
-                if gw_match:
-                    parsed_data["pools"][current_pool]["default_router"] = gw_match.group(1)
-
-        return parsed_data
-
-    def generate_pool_commands(self, data: dict) -> list[str]:
-        """
-        Generates commands for a DHCP pool, including a 'no' command for clean overwrites.
-        """
-        commands = ["configure terminal"]
-        name = data.get("name")
-        commands.append(f"no ip dhcp pool {name}")
-        commands.append(f"ip dhcp pool {name}")
-
-        network = data.get("network")
-        if network:
-            commands.append(f" network {network}")
-
-        default_router = data.get("default_router")
-        if default_router:
-            commands.append(f" default-router {default_router}")
-
-        commands.append(" exit")
-        commands.append("end")
         return commands
 
-    def generate_delete_pool_commands(self, data: dict) -> list[str]:
-        """
-        Generates commands to remove a DHCP pool.
-        """
-        return ["configure terminal", f"no ip dhcp pool {data.get('name')}", "end"]
 
-    def generate_exclusion_commands(self, data: dict) -> list[str]:
+class DHCPExcludedModel(BaseConfigModel):
+    """
+    Model for generating Cisco IOS commands for excluded DHCP addresses.
+    """
+
+    def generate_commands(self, **kwargs) -> list[str]:
         """
-        Generates commands for an excluded address range.
+        Generates commands to exclude specific IP addresses from DHCP allocation.
         """
-        commands = ["configure terminal"]
-        start = data.get("start")
-        end = data.get("end")
-        cmd = f"ip dhcp excluded-address {start}"
-        if end:
-            cmd += f" {end}"
-        commands.append(cmd)
-        commands.append("end")
+        commands = []
+
+        start_ip = kwargs.get("start_ip")
+        end_ip = kwargs.get("end_ip")
+
+        if start_ip:
+            if end_ip:
+                commands.append(f"ip dhcp excluded-address {start_ip} {end_ip}")
+            else:
+                commands.append(f"ip dhcp excluded-address {start_ip}")
+
+        if kwargs.get("_write_memory"):
+            commands.append("do write memory")
+
         return commands
 
-    def generate_delete_exclusion_commands(self, data: dict) -> list[str]:
+
+class DHCPModel:
+    """
+    Container model that holds sub-models for DHCP Pool and DHCP Excluded address configurations.
+    """
+
+    def __init__(self, session_manager):
         """
-        Generates commands to remove an excluded address range.
+        Initializes the DHCP sub-models with the shared network session manager.
         """
-        commands = ["configure terminal"]
-        start = data.get("start")
-        end = data.get("end")
-        cmd = f"no ip dhcp excluded-address {start}"
-        if end:
-            cmd += f" {end}"
-        commands.append(cmd)
-        commands.append("end")
-        return commands
+        self.dhcp_pool = DHCPPoolModel(session_manager)
+        self.dhcp_excluded = DHCPExcludedModel(session_manager)

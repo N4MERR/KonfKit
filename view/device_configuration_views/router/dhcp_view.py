@@ -1,108 +1,76 @@
-from PySide6.QtWidgets import QLabel
-from PySide6.QtCore import Signal
-from view.device_configuration_views.base_table_config_view import BaseTableConfigView
-from view.device_configuration_views.config_table_widget import ConfigTableWidget
-from utils.input_validator import InputValidator
+from view.device_configuration_views.base_config_view import BaseConfigView
+from view.device_configuration_views.config_fields.base_config_field import BaseConfigField
+from view.device_configuration_views.config_fields.ip_address_field import IPAddressField
+from view.device_configuration_views.config_fields.subnet_mask_field import SubnetMaskField
 
-class DHCPView(BaseTableConfigView):
-    """
-    View for managing DHCP with explicit signals for different configuration actions.
-    """
 
-    apply_pool_signal = Signal(dict)
-    delete_pool_signal = Signal(dict)
-    apply_exclusion_signal = Signal(dict)
-    delete_exclusion_signal = Signal(dict)
+class DHCPPoolView(BaseConfigView):
+    """
+    View handling parameters for a DHCP pool including network and optional services.
+    """
 
     def __init__(self):
         """
-        Initializes the view and setups the DHCP tables.
+        Initializes the DHCP pool fields and sets up the standard action buttons.
         """
         super().__init__()
-        self.form_layout.insertWidget(0, QLabel("<b>DHCP Pools:</b>"))
 
-        pool_buttons = [
-            {"text": "Apply", "color": "#2e7d32", "method": self._on_apply_pool},
-            {"text": "Delete", "color": "#d32f2f", "method": self._on_delete_pool}
-        ]
+        self.add_field("pool_name", BaseConfigField("Pool Name:", is_optional=False))
+        self.add_field("network", IPAddressField("Network Address:", is_optional=False))
+        self.add_field("mask", SubnetMaskField("Subnet Mask:", is_optional=False))
+        self.add_field("gateway", IPAddressField("Default Gateway:", is_optional=True))
+        self.add_field("dns", IPAddressField("DNS Server:", is_optional=True))
+        self.add_field("domain_name", BaseConfigField("Domain Name:", is_optional=True))
 
-        self.pool_table = ConfigTableWidget(
-            columns=[
-                {"header": "Pool Name", "key": "name", "validation_method": InputValidator.is_not_empty, "required": True},
-                {"header": "Network", "key": "network", "validation_method": InputValidator.is_not_empty, "required": True},
-                {"header": "Default Router", "key": "default_router", "validation_method": InputValidator.is_valid_ip, "required": False}
-            ],
-            action_buttons=pool_buttons,
-            add_button_text="Add"
-        )
-        self.form_layout.insertWidget(1, self.pool_table)
-        self.form_layout.insertSpacing(2, 30)
-        self.form_layout.insertWidget(3, QLabel("<b>DHCP Excluded Addresses:</b>"))
+    def get_data(self) -> dict:
+        """
+        Retrieves formatted data for DHCP pool configuration.
+        """
+        return {
+            "type": "dhcp_pool",
+            "pool_name": self.fields["pool_name"].get_value(),
+            "network": self.fields["network"].get_value(),
+            "mask": self.fields["mask"].get_value(),
+            "gateway": self.fields["gateway"].get_value() if self.fields["gateway"].radio.isChecked() else None,
+            "dns": self.fields["dns"].get_value() if self.fields["dns"].radio.isChecked() else None,
+            "domain_name": self.fields["domain_name"].get_value() if self.fields["domain_name"].radio.isChecked() else None,
+            "_write_memory": self.write_memory_cb.isChecked()
+        }
 
-        excl_buttons = [
-            {"text": "Apply", "color": "#2e7d32", "method": self._on_apply_exclusion},
-            {"text": "Delete", "color": "#d32f2f", "method": self._on_delete_exclusion}
-        ]
 
-        self.exclusion_table = ConfigTableWidget(
-            columns=[
-                {"header": "Start IP", "key": "start", "validation_method": InputValidator.is_valid_ip, "required": True},
-                {"header": "End IP (Optional)", "key": "end", "validation_method": InputValidator.is_valid_ip, "required": False}
-            ],
-            action_buttons=excl_buttons,
-            add_button_text="Add"
-        )
-        self.form_layout.insertWidget(4, self.exclusion_table)
+class DHCPExcludedView(BaseConfigView):
+    """
+    View handling the exclusion of IP addresses from DHCP pools.
+    """
 
-    def populate_data(self, data: dict):
+    def __init__(self):
         """
-        Populates the tables with parsed device data.
+        Initializes fields for defining excluded addresses and sets up action buttons.
         """
-        pools = [{"name": k, **v} for k, v in data.get("pools", {}).items()]
-        self.pool_table.populate(pools)
-        exclusions = [{"start": s or "", "end": e or ""} for s, e in data.get("excluded_addresses", [])]
-        self.exclusion_table.populate(exclusions)
+        super().__init__()
 
-    def _on_apply_pool(self, button):
-        """
-        Extracts pool row data and emits apply signal.
-        """
-        row = self.pool_table.table.indexAt(button.parent().pos()).row()
-        if self.pool_table._validate_row(row):
-            data = self._get_row_data(self.pool_table, row)
-            self.apply_pool_signal.emit(data)
+        self.add_field("start_ip", IPAddressField("Start IP Address:", is_optional=False))
+        self.add_field("end_ip", IPAddressField("End IP Address (Optional):", is_optional=True))
 
-    def _on_delete_pool(self, button):
+    def get_data(self) -> dict:
         """
-        Extracts pool row data and emits delete signal.
+        Retrieves formatted data for excluded DHCP addresses.
         """
-        row = self.pool_table.table.indexAt(button.parent().pos()).row()
-        data = self._get_row_data(self.pool_table, row)
-        self.delete_pool_signal.emit(data)
-        self.pool_table.table.removeRow(row)
+        return {
+            "type": "dhcp_excluded",
+            "start_ip": self.fields["start_ip"].get_value(),
+            "end_ip": self.fields["end_ip"].get_value() if self.fields["end_ip"].radio.isChecked() else None,
+            "_write_memory": self.write_memory_cb.isChecked()
+        }
 
-    def _on_apply_exclusion(self, button):
+class DHCPView:
+    """
+        Container class aggregating OSPF configuration subsections.
         """
-        Extracts exclusion row data and emits apply signal.
-        """
-        row = self.exclusion_table.table.indexAt(button.parent().pos()).row()
-        if self.exclusion_table._validate_row(row):
-            data = self._get_row_data(self.exclusion_table, row)
-            self.apply_exclusion_signal.emit(data)
 
-    def _on_delete_exclusion(self, button):
+    def __init__(self):
         """
-        Extracts exclusion row data and emits delete signal.
+        Initializes OSPF subsections.
         """
-        row = self.exclusion_table.table.indexAt(button.parent().pos()).row()
-        data = self._get_row_data(self.exclusion_table, row)
-        self.delete_exclusion_signal.emit(data)
-        self.exclusion_table.table.removeRow(row)
-
-    def _get_row_data(self, table_widget, row):
-        """
-        Helper to extract data from a specific table row.
-        """
-        data = {col["key"]: table_widget.table.cellWidget(row, i).text() for i, col in enumerate(table_widget.columns)}
-        data["_write_memory"] = self.write_memory_cb.isChecked()
-        return data
+        self.pool_view = DHCPPoolView()
+        self.excluded_view = DHCPExcludedView()
