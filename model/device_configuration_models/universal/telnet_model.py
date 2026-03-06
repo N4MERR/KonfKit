@@ -15,6 +15,7 @@ class TelnetConnectionModel(BaseConfigModel):
 
         if data.get("vty_enabled"):
             commands.append(f"line vty {data.get('vty_start')} {data.get('vty_end')}")
+            commands.append("login local")
             commands.append("transport input telnet")
             commands.append("exit")
 
@@ -38,7 +39,7 @@ class TelnetLoginModel(BaseConfigModel):
 
         if data.get("login_name") and data.get("login_password"):
             privilege = data.get("privilege")
-            commands.append(f"username {data.get('login_name')} privilege {privilege} password {data.get('login_password')}")
+            commands.append(f"username {data.get('login_name')} privilege {privilege} secret {data.get('login_password')}")
             commands.append("exit")
 
         if write_memory:

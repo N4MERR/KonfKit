@@ -33,6 +33,7 @@ class SSHConnectionModel(BaseConfigModel):
 
         if data.get("vty_enabled"):
             commands.append(f"line vty {data.get('vty_start')} {data.get('vty_end')}")
+            commands.append("login local")
             commands.append("transport input ssh")
             commands.append("exit")
 
