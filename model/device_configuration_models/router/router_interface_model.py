@@ -27,12 +27,12 @@ class BaseRouterInterfaceModel(BaseConfigModel):
 
 class RouterPhysicalInterfaceModel(BaseRouterInterfaceModel):
     """
-    Model handling the command generation for physical router interfaces.
+    Model handling the command generation for dual-stack physical router interfaces.
     """
 
     def generate_commands(self, **data) -> list[str]:
         """
-        Transforms input data into Cisco IOS commands for configuring physical interfaces.
+        Transforms input data into Cisco IOS commands including IPv6 support for physical interfaces.
         """
         commands = []
         write_memory = data.pop("_write_memory", False)
@@ -45,10 +45,15 @@ class RouterPhysicalInterfaceModel(BaseRouterInterfaceModel):
         if data.get("ip_enabled") and data.get("ip_address") and data.get("subnet_mask"):
             commands.append(f"ip address {data.get('ip_address')} {data.get('subnet_mask')}")
 
-        if data.get("enable_interface"):
-            commands.append("no shutdown")
-        else:
-            commands.append("shutdown")
+        if data.get("ipv6_enabled") and data.get("ipv6_address") and data.get("ipv6_prefix"):
+            prefix = data.get("ipv6_prefix").lstrip("/")
+            commands.append(f"ipv6 address {data.get('ipv6_address')}/{prefix}")
+
+        if data.get("enable_interface") is not None:
+            if data.get("enable_interface"):
+                commands.append("no shutdown")
+            else:
+                commands.append("shutdown")
 
         commands.append("exit")
 
@@ -60,12 +65,12 @@ class RouterPhysicalInterfaceModel(BaseRouterInterfaceModel):
 
 class RouterSubinterfaceModel(BaseRouterInterfaceModel):
     """
-    Model handling the command generation for dot1Q subinterfaces.
+    Model handling the command generation for dot1Q dual-stack subinterfaces.
     """
 
     def generate_commands(self, **data) -> list[str]:
         """
-        Transforms input data into Cisco IOS commands for configuring dot1Q subinterfaces.
+        Transforms input data into Cisco IOS commands for configuring dot1Q subinterfaces with IPv6 support.
         """
         commands = []
         write_memory = data.pop("_write_memory", False)
@@ -82,10 +87,15 @@ class RouterSubinterfaceModel(BaseRouterInterfaceModel):
         if data.get("ip_enabled") and data.get("ip_address") and data.get("subnet_mask"):
             commands.append(f"ip address {data.get('ip_address')} {data.get('subnet_mask')}")
 
-        if data.get("enable_interface"):
-            commands.append("no shutdown")
-        else:
-            commands.append("shutdown")
+        if data.get("ipv6_enabled") and data.get("ipv6_address") and data.get("ipv6_prefix"):
+            prefix = data.get("ipv6_prefix").lstrip("/")
+            commands.append(f"ipv6 address {data.get('ipv6_address')}/{prefix}")
+
+        if data.get("enable_interface") is not None:
+            if data.get("enable_interface"):
+                commands.append("no shutdown")
+            else:
+                commands.append("shutdown")
 
         commands.append("exit")
 

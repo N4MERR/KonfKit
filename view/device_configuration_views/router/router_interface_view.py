@@ -3,6 +3,8 @@ from PySide6.QtCore import Signal
 from view.device_configuration_views.base_config_view import BaseConfigView
 from view.device_configuration_views.input_fields.dropdown_field import DropdownField
 from view.device_configuration_views.input_fields.ip_address_field import IPAddressField
+from view.device_configuration_views.input_fields.ipv6_address_field import IPv6AddressField
+from view.device_configuration_views.input_fields.ipv6_prefix_length_field import IPv6PrefixField
 from view.device_configuration_views.input_fields.subnet_mask_field import SubnetMaskField
 from view.device_configuration_views.input_fields.number_field import NumberField
 from view.device_configuration_views.input_fields.radio_indicator_field import RadioIndicatorField
@@ -39,6 +41,30 @@ class BaseRouterInterfaceView(BaseConfigView):
         self.interface_dropdown.input_widget.clear()
         self.interface_dropdown.input_widget.addItems(interfaces)
 
+    def validate_all(self) -> bool:
+        """
+        Overrides base validation to ensure at least one IP protocol is enabled and conditional mask validation.
+        """
+        ipv4_enabled = self.fields["ip_address"].radio.isChecked()
+        ipv6_enabled = self.fields["ipv6_address"].radio.isChecked()
+
+        self.fields["subnet_mask"].is_optional = not ipv4_enabled
+        self.fields["ipv6_prefix"].is_optional = not ipv6_enabled
+
+        base_valid = super().validate_all()
+
+        if not ipv4_enabled and not ipv6_enabled:
+            self.fields["ip_address"].set_error_message("At least one address is required")
+            self.fields["ipv6_address"].set_error_message("At least one address is required")
+            self.fields["ip_address"].highlight_error("At least one address is required")
+            self.fields["ipv6_address"].highlight_error("At least one address is required")
+            return False
+
+        self.fields["ip_address"].set_error_message("Invalid IP address")
+        self.fields["ipv6_address"].set_error_message("Invalid IPv6 address")
+
+        return base_valid
+
 
 class RouterPhysicalInterfaceView(BaseRouterInterfaceView):
     """
@@ -47,19 +73,24 @@ class RouterPhysicalInterfaceView(BaseRouterInterfaceView):
 
     def __init__(self):
         """
-        Initializes fields relevant for physical interfaces.
+        Initializes fields relevant for physical interfaces including dual-stack options.
         """
         super().__init__()
 
-        self.add_field("ip_address", IPAddressField("IP Address:", is_optional=True))
-        self.add_field("subnet_mask", SubnetMaskField("Subnet Mask:", is_optional=False))
+        ipv4_field = IPAddressField("IPv4 Address:", is_optional=True)
+        self.add_field("ip_address", ipv4_field)
+        self.add_field("subnet_mask", SubnetMaskField("Subnet Mask:", is_optional=False, linked_ip_field=ipv4_field))
+
+        ipv6_field = IPv6AddressField("IPv6 Address:", is_optional=True)
+        self.add_field("ipv6_address", ipv6_field)
+        self.add_field("ipv6_prefix", IPv6PrefixField("IPv6 Prefix:", is_optional=False, linked_ip_field=ipv6_field))
 
         self.enable_interface = RadioIndicatorField("Enable Interface (no shutdown)")
         self.form_layout.insertWidget(self.form_layout.count() - 1, self.enable_interface)
 
     def get_data(self) -> dict:
         """
-        Collects physical interface configuration data and optional states.
+        Collects physical interface configuration data for both IP versions and optional states.
         """
         return {
             "type": "physical",
@@ -67,6 +98,9 @@ class RouterPhysicalInterfaceView(BaseRouterInterfaceView):
             "ip_address": self.fields["ip_address"].get_value(),
             "ip_enabled": self.fields["ip_address"].radio.isChecked(),
             "subnet_mask": self.fields["subnet_mask"].get_value(),
+            "ipv6_address": self.fields["ipv6_address"].get_value(),
+            "ipv6_enabled": self.fields["ipv6_address"].radio.isChecked(),
+            "ipv6_prefix": self.fields["ipv6_prefix"].get_value(),
             "enable_interface": self.enable_interface.isChecked(),
             "_write_memory": self.write_memory_cb.isChecked()
         }
@@ -79,20 +113,24 @@ class RouterSubinterfaceView(BaseRouterInterfaceView):
 
     def __init__(self):
         """
-        Initializes fields relevant for dot1Q subinterfaces.
+        Initializes fields relevant for dot1Q subinterfaces including dual-stack options.
         """
         super().__init__()
 
         self.add_field("subinterface_id", NumberField("Subinterface ID:", is_optional=False))
         self.add_field("vlan_id", NumberField("VLAN ID (dot1Q):", is_optional=False))
 
-        self.add_field("ip_address", IPAddressField("IP Address:", is_optional=True))
-        self.add_field("subnet_mask", SubnetMaskField("Subnet Mask:", is_optional=False))
+        ipv4_field = IPAddressField("IPv4 Address:", is_optional=True)
+        self.add_field("ip_address", ipv4_field)
+        self.add_field("subnet_mask", SubnetMaskField("Subnet Mask:", is_optional=False, linked_ip_field=ipv4_field))
 
+        ipv6_field = IPv6AddressField("IPv6 Address:", is_optional=True)
+        self.add_field("ipv6_address", ipv6_field)
+        self.add_field("ipv6_prefix", IPv6PrefixField("IPv6 Prefix:", is_optional=False, linked_ip_field=ipv6_field))
 
     def get_data(self) -> dict:
         """
-        Collects subinterface configuration data and optional states.
+        Collects subinterface configuration data for both IP versions and optional states.
         """
         return {
             "type": "subinterface",
@@ -102,6 +140,9 @@ class RouterSubinterfaceView(BaseRouterInterfaceView):
             "ip_address": self.fields["ip_address"].get_value(),
             "ip_enabled": self.fields["ip_address"].radio.isChecked(),
             "subnet_mask": self.fields["subnet_mask"].get_value(),
+            "ipv6_address": self.fields["ipv6_address"].get_value(),
+            "ipv6_enabled": self.fields["ipv6_address"].radio.isChecked(),
+            "ipv6_prefix": self.fields["ipv6_prefix"].get_value(),
             "_write_memory": self.write_memory_cb.isChecked()
         }
 
