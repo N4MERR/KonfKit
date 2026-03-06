@@ -65,12 +65,12 @@ class DHCPExcludedView(BaseConfigView):
 
 class DHCPView:
     """
-        Container class aggregating OSPF configuration subsections.
+        Container class aggregating DHCP configuration subsections.
         """
 
     def __init__(self):
         """
-        Initializes OSPF subsections.
+        Initializes DHCP subsections.
         """
         self.pool_view = DHCPPoolView()
         self.excluded_view = DHCPExcludedView()
