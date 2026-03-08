@@ -1,116 +1,165 @@
-import logging
 import threading
+import os
 from PySide6.QtCore import QObject, Signal
+from PySide6.QtWidgets import QMessageBox
 from utils.exceptions import CiscoToolError
-from model.password_resetter import PasswordResetter
+from utils.cisco_devices import Devices
+from model.password_reset_model import PasswordResetModel
 from model.port_manager import PortManager
 
-logger = logging.getLogger(__name__)
 
 class PasswordResetController(QObject):
     """
-    Controller for the Password Reset tab managing connection logic and reset execution.
+    Orchestrates password reset by handling serial connection and delegating execution to the model.
+    Operates as a standalone QObject controller independent of BaseConfigController.
     """
     reset_finished = Signal(bool, str)
 
-    def __init__(self, tab_view, serial_manager, error_callback):
+    def __init__(self, tab_view, session_manager, error_callback):
+        """
+        Initializes the standalone controller with dependencies.
+        """
         super().__init__()
         self.view = tab_view
-        self.serial_manager = serial_manager
+        self.model = PasswordResetModel()
+        self.session_manager = session_manager
         self.show_error = error_callback
-        self.resetter = PasswordResetter()
         self.port_manager = PortManager()
         self._is_connected = False
-        self._connect_signals()
-        self._init_data()
 
-    def _connect_signals(self):
-        self.view.get_connect_button().clicked.connect(self.handle_connection_toggle)
-        self.view.get_confirm_button().clicked.connect(self.handle_reset_request)
-        self.view.get_refresh_button().clicked.connect(self.refresh_ports)
+        self._setup_signals()
+        self._load_initial_data()
+        self._bind_terminal()
+
+    def _setup_signals(self):
+        """
+        Wires UI events to functional logic.
+        Links custom combo box signals to dynamic port refreshing.
+        """
+        self.view.connect_button.clicked.connect(self.toggle_connection)
+        self.view.serial_line_input.about_to_show.connect(self.refresh_ports)
+        self.view.submit_btn.clicked.connect(self.apply_configuration)
         self.reset_finished.connect(self.on_reset_finished)
 
-    def _init_data(self):
-        self.refresh_ports()
-        from utils.cisco_devices import Devices
+    def _bind_terminal(self):
+        """
+        Connects the active session stream to the local terminal view panel.
+        """
+        if hasattr(self.session_manager, 'terminal_output_signal'):
+            self.session_manager.terminal_output_signal.connect(self.view.terminal_view.append_output)
+
+    def _load_initial_data(self):
+        """
+        Populates standard static fields on load.
+        Loads devices from the JSON file into memory and populates the UI once.
+        Ensures the correct relative path to the devices.json file is used.
+        """
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        devices_path = os.path.join(base_dir, "devices.json")
+
+        Devices.load_from_json(devices_path)
         device_models = [d.model for d in Devices.get_all()]
-        self.view.set_device_list(device_models)
-        self.view.set_baud_rate_list(["9600", "19200", "38400", "57600", "115200"])
+
+        self.view.device_selector.clear()
+        self.view.device_selector.addItems(device_models)
 
     def refresh_ports(self):
+        """
+        Dynamically updates the list of available COM ports when the dropdown is clicked.
+        Preserves the currently selected text if it remains available.
+        """
+        current_port = self.view.serial_line_input.currentText()
         ports = [p.device for p in self.port_manager.list_ports()]
-        self.view.set_port_list(ports)
 
-    def handle_connection_toggle(self):
+        self.view.serial_line_input.clear()
+        self.view.serial_line_input.addItems(ports)
+
+        if current_port in ports:
+            self.view.serial_line_input.setCurrentText(current_port)
+
+    def toggle_connection(self):
+        """
+        Manages the NetworkSessionManager serial connection state.
+        """
         if self._is_connected:
-            self.serial_manager.close_connection()
+            self.session_manager.close_connection()
             self._is_connected = False
-            self.view.update_status_led(False)
+            self.model.session_manager = None
+            self.view.update_connection_state(False)
             return
 
+        port = self.view.serial_line_input.currentText()
+        baud_text = self.view.baud_rate_input.currentText()
+        device_model = self.view.device_selector.currentText()
+
         missing = []
-        if not self.view.get_port(): missing.append("COM Port")
-        if not self.view.get_baud_rate(): missing.append("Baud Rate")
-        if not self.view.get_selected_device(): missing.append("Device Model")
+        if not port: missing.append("COM Port")
+        if not baud_text: missing.append("Baud Rate")
+        if not device_model: missing.append("Device Model")
 
         if missing:
             self.show_error(f"Missing settings: {', '.join(missing)}")
             return
 
-        try:
-            self.serial_manager.port = self.view.get_port()
-            self.serial_manager.baud_rate = self.view.get_baud_rate()
-            self.serial_manager.open_serial_connection()
+        params = {
+            "device_type": "cisco_ios_serial",
+            "serial_settings": {"port": port, "baudrate": int(baud_text)}
+        }
+
+        success, message = self.session_manager.connect_device(params)
+        if success:
             self._is_connected = True
-            self.view.update_status_led(True)
-        except Exception as e:
-            self.show_error(f"Failed to connect: {str(e)}")
+            self.model.session_manager = self.session_manager
+            self.view.update_connection_state(True)
+        else:
+            self.show_error(message)
 
-    def handle_reset_request(self):
-        try:
-            if not self._is_connected:
-                raise CiscoToolError("Please connect to a device first.")
+    def apply_configuration(self):
+        """
+        Retrieves parameters from the view and triggers the hardware reset thread.
+        """
+        if not self._is_connected:
+            self.show_error("Please connect via Serial first.")
+            return
 
-            device_model = self.view.get_selected_device()
-            from utils.cisco_devices import Devices
-            device = next((d for d in Devices.get_all() if d.model == device_model), None)
+        device_model = self.view.device_selector.currentText()
+        device = next((d for d in Devices.get_all() if d.model == device_model), None)
 
-            if not device:
-                raise CiscoToolError("Invalid device model selected.")
+        if not device:
+            self.show_error("Invalid device model selected.")
+            return
 
-            self.resetter.remove_privileged_exec_mode_password = self.view.is_remove_enable_checked()
-            self.resetter.remove_line_console_password = self.view.is_remove_console_checked()
-            self.resetter.set_new_privileged_exec_mode_password = self.view.is_set_new_enable_checked()
-            self.resetter.new_privileged_exec_mode_password = self.view.get_new_enable_pass()
-            self.resetter.encrypt_enable_password = self.view.is_encrypt_enable_checked()
-            self.resetter.set_new_line_console_password = self.view.is_set_new_console_checked()
-            self.resetter.new_line_console_password = self.view.get_new_console_pass()
+        data = self.view.get_data()
 
-            self.view.set_ui_locked(True)
-            threading.Thread(target=self._run_reset_thread, args=(device,), daemon=True).start()
+        self.model.remove_privileged_exec_mode_password = data.get("remove_enable", False)
+        self.model.remove_line_console_password = data.get("remove_console", False)
+        self.model.set_new_privileged_exec_mode_password = data.get("set_new_enable", False)
+        self.model.new_privileged_exec_mode_password = data.get("new_enable_password", "")
+        self.model.encrypt_enable_password = data.get("encrypt_enable", False)
+        self.model.set_new_line_console_password = data.get("set_new_console", False)
+        self.model.new_line_console_password = data.get("new_console_password", "")
 
-        except CiscoToolError as e:
-            self.show_error(str(e))
-            self.view.set_ui_locked(False)
-        except Exception as e:
-            logger.critical(f"System Error: {e}", exc_info=True)
-            self.show_error("An unexpected internal application error occurred.")
-            self.view.set_ui_locked(False)
+        self.view.toggle_input_elements(False)
+        threading.Thread(target=self._run_reset_thread, args=(device,), daemon=True).start()
 
     def _run_reset_thread(self, device):
+        """
+        Executes the hardware reset sequence in a background thread.
+        """
         try:
-            self.resetter.reset_password(self.serial_manager, device)
+            self.model.reset_password(device)
             self.reset_finished.emit(True, "Password reset completed successfully.")
-        except CiscoToolError as e:
-            self.reset_finished.emit(False, str(e))
         except Exception as e:
-            logger.error(f"Thread error: {e}", exc_info=True)
-            self.reset_finished.emit(False, "A hardware communication error occurred.")
+            self.reset_finished.emit(False, str(e))
 
     def on_reset_finished(self, success, message):
-        self.view.set_ui_locked(False)
+        """
+        Restores the UI state.
+        """
+        self.view.toggle_input_elements(True)
         if success:
-            from PySide6.QtWidgets import QMessageBox
             QMessageBox.information(self.view, "Success", message)
+            self._is_connected = False
+            self.view.update_connection_state(False)
         else:
             self.show_error(message)
