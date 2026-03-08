@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, QTextEdit, QCheckBox, QLabel, QComboBox
 from PySide6.QtCore import Qt, QEvent
 
-class BaseConfigField(QWidget):
+class BaseInputField(QWidget):
     """
     Base class for specific configuration fields providing validation and error reporting.
     """

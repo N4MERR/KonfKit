@@ -1,8 +1,8 @@
 from PySide6.QtWidgets import QLineEdit, QPushButton, QHBoxLayout
 from PySide6.QtCore import Qt
-from .base_input_field import BaseConfigField
+from .base_input_field import BaseInputField
 
-class PasswordField(BaseConfigField):
+class PasswordField(BaseInputField):
     """
     Field with hidden text and a toggle button to show/hide.
     """

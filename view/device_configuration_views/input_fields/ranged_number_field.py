@@ -1,7 +1,7 @@
-from .base_input_field import BaseConfigField
+from .base_input_field import BaseInputField
 from utils.input_validator import InputValidator
 
-class RangedNumberField(BaseConfigField):
+class RangedNumberField(BaseInputField):
     """
     Field validated for numeric input within a specific range.
     """

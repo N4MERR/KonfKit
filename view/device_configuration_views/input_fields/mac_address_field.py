@@ -1,7 +1,7 @@
-from .base_input_field import BaseConfigField
+from .base_input_field import BaseInputField
 from utils.input_validator import InputValidator
 
-class MacAddressField(BaseConfigField):
+class MacAddressField(BaseInputField):
     """
     Field validated for standard Cisco MAC address formats.
     """

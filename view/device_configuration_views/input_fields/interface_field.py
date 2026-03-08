@@ -1,7 +1,7 @@
-from .base_input_field import BaseConfigField
+from .base_input_field import BaseInputField
 from utils.input_validator import InputValidator
 
-class InterfaceField(BaseConfigField):
+class InterfaceField(BaseInputField):
     """
     Field validated for standard Cisco interface names.
     """

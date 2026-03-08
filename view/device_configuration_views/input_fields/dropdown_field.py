@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import QComboBox
-from .base_input_field import BaseConfigField
+from .base_input_field import BaseInputField
 
-class DropdownField(BaseConfigField):
+class DropdownField(BaseInputField):
     """
     Field using a QComboBox for selection.
     """

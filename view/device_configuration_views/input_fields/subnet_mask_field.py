@@ -1,8 +1,8 @@
-from .base_input_field import BaseConfigField
+from .base_input_field import BaseInputField
 from utils.input_validator import InputValidator
 
 
-class SubnetMaskField(BaseConfigField):
+class SubnetMaskField(BaseInputField):
     """
     Field validated for contiguous subnet mask format.
     """

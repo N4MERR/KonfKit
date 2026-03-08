@@ -1,7 +1,7 @@
-from .base_input_field import BaseConfigField
+from .base_input_field import BaseInputField
 from utils.input_validator import InputValidator
 
-class IPv6PrefixField(BaseConfigField):
+class IPv6PrefixField(BaseInputField):
     """
     Field for IPv6 prefix length that enforces a leading forward slash.
     """

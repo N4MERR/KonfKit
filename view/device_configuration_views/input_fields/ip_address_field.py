@@ -1,7 +1,7 @@
-from .base_input_field import BaseConfigField
+from .base_input_field import BaseInputField
 from utils.input_validator import InputValidator
 
-class IPAddressField(BaseConfigField):
+class IPAddressField(BaseInputField):
     """
     Field validated for IPv4 format.
     """

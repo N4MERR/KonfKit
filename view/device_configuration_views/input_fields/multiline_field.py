@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import QTextEdit
-from .base_input_field import BaseConfigField
+from .base_input_field import BaseInputField
 
-class MultilineField(BaseConfigField):
+class MultilineField(BaseInputField):
     """
     Field using QTextEdit for multi-line configurations.
     """

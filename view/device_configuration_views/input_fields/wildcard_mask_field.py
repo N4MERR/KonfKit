@@ -1,7 +1,7 @@
-from .base_input_field import BaseConfigField
+from .base_input_field import BaseInputField
 from utils.input_validator import InputValidator
 
-class WildcardMaskField(BaseConfigField):
+class WildcardMaskField(BaseInputField):
     """
     Field validated for contiguous wildcard mask format.
     """
