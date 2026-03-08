@@ -1,5 +1,5 @@
 from view.device_configuration_views.base_config_view import BaseConfigView
-from view.device_configuration_views.input_fields.base_input_field import BaseConfigField
+from view.device_configuration_views.input_fields.base_input_field import BaseInputField
 from view.device_configuration_views.input_fields.ip_address_field import IPAddressField
 from view.device_configuration_views.input_fields.wildcard_mask_field import WildcardMaskField
 from view.device_configuration_views.input_fields.ranged_number_field import RangedNumberField

@@ -1,5 +1,5 @@
 from view.device_configuration_views.base_config_view import BaseConfigView
-from view.device_configuration_views.input_fields.base_input_field import BaseConfigField
+from view.device_configuration_views.input_fields.base_input_field import BaseInputField
 from view.device_configuration_views.input_fields.dropdown_field import DropdownField
 from view.device_configuration_views.input_fields.password_field import PasswordField
 from view.device_configuration_views.input_fields.password_confirm_field import PasswordConfirmField
@@ -17,8 +17,8 @@ class SSHConnectionView(BaseConfigView):
         """
         super().__init__()
 
-        self.add_field("hostname", BaseConfigField("Hostname:", is_optional=False))
-        self.add_field("domain_name", BaseConfigField("Domain Name:", is_optional=False))
+        self.add_field("hostname", BaseInputField("Hostname:", is_optional=False))
+        self.add_field("domain_name", BaseInputField("Domain Name:", is_optional=False))
         self.add_field("rsa_modulus", DropdownField("RSA Key Modulus:", ["1024", "2048", "4096"], is_optional=False))
         self.add_field("ssh_version", DropdownField("SSH Version:", ["2", "1"], is_optional=False))
         self.add_field("ssh_timeout", RangedNumberField("SSH Timeout (1-120 seconds):", 1, 120, is_optional=True))
@@ -64,7 +64,7 @@ class SSHLoginView(BaseConfigView):
         """
         super().__init__()
 
-        self.add_field("login_name", BaseConfigField("Username:", is_optional=False))
+        self.add_field("login_name", BaseInputField("Username:", is_optional=False))
         self.add_field("privilege", RangedNumberField("Privilege (0-15):", 0, 15, is_optional=False))
         pwd_field = self.add_field("login_password", PasswordField("Password:", is_optional=False))
         self.add_field("login_password_confirm",

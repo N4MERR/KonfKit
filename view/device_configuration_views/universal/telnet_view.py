@@ -1,5 +1,5 @@
 from view.device_configuration_views.base_config_view import BaseConfigView
-from view.device_configuration_views.input_fields.base_input_field import BaseConfigField
+from view.device_configuration_views.input_fields.base_input_field import BaseInputField
 from view.device_configuration_views.input_fields.password_field import PasswordField
 from view.device_configuration_views.input_fields.password_confirm_field import PasswordConfirmField
 from view.device_configuration_views.input_fields.ranged_number_field import RangedNumberField
@@ -50,7 +50,7 @@ class TelnetLoginView(BaseConfigView):
         """
         super().__init__()
 
-        self.add_field("login_name", BaseConfigField("Username:", is_optional=False))
+        self.add_field("login_name", BaseInputField("Username:", is_optional=False))
         self.add_field("privilege", RangedNumberField("Privilege (0-15):", 0, 15, is_optional=False))
         pwd_field = self.add_field("login_password", PasswordField("Password:", is_optional=False))
         self.add_field("login_password_confirm",
