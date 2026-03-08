@@ -4,6 +4,7 @@ from PySide6.QtWidgets import (QWidget, QGroupBox, QVBoxLayout, QHBoxLayout,
 from PySide6.QtCore import Qt, Signal
 from view.terminal_view import TerminalView
 from view.device_configuration_views.input_fields.password_field import PasswordField
+from utils.cisco_devices import Devices
 
 
 class ClickableComboBox(QComboBox):
@@ -35,6 +36,7 @@ class PasswordResetView(QWidget):
         self._setup_ui()
         self._connect_ui_constraints()
         self._set_initial_state()
+        self._populate_device_models()
 
     def _setup_ui(self):
         """
@@ -96,7 +98,7 @@ class PasswordResetView(QWidget):
         layout.addWidget(self.baud_rate_input)
 
         layout.addWidget(QLabel("Device Model:"))
-        self.device_selector = ClickableComboBox()
+        self.device_selector = QComboBox()
         self.device_selector.setPlaceholderText("Select Device Model...")
         layout.addWidget(self.device_selector)
 
@@ -160,6 +162,14 @@ class PasswordResetView(QWidget):
         self.encrypt_enable_checkbox.setEnabled(False)
         self.new_console_password_field.setEnabled(False)
         self._apply_disabled_styles(True)
+
+    def _populate_device_models(self):
+        """
+        Fetches the hardware list from the central configuration and populates the model selector.
+        """
+        devices = Devices.get_all()
+        model_names = [device.model for device in devices]
+        self.device_selector.addItems(model_names)
 
     def _apply_disabled_styles(self, disabled: bool):
         """
@@ -243,6 +253,7 @@ class PasswordResetView(QWidget):
         Gathers data from checkboxes and standard fields.
         """
         return {
+            "device_model": self.device_selector.currentText(),
             "remove_enable": self.remove_enable_checkbox.isChecked(),
             "set_new_enable": self.set_new_enable_checkbox.isChecked(),
             "encrypt_enable": self.encrypt_enable_checkbox.isChecked(),

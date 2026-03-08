@@ -1,8 +1,6 @@
 import threading
-import os
 from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import QMessageBox
-from utils.exceptions import CiscoToolError
 from utils.cisco_devices import Devices
 from model.password_reset_model import PasswordResetModel
 from model.port_manager import PortManager
@@ -18,6 +16,7 @@ class PasswordResetController(QObject):
     def __init__(self, tab_view, session_manager, error_callback):
         """
         Initializes the standalone controller with dependencies.
+        Populates static device data immediately on startup.
         """
         super().__init__()
         self.view = tab_view
@@ -34,7 +33,7 @@ class PasswordResetController(QObject):
     def _setup_signals(self):
         """
         Wires UI events to functional logic.
-        Links custom combo box signals to dynamic port refreshing.
+        Only the serial line input is refreshed dynamically.
         """
         self.view.connect_button.clicked.connect(self.toggle_connection)
         self.view.serial_line_input.about_to_show.connect(self.refresh_ports)
@@ -50,18 +49,13 @@ class PasswordResetController(QObject):
 
     def _load_initial_data(self):
         """
-        Populates standard static fields on load.
-        Loads devices from the JSON file into memory and populates the UI once.
-        Ensures the correct relative path to the devices.json file is used.
+        Loads the centralized device list from cisco_devices and populates the UI once at startup.
         """
-        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-        devices_path = os.path.join(base_dir, "devices.json")
-
-        Devices.load_from_json(devices_path)
         device_models = [d.model for d in Devices.get_all()]
 
-        self.view.device_selector.clear()
-        self.view.device_selector.addItems(device_models)
+        if device_models:
+            self.view.device_selector.addItems(device_models)
+            self.view.device_selector.setCurrentIndex(-1)
 
     def refresh_ports(self):
         """
