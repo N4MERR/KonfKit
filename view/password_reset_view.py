@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import (QWidget, QGroupBox, QVBoxLayout, QHBoxLayout,
                                QLabel, QComboBox, QPushButton, QCheckBox,
                                QScrollArea, QSizePolicy)
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QEvent
 from view.terminal_view import TerminalView
 from view.device_configuration_views.input_fields.password_field import PasswordField
 from view.device_configuration_views.input_fields.port_combobox import PortComboBox
@@ -77,15 +77,30 @@ class PasswordResetView(QWidget):
         self.port_input = PortComboBox()
         layout.addWidget(self.port_input)
 
+        self.port_error = QLabel()
+        self.port_error.setStyleSheet("color: red; font-size: 12px; font-weight: bold;")
+        self.port_error.hide()
+        layout.addWidget(self.port_error)
+
         layout.addWidget(QLabel("Baud Rate:"))
         self.baud_rate_input = QComboBox()
         self.baud_rate_input.addItems(["9600", "19200", "38400", "57600", "115200"])
         layout.addWidget(self.baud_rate_input)
 
+        self.baud_error = QLabel()
+        self.baud_error.setStyleSheet("color: red; font-size: 12px; font-weight: bold;")
+        self.baud_error.hide()
+        layout.addWidget(self.baud_error)
+
         layout.addWidget(QLabel("Device Model:"))
         self.device_selector = QComboBox()
         self.device_selector.setPlaceholderText("Select Device Model...")
         layout.addWidget(self.device_selector)
+
+        self.device_error = QLabel()
+        self.device_error.setStyleSheet("color: red; font-size: 12px; font-weight: bold;")
+        self.device_error.hide()
+        layout.addWidget(self.device_error)
 
         layout.addSpacing(15)
         self.connect_button = QPushButton("Connect")
@@ -94,6 +109,20 @@ class PasswordResetView(QWidget):
 
         layout.addStretch()
         self.left_layout.addWidget(self.groupBox_connection)
+
+        self.port_input.installEventFilter(self)
+        self.baud_rate_input.installEventFilter(self)
+        self.device_selector.installEventFilter(self)
+
+        if hasattr(self.port_input, "currentTextChanged"):
+            self.port_input.currentTextChanged.connect(lambda: self.clear_error(self.port_input, self.port_error))
+        if hasattr(self.port_input, "currentIndexChanged"):
+            self.port_input.currentIndexChanged.connect(lambda: self.clear_error(self.port_input, self.port_error))
+
+        self.baud_rate_input.currentIndexChanged.connect(
+            lambda: self.clear_error(self.baud_rate_input, self.baud_error))
+        self.device_selector.currentIndexChanged.connect(
+            lambda: self.clear_error(self.device_selector, self.device_error))
 
     def _setup_fields(self):
         """
@@ -155,6 +184,51 @@ class PasswordResetView(QWidget):
         devices = Devices.get_all()
         model_names = [device.model for device in devices]
         self.device_selector.addItems(model_names)
+
+    def eventFilter(self, source, event):
+        """
+        Intercepts mouse clicks and focus events on combo boxes to immediately clear validation errors.
+        """
+        if event.type() in (QEvent.MouseButtonPress, QEvent.FocusIn):
+            if source is self.port_input:
+                self.clear_error(self.port_input, self.port_error)
+            elif source is self.baud_rate_input:
+                self.clear_error(self.baud_rate_input, self.baud_error)
+            elif source is self.device_selector:
+                self.clear_error(self.device_selector, self.device_error)
+        return super().eventFilter(source, event)
+
+    def show_field_error(self, field_name: str, message: str):
+        """
+        Visually highlights connection inputs missing required parameters mimicking BaseInputField.
+        """
+        if field_name == "port":
+            self.port_error.setText(message)
+            self.port_error.show()
+            self.port_input.setStyleSheet("border: 1px solid red; background-color: rgba(255, 0, 0, 0.1);")
+        elif field_name == "baud":
+            self.baud_error.setText(message)
+            self.baud_error.show()
+            self.baud_rate_input.setStyleSheet("border: 1px solid red; background-color: rgba(255, 0, 0, 0.1);")
+        elif field_name == "device":
+            self.device_error.setText(message)
+            self.device_error.show()
+            self.device_selector.setStyleSheet("border: 1px solid red; background-color: rgba(255, 0, 0, 0.1);")
+
+    def clear_error(self, field, error_label):
+        """
+        Removes the validation warning state from a specified input node.
+        """
+        error_label.hide()
+        field.setStyleSheet("")
+
+    def clear_all_errors(self):
+        """
+        Purges all validation highlight states from the connection interface.
+        """
+        self.clear_error(self.port_input, self.port_error)
+        self.clear_error(self.baud_rate_input, self.baud_error)
+        self.clear_error(self.device_selector, self.device_error)
 
     def _apply_disabled_styles(self, disabled: bool):
         """

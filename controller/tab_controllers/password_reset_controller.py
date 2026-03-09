@@ -5,6 +5,7 @@ from PySide6.QtWidgets import QMessageBox
 from utils.cisco_devices import Devices
 from model.password_reset_model import PasswordResetModel
 from model.raw_serial_session_manager import RawSerialSessionManager
+from view.progress_dialog import ProgressDialog
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +27,7 @@ class PasswordResetController(QObject):
         self.raw_session_manager = RawSerialSessionManager()
         self.show_error = error_callback
         self._is_connected = False
+        self.progress_dialog = None
 
         self._setup_signals()
         self._load_initial_data()
@@ -111,6 +113,8 @@ class PasswordResetController(QObject):
 
         logger.info("Attempting to initialize connection...")
 
+        self.view.clear_all_errors()
+
         port_text = self.view.port_input.currentText() if hasattr(self.view.port_input, "currentText") else getattr(
             self.view.port_input, "get_value", lambda: "")()
         baud_text = self.view.baud_rate_input.currentText()
@@ -118,15 +122,19 @@ class PasswordResetController(QObject):
 
         logger.info(f"Retrieved connection values - Port: '{port_text}', Baud: '{baud_text}', Model: '{device_model}'")
 
-        missing = []
-        if not port_text: missing.append("COM Port")
-        if not baud_text: missing.append("Baud Rate")
-        if not device_model: missing.append("Device Model")
+        missing = False
+        if not port_text:
+            self.view.show_field_error("port", "COM Port is required.")
+            missing = True
+        if not baud_text:
+            self.view.show_field_error("baud", "Baud Rate is required.")
+            missing = True
+        if not device_model:
+            self.view.show_field_error("device", "Device Model is required.")
+            missing = True
 
         if missing:
-            error_msg = f"Missing settings: {', '.join(missing)}"
-            logger.warning(f"Validation failed. {error_msg}")
-            self._display_error(error_msg)
+            logger.warning("Validation failed for connection settings.")
             return
 
         logger.info(f"Initiating raw serial connection to {port_text} at {baud_text} baud...")
@@ -143,7 +151,8 @@ class PasswordResetController(QObject):
 
     def apply_configuration(self):
         """
-        Retrieves parameters from the view and triggers the hardware reset sequence in a background thread.
+        Retrieves parameters from the view, triggers the hardware reset sequence in a background thread,
+        and displays a blocking modal progress dialog.
         """
         if not self._is_connected:
             self._display_error("Please connect via Serial first.")
@@ -168,6 +177,10 @@ class PasswordResetController(QObject):
 
         self.view.toggle_input_elements(False)
         self.raw_session_manager.clear_buffer()
+
+        self.progress_dialog = ProgressDialog("Executing hardware password reset...", self.view)
+        self.progress_dialog.show()
+
         threading.Thread(target=self._run_reset_thread, args=(device,), daemon=True).start()
 
     def _run_reset_thread(self, device):
@@ -191,7 +204,12 @@ class PasswordResetController(QObject):
     def on_reset_finished(self, success, message):
         """
         Restores the UI state following the execution of the background sequence.
+        Destroys the blocking dialog on completion.
         """
+        if hasattr(self, 'progress_dialog') and self.progress_dialog:
+            self.progress_dialog.close()
+            self.progress_dialog = None
+
         self.view.toggle_input_elements(True)
         if success:
             QMessageBox.information(self.view, "Success", message)
