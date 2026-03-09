@@ -10,7 +10,7 @@ from model.terminal_model import TerminalModel
 from model.device_configuration_models.router.ospf_model import OSPFModel
 from model.device_configuration_models.router.dhcp_model import DHCPModel
 from model.device_configuration_models.switch.vlan_model import VLANModel
-from model.device_configuration_models.universal.basic_settings_model import BasicSettingsModel
+from model.device_configuration_models.universal.system_settings_model import SystemSettingsModel
 from model.device_configuration_models.universal.telnet_model import TelnetModel
 from model.device_configuration_models.universal.ssh_model import SSHModel
 from model.device_configuration_models.router.router_interface_model import RouterInterfaceModel
@@ -18,6 +18,7 @@ from model.device_configuration_models.router.router_interface_model import Rout
 from controller.tab_controllers.terminal_controller import TerminalController
 from controller.tab_controllers.connection_profile_controller import ConnectionProfileController
 from controller.tab_controllers.device_configuration_controllers.base_config_controller import BaseConfigController
+from controller.tab_controllers.password_reset_controller import PasswordResetController
 
 
 class ConnectionWorker(QThread):
@@ -71,7 +72,13 @@ class MainController:
             self.handle_session_start
         )
 
-        self.basic_settings_model = BasicSettingsModel(self.session_manager)
+        self.password_reset_controller = PasswordResetController(
+            self.window.password_reset_tab,
+            self.session_manager,
+            self.window.show_error
+        )
+
+        self.basic_settings_model = SystemSettingsModel(self.session_manager)
 
         self.router_basic_settings_controller = BaseConfigController(
             self.window.device_config_tab.router_basic_settings,
