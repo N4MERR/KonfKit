@@ -1,15 +1,22 @@
-import serial.tools.list_ports
 from PySide6.QtWidgets import QComboBox, QMessageBox, QLineEdit
 from .base_connection_dialog import BaseConnectionDialog
+from view.device_configuration_views.input_fields.port_combobox import PortComboBox
 
 class SerialConnectionDialog(BaseConnectionDialog):
+    """
+    Dialog for configuring and validating a serial connection utilizing a dynamic port selection component.
+    """
     def __init__(self, parent=None):
+        """
+        Initializes the dialog without requiring manual port refreshing.
+        """
         super().__init__("Add Serial Connection", parent)
-        self._refresh_com_ports()
 
     def _add_specific_fields(self):
-        self.port_input = QComboBox()
-        self.port_input.showPopup = self._refresh_ports_and_show_popup
+        """
+        Injects the customized port combobox alongside standard connection inputs into the form layout.
+        """
+        self.port_input = PortComboBox()
 
         self.baud_input = QComboBox()
         self.baud_input.addItems(["9600", "19200", "38400", "57600", "115200"])
@@ -22,31 +29,20 @@ class SerialConnectionDialog(BaseConnectionDialog):
         self.form.addRow("Baud Rate:", self.baud_input)
         self.form.addRow("Console Password:", self.pass_input)
 
-    def _refresh_com_ports(self):
-        current_port = self.port_input.currentText()
-        self.port_input.clear()
-        ports = [port.device for port in serial.tools.list_ports.comports()]
-
-        if not ports:
-            self.port_input.addItem("No ports found")
-            self.port_input.model().item(0).setEnabled(False)
-        else:
-            self.port_input.addItems(ports)
-            if current_port in ports:
-                self.port_input.setCurrentText(current_port)
-
-    def _refresh_ports_and_show_popup(self):
-        self._refresh_com_ports()
-        QComboBox.showPopup(self.port_input)
-
     def _validate_specific(self):
+        """
+        Validates the serial-specific constraints.
+        """
         port_text = self.port_input.currentText().strip()
-        if not port_text or port_text == "No ports found":
+        if not port_text:
             QMessageBox.warning(self, "Error", "A valid Serial Port must be selected.")
             return False
         return True
 
     def get_data(self):
+        """
+        Extracts and formats the provided input data into a structured dictionary.
+        """
         return {
             "name": self.name_input.text().strip(),
             "device_type": "cisco_ios_serial",

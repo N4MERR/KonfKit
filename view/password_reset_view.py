@@ -1,25 +1,11 @@
 from PySide6.QtWidgets import (QWidget, QGroupBox, QVBoxLayout, QHBoxLayout,
                                QLabel, QComboBox, QPushButton, QCheckBox,
                                QScrollArea, QSizePolicy)
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt
 from view.terminal_view import TerminalView
 from view.device_configuration_views.input_fields.password_field import PasswordField
+from view.device_configuration_views.input_fields.port_combobox import PortComboBox
 from utils.cisco_devices import Devices
-
-
-class ClickableComboBox(QComboBox):
-    """
-    A custom QComboBox that emits a signal immediately before its popup is shown.
-    Allows dynamic population of the dropdown list exactly when the user interacts with it.
-    """
-    about_to_show = Signal()
-
-    def showPopup(self):
-        """
-        Overrides the base method to broadcast the expansion event before rendering the list.
-        """
-        self.about_to_show.emit()
-        super().showPopup()
 
 
 class PasswordResetView(QWidget):
@@ -88,9 +74,8 @@ class PasswordResetView(QWidget):
         layout.addSpacing(10)
 
         layout.addWidget(QLabel("COM Port:"))
-        self.serial_line_input = ClickableComboBox()
-        self.serial_line_input.setPlaceholderText("Select Port...")
-        layout.addWidget(self.serial_line_input)
+        self.port_input = PortComboBox()
+        layout.addWidget(self.port_input)
 
         layout.addWidget(QLabel("Baud Rate:"))
         self.baud_rate_input = QComboBox()

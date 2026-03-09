@@ -3,7 +3,6 @@ from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import QMessageBox
 from utils.cisco_devices import Devices
 from model.password_reset_model import PasswordResetModel
-from model.port_manager import PortManager
 
 
 class PasswordResetController(QObject):
@@ -23,7 +22,6 @@ class PasswordResetController(QObject):
         self.model = PasswordResetModel()
         self.session_manager = session_manager
         self.show_error = error_callback
-        self.port_manager = PortManager()
         self._is_connected = False
 
         self._setup_signals()
@@ -33,10 +31,8 @@ class PasswordResetController(QObject):
     def _setup_signals(self):
         """
         Wires UI events to functional logic.
-        Only the serial line input is refreshed dynamically.
         """
         self.view.connect_button.clicked.connect(self.toggle_connection)
-        self.view.serial_line_input.about_to_show.connect(self.refresh_ports)
         self.view.submit_btn.clicked.connect(self.apply_configuration)
         self.reset_finished.connect(self.on_reset_finished)
 
@@ -57,20 +53,6 @@ class PasswordResetController(QObject):
             self.view.device_selector.addItems(device_models)
             self.view.device_selector.setCurrentIndex(-1)
 
-    def refresh_ports(self):
-        """
-        Dynamically updates the list of available COM ports when the dropdown is clicked.
-        Preserves the currently selected text if it remains available.
-        """
-        current_port = self.view.serial_line_input.currentText()
-        ports = [p.device for p in self.port_manager.list_ports()]
-
-        self.view.serial_line_input.clear()
-        self.view.serial_line_input.addItems(ports)
-
-        if current_port in ports:
-            self.view.serial_line_input.setCurrentText(current_port)
-
     def toggle_connection(self):
         """
         Manages the NetworkSessionManager serial connection state.
@@ -82,12 +64,12 @@ class PasswordResetController(QObject):
             self.view.update_connection_state(False)
             return
 
-        port = self.view.serial_line_input.currentText()
+        port_text = self.view.port_input.currentText()
         baud_text = self.view.baud_rate_input.currentText()
         device_model = self.view.device_selector.currentText()
 
         missing = []
-        if not port: missing.append("COM Port")
+        if not port_text: missing.append("COM Port")
         if not baud_text: missing.append("Baud Rate")
         if not device_model: missing.append("Device Model")
 
@@ -97,7 +79,7 @@ class PasswordResetController(QObject):
 
         params = {
             "device_type": "cisco_ios_serial",
-            "serial_settings": {"port": port, "baudrate": int(baud_text)}
+            "serial_settings": {"port": port_text, "baudrate": int(baud_text)}
         }
 
         success, message = self.session_manager.connect_device(params)
