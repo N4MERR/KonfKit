@@ -166,11 +166,9 @@ class PasswordResetView(QWidget):
         if disabled:
             self.submit_btn.setStyleSheet(
                 "background-color: #cccccc; color: #666666; font-weight: bold; border-radius: 5px;")
-            self.terminal_view.setStyleSheet("background-color: #f0f0f0; color: #999999;")
         else:
             self.submit_btn.setStyleSheet(
                 "background-color: #28a745; color: white; font-weight: bold; border-radius: 5px;")
-            self.terminal_view.setStyleSheet("background-color: #000000; color: #00ff00;")
 
     def _on_set_enable_toggled(self, checked: bool):
         """

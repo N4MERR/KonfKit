@@ -43,15 +43,26 @@ class PasswordResetController(QObject):
 
     def _bind_terminal(self):
         """
-        Connects the raw serial stream directly to the local terminal view panel.
+        Connects the raw serial stream directly to the local terminal view panel
+        and captures keystrokes to send back to the device.
         """
         self.raw_session_manager.data_received.connect(self._append_to_terminal)
+        self.view.terminal_view.user_input_received.connect(self._handle_user_input)
+
+    def _handle_user_input(self, text: str):
+        """
+        Forwards manual terminal input directly to the raw serial session.
+        """
+        if self._is_connected and self.raw_session_manager:
+            self.raw_session_manager.write_channel(text)
 
     def _append_to_terminal(self, text: str):
         """
         Dynamically routes received text to the terminal view regardless of the underlying widget implementation.
         """
-        if hasattr(self.view.terminal_view, 'append_text'):
+        if hasattr(self.view.terminal_view, 'display_text'):
+            self.view.terminal_view.display_text(text)
+        elif hasattr(self.view.terminal_view, 'append_text'):
             self.view.terminal_view.append_text(text)
         elif hasattr(self.view.terminal_view, 'appendPlainText'):
             self.view.terminal_view.appendPlainText(text)
