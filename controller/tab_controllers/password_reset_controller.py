@@ -1,13 +1,10 @@
 import threading
-import logging
 from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import QMessageBox
 from utils.cisco_devices import Devices
 from model.password_reset_model import PasswordResetModel
 from model.raw_serial_session_manager import RawSerialSessionManager
 from view.progress_dialog import ProgressDialog
-
-logger = logging.getLogger(__name__)
 
 
 class PasswordResetController(QObject):
@@ -90,28 +87,20 @@ class PasswordResetController(QObject):
 
     def _display_error(self, message: str):
         """
-        Forces a UI popup for errors instead of relying on a potentially silent background callback.
+        Delegates the error message to the global callback handler, avoiding duplicate popup windows.
         """
-        logger.error(f"Displaying error to user: {message}")
-        QMessageBox.critical(self.view, "Connection Error", message)
         self.show_error(message)
 
     def toggle_connection(self):
         """
         Manages the raw serial connection state for hardware recovery operations.
-        Logs every step to trace silent failures.
         """
-        logger.info("Connect button clicked!")
-
         if self._is_connected:
-            logger.info("State is currently connected. Disconnecting...")
             self.raw_session_manager.close_connection()
             self._is_connected = False
             self.model.session_manager = None
             self.view.update_connection_state(False)
             return
-
-        logger.info("Attempting to initialize connection...")
 
         self.view.clear_all_errors()
 
@@ -119,8 +108,6 @@ class PasswordResetController(QObject):
             self.view.port_input, "get_value", lambda: "")()
         baud_text = self.view.baud_rate_input.currentText()
         device_model = self.view.device_selector.currentText()
-
-        logger.info(f"Retrieved connection values - Port: '{port_text}', Baud: '{baud_text}', Model: '{device_model}'")
 
         missing = False
         if not port_text:
@@ -134,19 +121,15 @@ class PasswordResetController(QObject):
             missing = True
 
         if missing:
-            logger.warning("Validation failed for connection settings.")
             return
 
-        logger.info(f"Initiating raw serial connection to {port_text} at {baud_text} baud...")
         success, message = self.raw_session_manager.connect_device(port_text, int(baud_text))
 
         if success:
-            logger.info("Connection established successfully.")
             self._is_connected = True
             self.model.session_manager = self.raw_session_manager
             self.view.update_connection_state(True)
         else:
-            logger.error(f"Connection failed to establish: {message}")
             self._display_error(message)
 
     def apply_configuration(self):
