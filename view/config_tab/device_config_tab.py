@@ -6,7 +6,7 @@ from view.device_configuration_views.switch.vlan_view import VLANView
 from view.terminal_view import TerminalView
 from view.device_configuration_views.router.ospf_view import OSPFView
 from view.device_configuration_views.router.dhcp_view import DHCPView
-from view.device_configuration_views.universal.basic_settings_view import BasicSettingsView
+from view.device_configuration_views.universal.system_settings_view import SystemSettingsView
 from view.device_configuration_views.universal.telnet_view import TelnetView
 from view.device_configuration_views.universal.ssh_view import SSHView
 from view.device_configuration_views.router.router_interface_view import RouterInterfaceView
@@ -27,8 +27,8 @@ class DeviceConfigTab(QWidget):
         self.current_connection = None
         self.terminal_widget = None
 
-        self.router_basic_settings = BasicSettingsView()
-        self.switch_basic_settings = BasicSettingsView()
+        self.router_basic_settings = SystemSettingsView()
+        self.switch_basic_settings = SystemSettingsView()
 
         self.router_telnet_view = TelnetView()
         self.switch_telnet_view = TelnetView()
@@ -196,7 +196,7 @@ class DeviceConfigTab(QWidget):
 
         router_items = {
             "System Setup": {
-                "General Settings": self.router_basic_settings
+                "System Settings": self.router_basic_settings
             },
             "Interfaces": {
                 "Physical Interfaces": self.router_interface_view.physical,

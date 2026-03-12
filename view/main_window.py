@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import QMainWindow, QTabWidget, QMessageBox, QStackedWidget
-from view.password_resetter_tab import PasswordResetTab
 from view.connection_dialogs.connection_manager_tab import ConnectionManagerTab
-from view.device_config_tab import DeviceConfigTab
+from view.config_tab.device_config_tab import DeviceConfigTab
+from view.password_reset_view import PasswordResetView
 
 
 class MainWindow(QMainWindow):
@@ -49,7 +49,7 @@ class MainWindow(QMainWindow):
             }
         """)
 
-        self.password_reset_tab = PasswordResetTab()
+        self.password_reset_tab = PasswordResetView()
         self.connection_manager_tab = ConnectionManagerTab()
 
         self.main_tab_widget.addTab(self.connection_manager_tab, "Connection Manager")

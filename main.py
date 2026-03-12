@@ -3,7 +3,6 @@ import logging
 import traceback
 import qdarktheme
 from PySide6.QtWidgets import QApplication, QMessageBox
-from PySide6.QtCore import Qt
 from view.main_window import MainWindow
 from controller.main_controller import MainController
 from model.connection_profile_manager import ProfileManager
