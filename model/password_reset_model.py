@@ -30,7 +30,6 @@ class PasswordResetModel:
             self._execute_bootloader_recovery()
 
         self._apply_new_configuration(device)
-        self.session_manager.close_connection()
 
     def _execute_rommon_recovery(self):
         """
@@ -146,3 +145,4 @@ class PasswordResetModel:
         self.session_manager.write_channel("reload\r\n")
         self.session_manager.read_until_pattern(["Proceed with reload", "yes/no", "?"], timeout=10.0)
         self.session_manager.write_channel("\r\n")
+        self.session_manager.read_until_pattern(["Press RETURN to get started", "User Access Verification", "Username:", "Password:", ">", "login:"], timeout=300.0)

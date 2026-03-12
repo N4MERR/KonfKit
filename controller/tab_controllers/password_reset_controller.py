@@ -161,7 +161,7 @@ class PasswordResetController(QObject):
         self.view.toggle_input_elements(False)
         self.raw_session_manager.clear_buffer()
 
-        self.progress_dialog = ProgressDialog("Executing hardware password reset...", self.view)
+        self.progress_dialog = ProgressDialog("Resetting password...", self.view)
         self.progress_dialog.show()
 
         threading.Thread(target=self._run_reset_thread, args=(device,), daemon=True).start()
@@ -172,7 +172,7 @@ class PasswordResetController(QObject):
         """
         try:
             self.model.reset_password(device)
-            self.reset_finished.emit(True, "Password reset completed successfully. The device is now reloading.")
+            self.reset_finished.emit(True, "Password reset success.")
         except Exception as e:
             self.reset_finished.emit(False, str(e))
 
@@ -196,7 +196,5 @@ class PasswordResetController(QObject):
         self.view.toggle_input_elements(True)
         if success:
             QMessageBox.information(self.view, "Success", message)
-            self._is_connected = False
-            self.view.update_connection_state(False)
         else:
             self._display_error(message)
