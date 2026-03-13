@@ -3,35 +3,26 @@ from model.device_configuration_models.base_config_model import BaseConfigModel
 
 class TelnetConnectionModel(BaseConfigModel):
     """
-    Model for generating VTY line commands and management interface configuration for Telnet.
+    Model for generating VTY line commands for Telnet.
     """
 
     def generate_commands(self, **data) -> list[str]:
         """
-        Generates commands for line range, transport, and management VLAN IP configuration.
+        Generates commands for line range, transport, and login method.
         """
         commands = []
         write_memory = data.pop("_write_memory", False)
 
-        if data.get("vty_enabled"):
-            commands.append(f"line vty {data.get('vty_start')} {data.get('vty_end')}")
-            commands.append("login local")
+        vty_enabled = data.get("vty_enabled", False)
+        if vty_enabled:
+            vty_start = str(data.get('vty_start', '')).strip()
+            vty_end = str(data.get('vty_end', '')).strip()
+            login_method = str(data.get('login_method', 'login local')).strip()
+
+            commands.append(f"line vty {vty_start} {vty_end}")
+            commands.append(login_method)
             commands.append("transport input telnet")
             commands.append("exit")
-
-        vlan_id = data.get("vlan_id")
-        ip_address = data.get("ip_address")
-        subnet_mask = data.get("subnet_mask")
-        default_gateway = data.get("default_gateway")
-
-        if vlan_id and ip_address and subnet_mask:
-            commands.append(f"interface vlan {vlan_id}")
-            commands.append(f"ip address {ip_address} {subnet_mask}")
-            commands.append("no shutdown")
-            commands.append("exit")
-
-        if default_gateway:
-            commands.append(f"ip default-gateway {default_gateway}")
 
         if write_memory:
             commands.append("do write memory")
@@ -51,10 +42,12 @@ class TelnetLoginModel(BaseConfigModel):
         commands = []
         write_memory = data.pop("_write_memory", False)
 
-        if data.get("login_name") and data.get("login_password"):
-            privilege = data.get("privilege")
-            commands.append(
-                f"username {data.get('login_name')} privilege {privilege} secret {data.get('login_password')}")
+        login_name = str(data.get("login_name", "")).strip()
+        login_password = str(data.get("login_password", "")).strip()
+
+        if login_name and login_password:
+            privilege = str(data.get("privilege", "15")).strip()
+            commands.append(f"username {login_name} privilege {privilege} secret {login_password}")
             commands.append("exit")
 
         if write_memory:
@@ -65,12 +58,12 @@ class TelnetLoginModel(BaseConfigModel):
 
 class TelnetModel:
     """
-    Wrapper model aggregating independent Telnet configuration models for switches.
+    Wrapper model aggregating independent Telnet configuration models for routers.
     """
 
     def __init__(self, session_manager):
         """
-        Instantiates specific Telnet configuration models for switches.
+        Instantiates specific Telnet configuration models.
         """
         self.connection_section = TelnetConnectionModel(session_manager)
         self.login_section = TelnetLoginModel(session_manager)

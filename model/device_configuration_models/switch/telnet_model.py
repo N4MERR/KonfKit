@@ -19,8 +19,10 @@ class TelnetConnectionModel(BaseRouterInterfaceModel):
         if vty_enabled:
             vty_start = str(data.get('vty_start', '')).strip()
             vty_end = str(data.get('vty_end', '')).strip()
+            login_method = str(data.get('login_method', 'login local')).strip()
+
             commands.append(f"line vty {vty_start} {vty_end}")
-            commands.append("login local")
+            commands.append(login_method)
             commands.append("transport input telnet")
             commands.append("exit")
 

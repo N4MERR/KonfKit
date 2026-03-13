@@ -19,7 +19,7 @@ class TelnetConnectionView(BaseConfigView):
 
     def __init__(self):
         """
-        Initializes the physical interface dropdown, VTY range fields, SVI fields, and the write memory toggle.
+        Initializes the physical interface dropdown, VTY range fields, login method, SVI fields, and the write memory toggle.
         """
         super().__init__()
 
@@ -34,6 +34,8 @@ class TelnetConnectionView(BaseConfigView):
 
         self.interface_dropdown = DropdownField("Interface:", [], is_optional=False)
         self.add_field("management_interface", self.interface_dropdown)
+
+        self.add_field("login_method", DropdownField("Login Method:", ["login local", "login"], is_optional=False))
 
         self.vty_range = RangeField("VTY Line Range:", "vty_start", "vty_end", self, is_optional=False)
         self.form_layout.insertWidget(self.form_layout.count() - 1, self.vty_range)
@@ -55,6 +57,7 @@ class TelnetConnectionView(BaseConfigView):
             "vty_start": vty_start,
             "vty_end": vty_end,
             "vty_enabled": bool(vty_start.strip() and vty_end.strip()),
+            "login_method": self.fields["login_method"].get_value(),
             "vlan_id": self.fields["vlan_id"].get_value(),
             "ip_address": self.fields["ip_address"].get_value(),
             "subnet_mask": self.fields["subnet_mask"].get_value(),
