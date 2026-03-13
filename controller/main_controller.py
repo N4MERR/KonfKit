@@ -11,7 +11,8 @@ from model.device_configuration_models.router.ospf_model import OSPFModel
 from model.device_configuration_models.router.dhcp_model import DHCPModel
 from model.device_configuration_models.switch.vlan_model import VLANModel
 from model.device_configuration_models.universal.system_settings_model import SystemSettingsModel
-from model.device_configuration_models.universal.telnet_model import TelnetModel
+from model.device_configuration_models.router.telnet_model import TelnetModel as RouterTelnetModel
+from model.device_configuration_models.switch.telnet_model import TelnetModel as SwitchTelnetModel
 from model.device_configuration_models.universal.ssh_model import SSHModel
 from model.device_configuration_models.router.router_interface_model import RouterInterfaceModel
 
@@ -89,24 +90,25 @@ class MainController:
             self.basic_settings_model
         )
 
-        self.telnet_model = TelnetModel(self.session_manager)
+        self.router_telnet_model = RouterTelnetModel(self.session_manager)
+        self.switch_telnet_model = SwitchTelnetModel(self.session_manager)
 
         self.router_telnet_connection_controller = BaseConfigController(
             self.window.device_config_tab.router_telnet_view.connection_section,
-            self.telnet_model.connection_section
+            self.router_telnet_model.connection_section
         )
         self.router_telnet_login_controller = BaseConfigController(
             self.window.device_config_tab.router_telnet_view.login_section,
-            self.telnet_model.login_section
+            self.router_telnet_model.login_section
         )
 
         self.switch_telnet_connection_controller = BaseConfigController(
             self.window.device_config_tab.switch_telnet_view.connection_section,
-            self.telnet_model.connection_section
+            self.switch_telnet_model.connection_section
         )
         self.switch_telnet_login_controller = BaseConfigController(
             self.window.device_config_tab.switch_telnet_view.login_section,
-            self.telnet_model.login_section
+            self.switch_telnet_model.login_section
         )
 
         self.ssh_model = SSHModel(self.session_manager)
@@ -184,6 +186,32 @@ class MainController:
         self.window.device_config_tab.reconnect_signal.connect(self.handle_reconnect)
         self.session_manager.error_occurred.connect(self.window.show_error)
         self.session_manager.connection_lost.connect(self.handle_connection_lost)
+
+        self.window.device_config_tab.switch_telnet_view.connection_section.load_interfaces_signal.connect(
+            self.handle_load_switch_telnet_interfaces
+        )
+
+    def handle_load_switch_telnet_interfaces(self):
+        """
+        Fetches physical interfaces from the switch and populates the management interface dropdown.
+        """
+        if not self.current_connection_data:
+            self.window.show_error("No active connection to load interfaces.")
+            return
+
+        self.progress = ProgressDialog("Loading interfaces...", self.window)
+        self.progress.show()
+        QApplication.processEvents()
+
+        try:
+            interfaces = self.switch_telnet_model.connection_section.get_interfaces()
+            self.window.device_config_tab.switch_telnet_view.connection_section.update_interfaces(interfaces)
+        except Exception as e:
+            self.window.show_error(f"Failed to load interfaces: {str(e)}")
+        finally:
+            if self.progress:
+                self.progress.close()
+                self.progress = None
 
     def handle_session_close(self):
         """

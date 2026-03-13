@@ -7,7 +7,8 @@ from view.terminal_view import TerminalView
 from view.device_configuration_views.router.ospf_view import OSPFView
 from view.device_configuration_views.router.dhcp_view import DHCPView
 from view.device_configuration_views.universal.system_settings_view import SystemSettingsView
-from view.device_configuration_views.universal.telnet_view import TelnetView
+from view.device_configuration_views.router.telnet_view import TelnetView as RouterTelnetView
+from view.device_configuration_views.switch.telnet_view import TelnetView as SwitchTelnetView
 from view.device_configuration_views.universal.ssh_view import SSHView
 from view.device_configuration_views.router.router_interface_view import RouterInterfaceView
 
@@ -30,8 +31,8 @@ class DeviceConfigTab(QWidget):
         self.router_basic_settings = SystemSettingsView()
         self.switch_basic_settings = SystemSettingsView()
 
-        self.router_telnet_view = TelnetView()
-        self.switch_telnet_view = TelnetView()
+        self.router_telnet_view = RouterTelnetView()
+        self.switch_telnet_view = SwitchTelnetView()
 
         self.router_ssh_view = SSHView()
         self.switch_ssh_view = SSHView()
