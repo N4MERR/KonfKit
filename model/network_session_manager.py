@@ -125,18 +125,15 @@ class NetworkSessionManager(QObject):
 
                     current_time = time.time()
                     if current_time - last_alive_check > 3.0:
-                        try:
-                            if hasattr(self.connection.remote_conn, "get_transport"):
+                        if hasattr(self.connection, "remote_conn") and hasattr(self.connection.remote_conn, "get_transport"):
+                            try:
                                 transport = self.connection.remote_conn.get_transport()
                                 if transport:
                                     transport.send_ignore()
                                     if not transport.is_active():
                                         raise ConnectionError("Connection dead")
-                            else:
-                                if not self.connection.is_alive():
-                                    raise ConnectionError("Connection dead")
-                        except (Exception, OSError, EOFError):
-                            raise ConnectionError("Socket unresponsive")
+                            except (Exception, OSError, EOFError):
+                                raise ConnectionError("Socket unresponsive")
 
                         last_alive_check = current_time
 
@@ -213,12 +210,12 @@ class NetworkSessionManager(QObject):
             with self._lock:
                 alive = True
                 try:
-                    if hasattr(self.connection.remote_conn, "get_transport"):
+                    if hasattr(self.connection, "remote_conn") and hasattr(self.connection.remote_conn, "get_transport"):
                         transport = self.connection.remote_conn.get_transport()
                         if transport and not transport.is_active():
                             alive = False
                     else:
-                        alive = self.connection.is_alive()
+                        alive = True
                 except Exception:
                     alive = False
 
