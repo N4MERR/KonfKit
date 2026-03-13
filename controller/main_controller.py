@@ -44,6 +44,30 @@ class ConnectionWorker(QThread):
         self.finished_signal.emit(success, message)
 
 
+class InterfaceLoadWorker(QThread):
+    """
+    Native PySide worker class to handle interface loading asynchronously.
+    """
+    finished_signal = Signal(list, str)
+
+    def __init__(self, model):
+        """
+        Initializes the interface worker with the designated model for querying device interfaces.
+        """
+        super().__init__()
+        self.model = model
+
+    def run(self):
+        """
+        Executes the blocking network query for interfaces outside the UI event loop.
+        """
+        try:
+            interfaces = self.model.get_interfaces()
+            self.finished_signal.emit(interfaces if interfaces is not None else [], "")
+        except Exception as e:
+            self.finished_signal.emit([], str(e))
+
+
 class MainController:
     """
     Main application controller that coordinates between models and views while managing sub-controllers.
@@ -59,6 +83,7 @@ class MainController:
         self.current_connection_data = None
         self.progress = None
         self.worker = None
+        self.interface_worker = None
 
         self.terminal_view = self.window.device_config_tab.create_new_terminal()
         self.terminal_model = TerminalModel(self.session_manager)
@@ -193,7 +218,7 @@ class MainController:
 
     def handle_load_switch_telnet_interfaces(self):
         """
-        Fetches physical interfaces from the switch and populates the management interface dropdown.
+        Fetches physical interfaces from the switch via a background worker and populates the management interface dropdown.
         """
         if not self.current_connection_data:
             self.window.show_error("No active connection to load interfaces.")
@@ -201,17 +226,27 @@ class MainController:
 
         self.progress = ProgressDialog("Loading interfaces...", self.window)
         self.progress.show()
-        QApplication.processEvents()
 
-        try:
-            interfaces = self.switch_telnet_model.connection_section.get_interfaces()
-            self.window.device_config_tab.switch_telnet_view.connection_section.update_interfaces(interfaces)
-        except Exception as e:
-            self.window.show_error(f"Failed to load interfaces: {str(e)}")
-        finally:
+        self.interface_worker = InterfaceLoadWorker(self.switch_telnet_model.connection_section)
+
+        def on_finished(interfaces, error_message):
+            """
+            Handles the completion of the background query and updates the UI state.
+            """
             if self.progress:
                 self.progress.close()
                 self.progress = None
+
+            if error_message:
+                self.window.show_error(f"Failed to load interfaces: {error_message}")
+            elif interfaces:
+                self.window.device_config_tab.switch_telnet_view.connection_section.update_interfaces(interfaces)
+
+            self.interface_worker.deleteLater()
+            self.interface_worker = None
+
+        self.interface_worker.finished_signal.connect(on_finished)
+        self.interface_worker.start()
 
     def handle_session_close(self):
         """
