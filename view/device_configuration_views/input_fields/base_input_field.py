@@ -1,6 +1,7 @@
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, QTextEdit, QCheckBox, QLabel, QComboBox
 from PySide6.QtCore import Qt, QEvent
 
+
 class BaseInputField(QWidget):
     """
     Base class for specific configuration fields providing validation and error reporting.
@@ -72,14 +73,34 @@ class BaseInputField(QWidget):
         Sets up signal connections for the input widget.
         """
         if isinstance(self.input_widget, QTextEdit):
-            self.input_widget.textChanged.connect(lambda: self.radio.setChecked(bool(self.input_widget.toPlainText())))
+            self.input_widget.textChanged.connect(self._on_text_changed)
             self.input_widget.textChanged.connect(self.clear_highlight)
         elif isinstance(self.input_widget, QComboBox):
-            self.input_widget.currentIndexChanged.connect(lambda: self.radio.setChecked(True))
+            self.input_widget.currentIndexChanged.connect(self._on_combo_changed)
             self.input_widget.currentIndexChanged.connect(self.clear_highlight)
         else:
-            self.input_widget.textChanged.connect(lambda text: self.radio.setChecked(bool(text)))
+            self.input_widget.textChanged.connect(self._on_text_changed)
             self.input_widget.textChanged.connect(self.clear_highlight)
+
+    def _on_text_changed(self, *args):
+        """
+        Checks the radio button when text is entered, but does not uncheck it when cleared.
+        """
+        has_text = False
+        if isinstance(self.input_widget, QTextEdit):
+            has_text = bool(self.input_widget.toPlainText())
+        else:
+            has_text = bool(self.input_widget.text())
+
+        if has_text and not self.radio.isChecked():
+            self.radio.setChecked(True)
+
+    def _on_combo_changed(self, *args):
+        """
+        Checks the radio button when combo box selection changes.
+        """
+        if not self.radio.isChecked():
+            self.radio.setChecked(True)
 
     def validate(self):
         """
