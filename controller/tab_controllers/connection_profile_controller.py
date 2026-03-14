@@ -1,4 +1,4 @@
-from PySide6.QtCore import QObject, QThreadPool
+from PySide6.QtCore import QObject, QThreadPool, QTimer
 from PySide6.QtWidgets import QMessageBox
 from model.worker import Worker
 from view.connection_dialogs.serial_connection_dialog import SerialConnectionDialog
@@ -57,7 +57,7 @@ class ConnectionProfileController(QObject):
         else:
             return
 
-        dialog.test_requested.connect(lambda data: self.run_test_process(data, "Testing connection..."))
+        dialog.test_requested.connect(lambda data, d=dialog: self.run_test_process(data, "Testing connection...", d))
 
         result = dialog.exec()
         if result == 10:
@@ -75,27 +75,53 @@ class ConnectionProfileController(QObject):
         device_type = data.get('device_type', '')
         if 'telnet' in device_type:
             dialog = TelnetConnectionDialog(self.view)
-            dialog.name_input.setText(data['name'])
-            dialog.ip_input.setText(data['host'])
-            dialog.port_input.setText(str(data.get('port', 23)))
-            dialog.pass_input.setText(data.get('password', ''))
-            dialog.secret_input.setText(data.get('secret', ''))
+            dialog.name_input.input_widget.setText(data['name'])
+            dialog.ip_input.input_widget.setText(data['host'])
+            dialog.port_input.input_widget.setText(str(data.get('port', 23)))
+
+            if data.get('username'):
+                dialog.auth_mode.input_widget.setCurrentText("Login Local")
+            elif data.get('password'):
+                dialog.auth_mode.input_widget.setCurrentText("Login")
+            else:
+                dialog.auth_mode.input_widget.setCurrentText("No Login")
+
+            dialog.user_input.input_widget.setText(data.get('username', ''))
+            dialog.pass_input.input_widget.setText(data.get('password', ''))
+            dialog.enable_pass_input.input_widget.setText(data.get('secret', ''))
+
         elif 'serial' in device_type:
             dialog = SerialConnectionDialog(self.view)
-            dialog.name_input.setText(data['name'])
-            dialog.port_input.setCurrentText(data['serial_settings']['port'])
-            dialog.baud_input.setCurrentText(str(data['serial_settings'].get('baudrate', 9600)))
-            dialog.secret_input.setText(data.get('secret', ''))
+            dialog.name_input.input_widget.setText(data['name'])
+            dialog.port_input.input_widget.setCurrentText(data['serial_settings']['port'])
+            dialog.baud_input.input_widget.setCurrentText(str(data['serial_settings'].get('baudrate', 9600)))
+
+            if data.get('username'):
+                dialog.auth_mode.input_widget.setCurrentText("Login Local")
+            elif data.get('password'):
+                dialog.auth_mode.input_widget.setCurrentText("Login")
+            else:
+                dialog.auth_mode.input_widget.setCurrentText("No Login")
+
+            dialog.user_input.input_widget.setText(data.get('username', ''))
+            dialog.pass_input.input_widget.setText(data.get('password', ''))
+
+            if data.get('secret'):
+                dialog.enable_pass_input.radio.setChecked(True)
+                dialog.enable_pass_input.input_widget.setText(data.get('secret'))
+            else:
+                dialog.enable_pass_input.radio.setChecked(False)
+
         else:
             dialog = SSHConnectionDialog(self.view)
-            dialog.name_input.setText(data['name'])
-            dialog.ip_input.setText(data['host'])
-            dialog.port_input.setText(str(data.get('port', 22)))
-            dialog.user_input.setText(data.get('username', ''))
-            dialog.pass_input.setText(data.get('password', ''))
-            dialog.secret_input.setText(data.get('secret', ''))
+            dialog.name_input.input_widget.setText(data['name'])
+            dialog.ip_input.input_widget.setText(data['host'])
+            dialog.port_input.input_widget.setText(str(data.get('port', 22)))
+            dialog.user_input.input_widget.setText(data.get('username', ''))
+            dialog.pass_input.input_widget.setText(data.get('password', ''))
+            dialog.enable_pass_input.input_widget.setText(data.get('secret', ''))
 
-        dialog.test_requested.connect(lambda test_data: self.run_test_process(test_data, "Testing connection..."))
+        dialog.test_requested.connect(lambda test_data, d=dialog: self.run_test_process(test_data, "Testing connection...", d))
         result = dialog.exec()
 
         if result == 10:
@@ -122,15 +148,16 @@ class ConnectionProfileController(QObject):
         """
         self.start_session(data)
 
-    def run_test_process(self, data, message):
+    def run_test_process(self, data, message, parent_widget=None):
         """
         Starts a background worker to test the network connection for the dialogs.
         """
-        self.progress_window = ProgressDialog(message, self.view)
+        parent = parent_widget if parent_widget else self.view
+        self.progress_window = ProgressDialog(message, parent)
 
         worker = Worker(self._perform_test, data)
-        worker.signals.result.connect(self.on_test_finished)
-        worker.signals.error.connect(lambda err: self.on_test_finished((False, str(err[1]))))
+        worker.signals.result.connect(lambda res: self.on_test_finished(res, parent))
+        worker.signals.error.connect(lambda err: self.on_test_finished((False, str(err[1])), parent))
 
         self.threadpool.start(worker)
         self.progress_window.exec()
@@ -151,16 +178,23 @@ class ConnectionProfileController(QObject):
         except Exception as e:
             return False, str(e)
 
-    def on_test_finished(self, result):
+    def on_test_finished(self, result, parent_widget):
         """
         Handles the result of the connection test and closes the progress dialog.
+        Schedules the result message box to allow UI focus to settle on the parent dialog.
         """
         if self.progress_window:
             self.progress_window.close()
             self.progress_window = None
 
+        QTimer.singleShot(100, lambda: self._show_test_result(result, parent_widget))
+
+    def _show_test_result(self, result, parent_widget):
+        """
+        Displays the success or failure message box for the connection test.
+        """
         success, message = result
         if success:
-            QMessageBox.information(self.view, "Success", message)
+            QMessageBox.information(parent_widget, "Success", message)
         else:
-            QMessageBox.critical(self.view, "Connection Failed", f"Connection failed: {message}")
+            QMessageBox.critical(parent_widget, "Connection Failed", f"Connection failed: {message}")
