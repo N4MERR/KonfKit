@@ -239,7 +239,7 @@ class DeviceConfigTab(QWidget):
             },
             "Telnet": {
                 "Telnet Connection": self.switch_telnet_view.connection_section,
-                "Telnet Login": self.switch_telnet_view.login_section
+                "Telnet Login": self.switch_telnet_view.authentication_section
             },
             "VLAN": {
                 "VLAN Database": self.vlan_view
