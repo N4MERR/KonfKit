@@ -86,6 +86,9 @@ class NetworkSessionManager(QObject):
         """
         Establishes a connection to a network device and starts the background read loop.
         """
+        success = False
+        message = ""
+
         try:
             connection_settings.pop("keepalive", None)
 
@@ -97,16 +100,46 @@ class NetworkSessionManager(QObject):
             if not self.connection.check_enable_mode():
                 self.connection.enable()
 
-            self._receiving = True
-            threading.Thread(target=self._read_loop, daemon=True).start()
-            return True, "Connection successful"
+            success = True
+            message = "Connection successful"
+
         except NetmikoTimeoutException:
-            return False, "Connection timed out."
+            message = "Connection timed out. The device is unreachable."
         except NetmikoAuthenticationException:
-            return False, "Authentication failed."
+            message = "Authentication failed. Check your login credentials."
+        except ValueError as e:
+            error_text = str(e)
+            lines = [line.strip() for line in error_text.split('\n') if line.strip()]
+            message = lines[0] if lines else "Value error during connection."
+
+            lower_err = error_text.lower()
+            if "enable" in lower_err or "secret" in lower_err:
+                message = "Failed to enter enable mode. Check enable password."
+            elif "pattern not detected" in lower_err:
+                message = "Authentication failed: Expected device prompt not found. Check your passwords."
+
         except Exception as e:
-            error_msg = str(e).split('\n')[0].strip()
-            return False, error_msg
+            error_text = str(e)
+            lines = [line.strip() for line in error_text.split('\n') if line.strip()]
+            message = lines[0] if lines else "An unknown connection error occurred."
+
+            lower_err = error_text.lower()
+            if "pattern not detected" in lower_err:
+                message = "Authentication failed: Expected device prompt not found. Check your passwords."
+            elif "authentication" in lower_err or "access denied" in lower_err or "login" in lower_err:
+                message = "Authentication failed. Check your login credentials."
+            elif "timeout" in lower_err:
+                message = "Connection timed out. The device is unreachable or blocking the port."
+            elif "refused" in lower_err:
+                message = "Connection refused. Check if the specific service is enabled on the device."
+
+        if not success:
+            self.close_connection()
+            return False, message
+
+        self._receiving = True
+        threading.Thread(target=self._read_loop, daemon=True).start()
+        return True, message
 
     def _read_loop(self):
         """
@@ -125,7 +158,8 @@ class NetworkSessionManager(QObject):
 
                     current_time = time.time()
                     if current_time - last_alive_check > 3.0:
-                        if hasattr(self.connection, "remote_conn") and hasattr(self.connection.remote_conn, "get_transport"):
+                        if hasattr(self.connection, "remote_conn") and hasattr(self.connection.remote_conn,
+                                                                               "get_transport"):
                             try:
                                 transport = self.connection.remote_conn.get_transport()
                                 if transport:
@@ -210,7 +244,8 @@ class NetworkSessionManager(QObject):
             with self._lock:
                 alive = True
                 try:
-                    if hasattr(self.connection, "remote_conn") and hasattr(self.connection.remote_conn, "get_transport"):
+                    if hasattr(self.connection, "remote_conn") and hasattr(self.connection.remote_conn,
+                                                                           "get_transport"):
                         transport = self.connection.remote_conn.get_transport()
                         if transport and not transport.is_active():
                             alive = False
