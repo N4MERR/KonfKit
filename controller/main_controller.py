@@ -132,8 +132,8 @@ class MainController:
             self.switch_telnet_model.connection_section
         )
         self.switch_telnet_login_controller = BaseConfigController(
-            self.window.device_config_tab.switch_telnet_view.login_section,
-            self.switch_telnet_model.login_section
+            self.window.device_config_tab.switch_telnet_view.authentication_section,
+            self.switch_telnet_model.authentication_section
         )
 
         self.ssh_model = SSHModel(self.session_manager)
