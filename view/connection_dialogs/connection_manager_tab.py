@@ -7,6 +7,7 @@ class AddConnectionCard(QPushButton):
     """
     UI element for adding a new connection.
     """
+
     def __init__(self, protocol_name):
         """
         Initializes the add connection card with adaptable styling.
@@ -20,7 +21,10 @@ class AddConnectionCard(QPushButton):
                 border-radius: 8px;
                 background-color: transparent;
             }
-            QPushButton:hover { border-color: #0078d4; background-color: rgba(0, 120, 212, 0.05); }
+            QPushButton:hover { 
+                border-color: #0078d4; 
+                background-color: rgba(0, 120, 212, 0.05); 
+            }
         """)
 
         layout = QVBoxLayout(self)
@@ -56,17 +60,34 @@ class ConnectionCard(QFrame):
         self.conn = conn
         self.setFixedSize(160, 120)
         self.setCursor(Qt.PointingHandCursor)
+
         self.setStyleSheet("""
-            QFrame {
+            ConnectionCard {
                 border: 1px solid rgba(128, 128, 128, 0.4);
                 border-radius: 8px;
                 background-color: transparent;
             }
-            QFrame:hover { border: 2px solid #0078d4; background-color: rgba(0, 120, 212, 0.05); }
-            QLabel { font-weight: bold; border: none; background: transparent; }
-            QToolButton { border: none; background: transparent; font-size: 18px; font-weight: bold; }
-            QToolButton:hover { color: #0078d4; }
-            QToolButton::menu-indicator { image: none; }
+            ConnectionCard:hover { 
+                border: 2px solid #0078d4; 
+                background-color: rgba(0, 120, 212, 0.05); 
+            }
+            QLabel { 
+                font-weight: bold; 
+                border: none; 
+                background: transparent; 
+            }
+            QToolButton { 
+                border: none; 
+                background: transparent; 
+                font-size: 18px; 
+                font-weight: bold; 
+            }
+            QToolButton:hover { 
+                color: #0078d4; 
+            }
+            QToolButton::menu-indicator { 
+                image: none; 
+            }
         """)
 
         self.options_btn = QToolButton(self)
@@ -131,12 +152,14 @@ class ConnectionRow(QWidget):
         self.left_btn = QPushButton("<")
         self.left_btn.setFixedSize(30, 120)
         self.left_btn.setCursor(Qt.PointingHandCursor)
-        self.left_btn.setStyleSheet("QPushButton { background: transparent; border: 1px solid rgba(128, 128, 128, 0.3); border-radius: 4px; }")
+        self.left_btn.setStyleSheet(
+            "QPushButton { background: transparent; border: 1px solid rgba(128, 128, 128, 0.3); border-radius: 4px; }")
 
         self.right_btn = QPushButton(">")
         self.right_btn.setFixedSize(30, 120)
         self.right_btn.setCursor(Qt.PointingHandCursor)
-        self.right_btn.setStyleSheet("QPushButton { background: transparent; border: 1px solid rgba(128, 128, 128, 0.3); border-radius: 4px; }")
+        self.right_btn.setStyleSheet(
+            "QPushButton { background: transparent; border: 1px solid rgba(128, 128, 128, 0.3); border-radius: 4px; }")
 
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
@@ -264,7 +287,8 @@ class ConnectionManagerTab(QWidget):
         line = QFrame()
         line.setFrameShape(QFrame.HLine)
         line.setFrameShadow(QFrame.Plain)
-        line.setStyleSheet("QFrame { border-bottom: 2px dashed rgba(128, 128, 128, 0.2); max-height: 2px; background: transparent; }")
+        line.setStyleSheet(
+            "QFrame { border-bottom: 2px dashed rgba(128, 128, 128, 0.2); max-height: 2px; background: transparent; }")
         return line
 
     def update_list(self, all_connections):
