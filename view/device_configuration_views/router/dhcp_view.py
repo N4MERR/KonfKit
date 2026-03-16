@@ -34,7 +34,7 @@ class DHCPPoolView(BaseConfigView):
             "gateway": self.fields["gateway"].get_value() if self.fields["gateway"].radio.isChecked() else None,
             "dns": self.fields["dns"].get_value() if self.fields["dns"].radio.isChecked() else None,
             "domain_name": self.fields["domain_name"].get_value() if self.fields["domain_name"].radio.isChecked() else None,
-            "_write_memory": self.write_memory_cb.isChecked()
+            "_save_configuration": self.save_configuration_cb.isChecked()
         }
 
 
@@ -60,7 +60,7 @@ class DHCPExcludedView(BaseConfigView):
             "type": "dhcp_excluded",
             "start_ip": self.fields["start_ip"].get_value(),
             "end_ip": self.fields["end_ip"].get_value() if self.fields["end_ip"].radio.isChecked() else None,
-            "_write_memory": self.write_memory_cb.isChecked()
+            "_save_configuration": self.save_configuration_cb.isChecked()
         }
 
 class DHCPView:

@@ -13,7 +13,6 @@ class TelnetConnectionModel(BaseRouterInterfaceModel):
         Generates commands for line range, transport, management VLAN IP, and physical port assignment.
         """
         commands = []
-        write_memory = data.pop("_write_memory", False)
 
         login_method = str(data.get('login_method', 'no login')).strip()
 
@@ -70,9 +69,7 @@ class TelnetConnectionModel(BaseRouterInterfaceModel):
         if default_gateway:
             commands.append(f"ip default-gateway {default_gateway}")
 
-        if write_memory:
-            commands.append("do write memory")
-
+        commands.extend(super().generate_commands(**data))
         return commands
 
 
@@ -86,7 +83,6 @@ class TelnetAuthenticationModel(BaseConfigModel):
         Generates commands for username, optional privilege, password, and local login enforcement.
         """
         commands = []
-        write_memory = data.pop("_write_memory", False)
 
         login_username = str(data.get("login_username", "")).strip()
         login_password = str(data.get("login_password", "")).strip()
@@ -99,9 +95,7 @@ class TelnetAuthenticationModel(BaseConfigModel):
                 commands.append(f"username {login_username} secret {login_password}")
             commands.append("exit")
 
-        if write_memory:
-            commands.append("do write memory")
-
+        commands.extend(super().generate_commands(**data))
         return commands
 
 

@@ -102,7 +102,7 @@ class RouterPhysicalInterfaceView(BaseRouterInterfaceView):
             "ipv6_enabled": self.fields["ipv6_address"].radio.isChecked(),
             "ipv6_prefix": self.fields["ipv6_prefix"].get_value(),
             "enable_interface": self.enable_interface.isChecked(),
-            "_write_memory": self.write_memory_cb.isChecked()
+            "_save_configuration": self.save_configuration_cb.isChecked()
         }
 
 
@@ -143,7 +143,7 @@ class RouterSubinterfaceView(BaseRouterInterfaceView):
             "ipv6_address": self.fields["ipv6_address"].get_value(),
             "ipv6_enabled": self.fields["ipv6_address"].radio.isChecked(),
             "ipv6_prefix": self.fields["ipv6_prefix"].get_value(),
-            "_write_memory": self.write_memory_cb.isChecked()
+            "_save_configuration": self.save_configuration_cb.isChecked()
         }
 
 

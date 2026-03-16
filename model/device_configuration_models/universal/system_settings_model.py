@@ -11,7 +11,6 @@ class SystemSettingsModel(BaseConfigModel):
         Generates Cisco CLI commands for hostname, secret, and banner based on enabled fields.
         """
         commands = []
-        write_memory = kwargs.pop("_write_memory", False)
 
         if kwargs.get('hostname_enabled') and kwargs.get('hostname'):
             commands.append(f"hostname {kwargs.get('hostname')}")
@@ -31,7 +30,5 @@ class SystemSettingsModel(BaseConfigModel):
         if kwargs.get('password_encryption_enabled'):
             commands.append("service password-encryption")
 
-        if write_memory:
-            commands.append("do write memory")
-
+        commands.extend(super().generate_commands(**kwargs))
         return commands

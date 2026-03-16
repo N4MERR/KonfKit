@@ -12,7 +12,7 @@ class SystemSettingsView(BaseConfigView):
 
     def __init__(self):
         """
-        Initializes basic settings fields and embeds the write memory toggle into the layout.
+        Initializes basic settings fields and embeds the save configuration toggle into the layout.
         """
         super().__init__()
         self.add_field("hostname", BaseInputField("Hostname:", is_optional=True))
@@ -28,7 +28,7 @@ class SystemSettingsView(BaseConfigView):
 
     def get_data(self) -> dict:
         """
-        Retrieves data for basic settings based on active radio indicators and the write memory flag.
+        Retrieves data for basic settings based on active radio indicators and the save configuration flag.
         """
         return {
             "type": "basic_settings",
@@ -41,5 +41,5 @@ class SystemSettingsView(BaseConfigView):
             "banner_motd": self.fields["banner_motd"].get_value(),
             "banner_motd_enabled": self.fields["banner_motd"].radio.isChecked(),
             "password_encryption_enabled": self.password_encryption.isChecked(),
-            "_write_memory": self.write_memory_cb.isChecked()
+            "_save_configuration": self.save_configuration_cb.isChecked()
         }

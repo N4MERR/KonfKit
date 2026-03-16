@@ -11,7 +11,6 @@ class VLANModel(BaseConfigModel):
         Generates Cisco CLI commands for creating VLANs and assigning optional names.
         """
         commands = []
-        write_memory = kwargs.pop("_write_memory", False)
 
         vlan_id = kwargs.get("vlan_id")
         if vlan_id:
@@ -20,7 +19,5 @@ class VLANModel(BaseConfigModel):
                 commands.append(f"name {kwargs.get('vlan_name')}")
             commands.append("exit")
 
-        if write_memory:
-            commands.append("do write memory")
-
+        commands.extend(super().generate_commands(**kwargs))
         return commands

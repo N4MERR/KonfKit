@@ -11,7 +11,6 @@ class SSHConnectionModel(BaseConfigModel):
         Transforms validated user input into global SSH configuration commands.
         """
         commands = []
-        write_memory = data.pop("_write_memory", False)
 
         if data.get("hostname"):
             commands.append(f"hostname {data.get('hostname')}")
@@ -37,9 +36,7 @@ class SSHConnectionModel(BaseConfigModel):
             commands.append("transport input ssh")
             commands.append("exit")
 
-        if write_memory:
-            commands.append("do write memory")
-
+        commands.extend(super().generate_commands(**data))
         return commands
 
 
@@ -53,16 +50,13 @@ class SSHLoginModel(BaseConfigModel):
         Transforms validated user input into SSH local authentication commands.
         """
         commands = []
-        write_memory = data.pop("_write_memory", False)
 
         if data.get("login_name") and data.get("login_password"):
             privilege = data.get("privilege")
             commands.append(f"username {data.get('login_name')} privilege {privilege} secret {data.get('login_password')}")
             commands.append("exit")
 
-        if write_memory:
-            commands.append("do write memory")
-
+        commands.extend(super().generate_commands(**data))
         return commands
 
 

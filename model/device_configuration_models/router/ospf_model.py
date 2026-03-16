@@ -11,7 +11,6 @@ class OSPFAreaModel(BaseConfigModel):
         Generates OSPF network commands using process_id, network, wildcard, and area keys.
         """
         commands = []
-        write_memory = kwargs.pop("_write_memory", False)
 
         process_id = kwargs.get("process_id")
         network = kwargs.get("network")
@@ -22,9 +21,7 @@ class OSPFAreaModel(BaseConfigModel):
             commands.append(f"router ospf {process_id}")
             commands.append(f"network {network} {wildcard} area {area}")
 
-        if write_memory:
-            commands.append("do write memory")
-
+        commands.extend(super().generate_commands(**kwargs))
         return commands
 
 
@@ -38,7 +35,6 @@ class OSPFRouterIdModel(BaseConfigModel):
         Generates OSPF router-id command.
         """
         commands = []
-        write_memory = kwargs.pop("_write_memory", False)
 
         process_id = kwargs.get("process_id")
         router_id = kwargs.get("router_id")
@@ -47,9 +43,7 @@ class OSPFRouterIdModel(BaseConfigModel):
             commands.append(f"router ospf {process_id}")
             commands.append(f"router-id {router_id}")
 
-        if write_memory:
-            commands.append("do write memory")
-
+        commands.extend(super().generate_commands(**kwargs))
         return commands
 
 
@@ -63,7 +57,6 @@ class OSPFPassiveInterfaceModel(BaseConfigModel):
         Generates OSPF passive-interface command.
         """
         commands = []
-        write_memory = kwargs.pop("_write_memory", False)
 
         process_id = kwargs.get("process_id")
         interface = kwargs.get("interface_name")
@@ -72,10 +65,9 @@ class OSPFPassiveInterfaceModel(BaseConfigModel):
             commands.append(f"router ospf {process_id}")
             commands.append(f"passive-interface {interface}")
 
-        if write_memory:
-            commands.append("do write memory")
-
+        commands.extend(super().generate_commands(**kwargs))
         return commands
+
 
 class OSPFModel:
     """
@@ -89,4 +81,3 @@ class OSPFModel:
         self.passive_interface_model = OSPFPassiveInterfaceModel(session_manager)
         self.router_id_model = OSPFRouterIdModel(session_manager)
         self.area_model = OSPFAreaModel(session_manager)
-

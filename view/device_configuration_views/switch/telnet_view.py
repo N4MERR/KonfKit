@@ -18,7 +18,7 @@ class TelnetConnectionView(BaseConfigView):
 
     def __init__(self):
         """
-        Initializes the physical interface dropdown, VTY range fields, login method, SVI fields, and the write memory toggle.
+        Initializes the physical interface dropdown, VTY range fields, login method, SVI fields, and the save configuration toggle.
         """
         super().__init__()
 
@@ -135,7 +135,7 @@ class TelnetConnectionView(BaseConfigView):
             "default_gateway": self.fields["default_gateway"].get_value() if self.fields[
                 "default_gateway"].radio.isChecked() else "",
             "management_interface": self.fields["management_interface"].get_value(),
-            "_write_memory": self.write_memory_cb.isChecked()
+            "_save_configuration": self.save_configuration_cb.isChecked()
         }
 
     def update_interfaces(self, interfaces: list[str]):
@@ -159,7 +159,7 @@ class TelnetAuthenticationView(BaseConfigView):
 
     def __init__(self):
         """
-        Initializes mandatory login name, password fields, optional privilege, and the write memory toggle.
+        Initializes mandatory login name, password fields, optional privilege, and the save configuration toggle.
         """
         super().__init__()
 
@@ -169,14 +169,14 @@ class TelnetAuthenticationView(BaseConfigView):
 
     def get_data(self) -> dict:
         """
-        Retrieves Telnet authentication data and the write memory flag.
+        Retrieves Telnet authentication data and the save configuration flag.
         """
         return {
             "type": "telnet_authentication",
             "login_username": self.fields["login_username"].get_value(),
             "privilege": self.fields["privilege"].get_value() if self.fields["privilege"].radio.isChecked() else "",
             "login_password": self.fields["login_password"].get_value(),
-            "_write_memory": self.write_memory_cb.isChecked()
+            "_save_configuration": self.save_configuration_cb.isChecked()
         }
 
 

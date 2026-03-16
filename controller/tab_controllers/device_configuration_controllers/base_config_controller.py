@@ -48,27 +48,31 @@ class BaseConfigController:
         if hasattr(self.view, 'apply_config_signal'):
             self.view.apply_config_signal.connect(self.handle_apply)
 
-    def handle_preview(self):
+    def handle_preview(self, data=None):
         """
         Generates and displays the configuration commands without sending them to the device.
         """
-        if self.view.validate_all():
+        if data is None or not isinstance(data, dict):
+            if not self.view.validate_all():
+                return
             data = self.view.get_data()
-            commands = self.model.generate_commands(**data)
-            if commands:
-                preview = PreviewDialog("\n".join(commands), self.view)
-                preview.exec()
-            else:
-                self._show_error("No commands generated. Check configuration logic.")
 
-    def handle_apply(self):
+        commands = self.model.generate_commands(**data)
+        if commands:
+            preview = PreviewDialog("\n".join(commands), self.view)
+            preview.exec()
+        else:
+            self._show_error("No commands generated. Check configuration logic.")
+
+    def handle_apply(self, data=None):
         """
         Validates, generates, and asynchronously sends the configuration to the connected device.
         """
-        if not self.view.validate_all():
-            return
+        if data is None or not isinstance(data, dict):
+            if not self.view.validate_all():
+                return
+            data = self.view.get_data()
 
-        data = self.view.get_data()
         commands = self.model.generate_commands(**data)
 
         if not commands:

@@ -11,7 +11,7 @@ class BaseConfigView(QWidget):
 
     def __init__(self):
         """
-        Initializes the base configuration view layout with a write memory toggle and action buttons.
+        Initializes the base configuration view layout with a save configuration toggle and action buttons.
         """
         super().__init__()
         self.main_layout = QVBoxLayout(self)
@@ -29,10 +29,10 @@ class BaseConfigView(QWidget):
 
         self.main_layout.addLayout(self.form_layout)
 
-        self.write_memory_cb = QCheckBox("Write Memory")
+        self.save_configuration_cb = QCheckBox("Save Configuration")
         self.checkbox_layout = QHBoxLayout()
         self.checkbox_layout.addStretch()
-        self.checkbox_layout.addWidget(self.write_memory_cb)
+        self.checkbox_layout.addWidget(self.save_configuration_cb)
 
         self.button_layout = QHBoxLayout()
         self.preview_button = QPushButton("Preview")
@@ -70,18 +70,20 @@ class BaseConfigView(QWidget):
 
     def get_data(self):
         """
-        Returns data for active checkboxes or radios.
+        Returns data for active checkboxes or radios, and includes the global save configuration state.
         """
-        if not self.fields:
-            return {}
+        data = {}
+        if self.fields:
+            first_field = next(iter(self.fields.values()))
+            if hasattr(first_field, 'checkbox'):
+                data = {k: f.get_value() for k, f in self.fields.items() if f.checkbox.isChecked()}
+            elif hasattr(first_field, 'radio'):
+                data = {k: f.get_value() for k, f in self.fields.items() if f.radio.isChecked()}
+            else:
+                data = {k: f.get_value() for k, f in self.fields.items()}
 
-        first_field = next(iter(self.fields.values()))
-        if hasattr(first_field, 'checkbox'):
-            return {k: f.get_value() for k, f in self.fields.items() if f.checkbox.isChecked()}
-        elif hasattr(first_field, 'radio'):
-            return {k: f.get_value() for k, f in self.fields.items() if f.radio.isChecked()}
-        else:
-            return {k: f.get_value() for k, f in self.fields.items()}
+        data["_save_configuration"] = self.save_configuration_cb.isChecked()
+        return data
 
     def validate_all(self):
         """
@@ -95,18 +97,14 @@ class BaseConfigView(QWidget):
 
     def _on_preview_clicked(self):
         """
-        Emits preview signal with an injected write memory flag if valid.
+        Emits preview signal with populated data if valid.
         """
         if self.validate_all():
-            data = self.get_data()
-            data["_write_memory"] = self.write_memory_cb.isChecked()
-            self.preview_config_signal.emit(data)
+            self.preview_config_signal.emit(self.get_data())
 
     def _on_apply_clicked(self):
         """
-        Emits apply signal with an injected write memory flag if valid.
+        Emits apply signal with populated data if valid.
         """
         if self.validate_all():
-            data = self.get_data()
-            data["_write_memory"] = self.write_memory_cb.isChecked()
-            self.apply_config_signal.emit(data)
+            self.apply_config_signal.emit(self.get_data())

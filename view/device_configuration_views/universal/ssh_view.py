@@ -12,7 +12,7 @@ class SSHConnectionView(BaseConfigView):
 
     def __init__(self):
         """
-        Initializes global SSH configuration fields with strict input validation and a write memory toggle.
+        Initializes global SSH configuration fields with strict input validation and a save configuration toggle.
         """
         super().__init__()
 
@@ -28,7 +28,7 @@ class SSHConnectionView(BaseConfigView):
 
     def get_data(self) -> dict:
         """
-        Retrieves data for global SSH settings including optional field states and the write memory flag.
+        Retrieves data for global SSH settings including optional field states and the save configuration flag.
         """
         return {
             "type": "ssh_global",
@@ -43,7 +43,7 @@ class SSHConnectionView(BaseConfigView):
             "vty_start": self.vty_range.start_field.text(),
             "vty_end": self.vty_range.end_field.text(),
             "vty_enabled": bool(self.vty_range.start_field.text().strip() and self.vty_range.end_field.text().strip()),
-            "_write_memory": self.write_memory_cb.isChecked()
+            "_save_configuration": self.save_configuration_cb.isChecked()
         }
 
     def validate_all(self) -> bool:
@@ -59,7 +59,7 @@ class SSHAuthenticationView(BaseConfigView):
 
     def __init__(self):
         """
-        Initializes authentication name and password fields along with a write memory toggle.
+        Initializes authentication name and password fields along with a save configuration toggle.
         """
         super().__init__()
 
@@ -69,14 +69,14 @@ class SSHAuthenticationView(BaseConfigView):
 
     def get_data(self) -> dict:
         """
-        Retrieves local authentication data and the write memory flag.
+        Retrieves local authentication data and the save configuration flag.
         """
         return {
             "type": "ssh_auth",
             "login_name": self.fields["login_name"].get_value(),
             "privilege": self.fields["privilege"].get_value() if self.fields["privilege"].radio.isChecked() else None,
             "login_password": self.fields["login_password"].get_value(),
-            "_write_memory": self.write_memory_cb.isChecked()
+            "_save_configuration": self.save_configuration_cb.isChecked()
         }
 
 class SSHView:

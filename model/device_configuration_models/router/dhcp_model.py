@@ -31,9 +31,7 @@ class DHCPPoolModel(BaseConfigModel):
                 commands.append(f" domain-name {domain}")
             commands.append(" exit")
 
-        if kwargs.get("_write_memory"):
-            commands.append("do write memory")
-
+        commands.extend(super().generate_commands(**kwargs))
         return commands
 
 
@@ -57,9 +55,7 @@ class DHCPExcludedModel(BaseConfigModel):
             else:
                 commands.append(f"ip dhcp excluded-address {start_ip}")
 
-        if kwargs.get("_write_memory"):
-            commands.append("do write memory")
-
+        commands.extend(super().generate_commands(**kwargs))
         return commands
 
 

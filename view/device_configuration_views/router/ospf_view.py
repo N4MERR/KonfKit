@@ -31,7 +31,7 @@ class OSPFBasicView(BaseConfigView):
             "network": self.fields["network"].get_value(),
             "wildcard_mask": self.fields["wildcard_mask"].get_value(),
             "area": self.fields["area"].get_value(),
-            "_write_memory": self.write_memory_cb.isChecked()
+            "_save_configuration": self.save_configuration_cb.isChecked()
         }
 
 class OSPFRouterIdView(BaseConfigView):
@@ -56,7 +56,7 @@ class OSPFRouterIdView(BaseConfigView):
             "type": "router_id",
             "process_id": self.fields["process_id"].get_value(),
             "router_id": self.fields["router_id"].get_value(),
-            "_write_memory": self.write_memory_cb.isChecked()
+            "_save_configuration": self.save_configuration_cb.isChecked()
         }
 
 class OSPFPassiveInterfaceView(BaseConfigView):
@@ -81,7 +81,7 @@ class OSPFPassiveInterfaceView(BaseConfigView):
             "type": "passive_interface",
             "process_id": self.fields["process_id"].get_value(),
             "interface_name": self.fields["interface_name"].get_value(),
-            "_write_memory": self.write_memory_cb.isChecked()
+            "_save_configuration": self.save_configuration_cb.isChecked()
         }
 
 class OSPFView:

@@ -13,7 +13,7 @@ class TelnetConnectionView(BaseConfigView):
 
     def __init__(self):
         """
-        Initializes VTY range fields, login method, and the write memory toggle.
+        Initializes VTY range fields, login method, and the save configuration toggle.
         """
         super().__init__()
 
@@ -24,7 +24,7 @@ class TelnetConnectionView(BaseConfigView):
 
     def get_data(self) -> dict:
         """
-        Retrieves Telnet VTY configuration data and the write memory flag.
+        Retrieves Telnet VTY configuration data and the save configuration flag.
         """
         vty_start = self.vty_range.start_field.text()
         vty_end = self.vty_range.end_field.text()
@@ -35,7 +35,7 @@ class TelnetConnectionView(BaseConfigView):
             "vty_end": vty_end,
             "vty_enabled": bool(vty_start.strip() and vty_end.strip()),
             "login_method": self.fields["login_method"].get_value(),
-            "_write_memory": self.write_memory_cb.isChecked()
+            "_save_configuration": self.save_configuration_cb.isChecked()
         }
 
     def validate_all(self) -> bool:
@@ -52,7 +52,7 @@ class TelnetLoginView(BaseConfigView):
 
     def __init__(self):
         """
-        Initializes mandatory login name, privilege, and password fields, and the write memory toggle.
+        Initializes mandatory login name, privilege, and password fields, and the save configuration toggle.
         """
         super().__init__()
 
@@ -62,14 +62,14 @@ class TelnetLoginView(BaseConfigView):
 
     def get_data(self) -> dict:
         """
-        Retrieves Telnet authentication data and the write memory flag.
+        Retrieves Telnet authentication data and the save configuration flag.
         """
         return {
             "type": "telnet_login",
             "login_name": self.fields["login_name"].get_value(),
             "privilege": self.fields["privilege"].get_value(),
             "login_password": self.fields["login_password"].get_value(),
-            "_write_memory": self.write_memory_cb.isChecked()
+            "_save_configuration": self.save_configuration_cb.isChecked()
         }
 
 

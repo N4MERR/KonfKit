@@ -11,6 +11,9 @@ class BaseConfigModel:
 
     def generate_commands(self, **kwargs) -> list[str]:
         """
-        Generates the specific Cisco IOS commands required for the configuration.
+        Generates base configuration commands like saving configuration.
         """
-        raise NotImplementedError
+        commands = []
+        if kwargs.get("_save_configuration", False):
+            commands.extend(["end", "copy running-config startup-config"])
+        return commands

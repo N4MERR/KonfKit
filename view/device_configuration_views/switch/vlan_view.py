@@ -55,7 +55,7 @@ class VLANView(BaseConfigView):
         return {
             "type": "vlan_batch",
             "vlans": vlans,
-            "_write_memory": self.write_memory_cb.isChecked()
+            "_save_configuration": self.save_configuration_cb.isChecked()
         }
 
     def _add_empty_row(self):

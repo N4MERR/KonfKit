@@ -36,7 +36,6 @@ class RouterPhysicalInterfaceModel(BaseRouterInterfaceModel):
         Transforms input data into Cisco IOS commands including IPv6 support for physical interfaces.
         """
         commands = []
-        write_memory = data.pop("_write_memory", False)
 
         if not data.get("interface"):
             return commands
@@ -58,9 +57,7 @@ class RouterPhysicalInterfaceModel(BaseRouterInterfaceModel):
 
         commands.append("exit")
 
-        if write_memory:
-            commands.append("do write memory")
-
+        commands.extend(super().generate_commands(**data))
         return commands
 
 
@@ -74,7 +71,6 @@ class RouterSubinterfaceModel(BaseRouterInterfaceModel):
         Transforms input data into Cisco IOS commands for configuring dot1Q subinterfaces with IPv6 support.
         """
         commands = []
-        write_memory = data.pop("_write_memory", False)
 
         if not data.get("interface") or not data.get("subinterface_id"):
             return commands
@@ -100,9 +96,7 @@ class RouterSubinterfaceModel(BaseRouterInterfaceModel):
 
         commands.append("exit")
 
-        if write_memory:
-            commands.append("do write memory")
-
+        commands.extend(super().generate_commands(**data))
         return commands
 
 

@@ -11,7 +11,6 @@ class TelnetConnectionModel(BaseConfigModel):
         Generates commands for line range, transport, and login method.
         """
         commands = []
-        write_memory = data.pop("_write_memory", False)
 
         vty_enabled = data.get("vty_enabled", False)
         if vty_enabled:
@@ -24,9 +23,7 @@ class TelnetConnectionModel(BaseConfigModel):
             commands.append("transport input telnet")
             commands.append("exit")
 
-        if write_memory:
-            commands.append("do write memory")
-
+        commands.extend(super().generate_commands(**data))
         return commands
 
 
@@ -40,7 +37,6 @@ class TelnetLoginModel(BaseConfigModel):
         Generates commands for username, privilege, password, and local login enforcement.
         """
         commands = []
-        write_memory = data.pop("_write_memory", False)
 
         login_name = str(data.get("login_name", "")).strip()
         login_password = str(data.get("login_password", "")).strip()
@@ -50,9 +46,7 @@ class TelnetLoginModel(BaseConfigModel):
             commands.append(f"username {login_name} privilege {privilege} secret {login_password}")
             commands.append("exit")
 
-        if write_memory:
-            commands.append("do write memory")
-
+        commands.extend(super().generate_commands(**data))
         return commands
 
 
