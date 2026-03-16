@@ -2,7 +2,6 @@ from view.device_configuration_views.base_config_view import BaseConfigView
 from view.device_configuration_views.input_fields.base_input_field import BaseInputField
 from view.device_configuration_views.input_fields.dropdown_field import DropdownField
 from view.device_configuration_views.input_fields.password_field import PasswordField
-from view.device_configuration_views.input_fields.password_confirm_field import PasswordConfirmField
 from view.device_configuration_views.input_fields.ranged_number_field import RangedNumberField
 from view.device_configuration_views.input_fields.range_field import RangeField
 
@@ -53,22 +52,20 @@ class SSHConnectionView(BaseConfigView):
         """
         return super().validate_all() and self.vty_range.validate()
 
-class SSHLoginView(BaseConfigView):
+class SSHAuthenticationView(BaseConfigView):
     """
     View handling mandatory local SSH user authentication setup.
     """
 
     def __init__(self):
         """
-        Initializes login name, password, and password confirmation fields along with a write memory toggle.
+        Initializes authentication name and password fields along with a write memory toggle.
         """
         super().__init__()
 
         self.add_field("login_name", BaseInputField("Username:", is_optional=False))
-        self.add_field("privilege", RangedNumberField("Privilege (0-15):", 0, 15, is_optional=False))
-        pwd_field = self.add_field("login_password", PasswordField("Password:", is_optional=False))
-        self.add_field("login_password_confirm",
-                       PasswordConfirmField("Confirm Password:", pwd_field, is_optional=False))
+        self.add_field("privilege", RangedNumberField("Privilege (0-15):", 0, 15, is_optional=True))
+        self.add_field("login_password", PasswordField("Password:", is_optional=False))
 
     def get_data(self) -> dict:
         """
@@ -77,7 +74,7 @@ class SSHLoginView(BaseConfigView):
         return {
             "type": "ssh_auth",
             "login_name": self.fields["login_name"].get_value(),
-            "privilege": self.fields["privilege"].get_value(),
+            "privilege": self.fields["privilege"].get_value() if self.fields["privilege"].radio.isChecked() else None,
             "login_password": self.fields["login_password"].get_value(),
             "_write_memory": self.write_memory_cb.isChecked()
         }
@@ -92,4 +89,4 @@ class SSHView:
         Instantiates specific SSH configuration views.
         """
         self.global_section = SSHConnectionView()
-        self.auth_section = SSHLoginView()
+        self.auth_section = SSHAuthenticationView()
