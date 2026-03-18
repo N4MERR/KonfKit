@@ -1,26 +1,58 @@
 from model.device_configuration_models.base_config_model import BaseConfigModel
+from model.device_configuration_models.router.router_interface_model import BaseRouterInterfaceModel
 
 
-class TelnetConnectionModel(BaseConfigModel):
+class TelnetConnectionModel(BaseRouterInterfaceModel):
     """
-    Model for generating VTY line commands for Telnet.
+    Model for generating VTY line commands and interface IP for Telnet on routers.
     """
 
     def generate_commands(self, **data) -> list[str]:
         """
-        Generates commands for line range, transport, and login method.
+        Generates commands for line range, transport, line passwords, login method, local user, and interface IP.
         """
         commands = []
+
+        login_method = str(data.get('login_method', 'login local')).strip()
+
+        if login_method == "login local":
+            login_username = str(data.get("login_username", "")).strip()
+            login_password = str(data.get("login_password", "")).strip()
+            if login_username and login_password:
+                login_privilege = str(data.get("login_privilege", "")).strip()
+                if login_privilege:
+                    commands.append(f"username {login_username} privilege {login_privilege} secret {login_password}")
+                else:
+                    commands.append(f"username {login_username} secret {login_password}")
 
         vty_enabled = data.get("vty_enabled", False)
         if vty_enabled:
             vty_start = str(data.get('vty_start', '')).strip()
             vty_end = str(data.get('vty_end', '')).strip()
-            login_method = str(data.get('login_method', 'login local')).strip()
+            line_password = str(data.get('line_password', '')).strip()
 
             commands.append(f"line vty {vty_start} {vty_end}")
-            commands.append(login_method)
+
+            if login_method == "login":
+                if line_password:
+                    commands.append(f"password {line_password}")
+                commands.append("login")
+            elif login_method == "no login":
+                commands.append("no login")
+            else:
+                commands.append("login local")
+
             commands.append("transport input telnet")
+            commands.append("exit")
+
+        interface = str(data.get("interface", "")).strip()
+        ip_address = str(data.get("ip_address", "")).strip()
+        subnet_mask = str(data.get("subnet_mask", "")).strip()
+
+        if interface and ip_address and subnet_mask:
+            commands.append(f"interface {interface}")
+            commands.append(f"ip address {ip_address} {subnet_mask}")
+            commands.append("no shutdown")
             commands.append("exit")
 
         commands.extend(super().generate_commands(**data))

@@ -14,12 +14,9 @@ class BaseRouterInterfaceView(BaseConfigView):
     """
     Base view for loading interfaces and providing the selection dropdown.
     """
-    refresh_interfaces_signal = Signal()
+    load_interfaces_signal = Signal()
 
     def __init__(self):
-        """
-        Initializes the interface layout with a fetch button placed in the bottom left corner and an interface selection.
-        """
         super().__init__()
 
         self.refresh_btn = QPushButton("Load Interfaces")
@@ -28,23 +25,17 @@ class BaseRouterInterfaceView(BaseConfigView):
             "QPushButton:hover { background-color: #b3b3b3; }"
             "QPushButton:disabled { background-color: #e6e6e6; color: #a0a0a0; border: 1px solid #c0c0c0; }"
         )
-        self.refresh_btn.clicked.connect(self.refresh_interfaces_signal.emit)
+        self.refresh_btn.clicked.connect(self.load_interfaces_signal.emit)
         self.button_layout.insertWidget(0, self.refresh_btn)
 
         self.interface_dropdown = DropdownField("Select Interface:", [], is_optional=False)
         self.add_field("interface", self.interface_dropdown)
 
     def update_interfaces(self, interfaces: list[str]):
-        """
-        Populates the interface dropdown with retrieved device data using the correct base widget attribute.
-        """
         self.interface_dropdown.input_widget.clear()
         self.interface_dropdown.input_widget.addItems(interfaces)
 
     def validate_all(self) -> bool:
-        """
-        Overrides base validation to ensure at least one IP protocol is enabled and conditional mask validation.
-        """
         ipv4_enabled = self.fields["ip_address"].radio.isChecked()
         ipv6_enabled = self.fields["ipv6_address"].radio.isChecked()
 
@@ -70,11 +61,7 @@ class RouterPhysicalInterfaceView(BaseRouterInterfaceView):
     """
     View dedicated to configuring standard physical interfaces on the router.
     """
-
     def __init__(self):
-        """
-        Initializes fields relevant for physical interfaces including dual-stack options.
-        """
         super().__init__()
 
         ipv4_field = IPAddressField("IPv4 Address:", is_optional=True)
@@ -89,9 +76,6 @@ class RouterPhysicalInterfaceView(BaseRouterInterfaceView):
         self.form_layout.insertWidget(self.form_layout.count() - 1, self.enable_interface)
 
     def get_data(self) -> dict:
-        """
-        Collects physical interface configuration data for both IP versions and optional states.
-        """
         return {
             "type": "physical",
             "interface": self.fields["interface"].get_value(),
@@ -110,11 +94,7 @@ class RouterSubinterfaceView(BaseRouterInterfaceView):
     """
     View dedicated to configuring 802.1Q subinterfaces on the router.
     """
-
     def __init__(self):
-        """
-        Initializes fields relevant for dot1Q subinterfaces including dual-stack options.
-        """
         super().__init__()
 
         self.add_field("subinterface_id", NumberField("Subinterface ID:", is_optional=False))
@@ -129,9 +109,6 @@ class RouterSubinterfaceView(BaseRouterInterfaceView):
         self.add_field("ipv6_prefix", IPv6PrefixField("IPv6 Prefix:", is_optional=False, linked_ip_field=ipv6_field))
 
     def get_data(self) -> dict:
-        """
-        Collects subinterface configuration data for both IP versions and optional states.
-        """
         return {
             "type": "subinterface",
             "interface": self.fields["interface"].get_value(),
@@ -148,13 +125,6 @@ class RouterSubinterfaceView(BaseRouterInterfaceView):
 
 
 class RouterInterfaceView:
-    """
-    Container aggregating independent router interface configuration views.
-    """
-
     def __init__(self):
-        """
-        Instantiates specific physical and subinterface views.
-        """
         self.physical = RouterPhysicalInterfaceView()
         self.subinterface = RouterSubinterfaceView()

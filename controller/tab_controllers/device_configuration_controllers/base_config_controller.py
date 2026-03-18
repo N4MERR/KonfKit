@@ -10,18 +10,11 @@ class ConfigApplyWorker(QThread):
     finished_signal = Signal(bool, str)
 
     def __init__(self, session_manager, commands):
-        """
-        Initializes the worker with session management and the generated commands.
-        """
         super().__init__()
         self.session_manager = session_manager
         self.commands = commands
 
     def run(self):
-        """
-        Executes the blocking configuration sending logic outside the UI event loop.
-        Captures the exact error message instead of a generic fallback.
-        """
         try:
             output = self.session_manager.send_command_set(self.commands)
             self.finished_signal.emit(True, output)
@@ -29,29 +22,69 @@ class ConfigApplyWorker(QThread):
             self.finished_signal.emit(False, str(e))
 
 
+class InterfaceLoadWorker(QThread):
+    """
+    Universal native PySide worker class to handle interface loading asynchronously.
+    """
+    finished_signal = Signal(list, str)
+
+    def __init__(self, model):
+        super().__init__()
+        self.model = model
+
+    def run(self):
+        try:
+            interfaces = self.model.get_interfaces()
+            self.finished_signal.emit(interfaces if interfaces is not None else [], "")
+        except Exception as e:
+            self.finished_signal.emit([], str(e))
+
+
 class BaseConfigController:
     """
-    Base controller providing standard validation, preview, and apply functionality for device configurations.
+    Base controller providing standard validation, preview, apply functionality,
+    and dynamic interface loading for device configurations.
     """
 
     def __init__(self, view, model):
-        """
-        Connects standard view signals to controller actions.
-        """
         self.view = view
         self.model = model
         self.progress = None
         self.worker = None
+        self.interface_worker = None
 
         if hasattr(self.view, 'preview_config_signal'):
             self.view.preview_config_signal.connect(self.handle_preview)
         if hasattr(self.view, 'apply_config_signal'):
             self.view.apply_config_signal.connect(self.handle_apply)
 
+        # Universal dynamic binding for interface loading
+        if hasattr(self.view, 'load_interfaces_signal') and hasattr(self.model, 'get_interfaces'):
+            self.view.load_interfaces_signal.connect(self.handle_load_interfaces)
+
+    def handle_load_interfaces(self, checked=False):
+        """
+        Universally handles querying device interfaces if the paired view and model support it.
+        """
+        self._show_progress("Loading interfaces from device...")
+
+        self.interface_worker = InterfaceLoadWorker(self.model)
+
+        def on_finished(interfaces, error_message):
+            self._close_progress()
+
+            if error_message:
+                self._show_error(f"Failed to load interfaces: {error_message}")
+            elif interfaces and hasattr(self.view, 'update_interfaces'):
+                self.view.update_interfaces(interfaces)
+
+            self.interface_worker.deleteLater()
+            self.interface_worker = None
+
+        self.interface_worker.finished_signal.connect(on_finished)
+        self.interface_worker.start()
+
     def handle_preview(self, data=None):
-        """
-        Generates and displays the configuration commands without sending them to the device.
-        """
         if data is None or not isinstance(data, dict):
             if not self.view.validate_all():
                 return
@@ -65,9 +98,6 @@ class BaseConfigController:
             self._show_error("No commands generated. Check configuration logic.")
 
     def handle_apply(self, data=None):
-        """
-        Validates, generates, and asynchronously sends the configuration to the connected device.
-        """
         if data is None or not isinstance(data, dict):
             if not self.view.validate_all():
                 return
@@ -80,13 +110,9 @@ class BaseConfigController:
             return
 
         self._show_progress("Applying configuration...")
-
         self.worker = ConfigApplyWorker(self.model.session_manager, commands)
 
         def on_finished(success, message):
-            """
-            Handles the outcome of the configuration task and cleans up the worker.
-            """
             self._close_progress()
 
             if not success:
@@ -99,26 +125,17 @@ class BaseConfigController:
         self.worker.start()
 
     def _show_progress(self, message):
-        """
-        Helper to display a non-blocking progress dialog.
-        """
         main_window = self.view.window()
         if main_window:
             self.progress = ProgressDialog(message, main_window)
             self.progress.show()
 
     def _close_progress(self):
-        """
-        Helper to safely close and remove the active progress dialog.
-        """
         if self.progress:
             self.progress.close()
             self.progress = None
 
     def _show_error(self, message):
-        """
-        Helper to invoke the parent window's generic error display method.
-        """
         main_window = self.view.window()
         if hasattr(main_window, 'show_error'):
             main_window.show_error(message)

@@ -1,9 +1,6 @@
 from PySide6.QtWidgets import QMessageBox, QApplication
 from PySide6.QtCore import QThread, Signal
 
-from controller.tab_controllers.device_configuration_controllers.router_interface_controller import \
-    RouterInterfaceController
-
 from view.progress_dialog import ProgressDialog
 from model.network_session_manager import NetworkSessionManager
 from model.terminal_model import TerminalModel
@@ -29,43 +26,13 @@ class ConnectionWorker(QThread):
     finished_signal = Signal(bool, str)
 
     def __init__(self, session_manager, settings):
-        """
-        Initializes the connection worker with session management and device settings.
-        """
         super().__init__()
         self.session_manager = session_manager
         self.settings = settings
 
     def run(self):
-        """
-        Executes the blocking connection logic entirely outside the UI event loop.
-        """
         success, message = self.session_manager.connect_device(self.settings)
         self.finished_signal.emit(success, message)
-
-
-class InterfaceLoadWorker(QThread):
-    """
-    Native PySide worker class to handle interface loading asynchronously.
-    """
-    finished_signal = Signal(list, str)
-
-    def __init__(self, model):
-        """
-        Initializes the interface worker with the designated model for querying device interfaces.
-        """
-        super().__init__()
-        self.model = model
-
-    def run(self):
-        """
-        Executes the blocking network query for interfaces outside the UI event loop.
-        """
-        try:
-            interfaces = self.model.get_interfaces()
-            self.finished_signal.emit(interfaces if interfaces is not None else [], "")
-        except Exception as e:
-            self.finished_signal.emit([], str(e))
 
 
 class MainController:
@@ -74,16 +41,12 @@ class MainController:
     """
 
     def __init__(self, window, profile_model):
-        """
-        Initializes the session manager and all sub-controllers for different device configurations.
-        """
         self.window = window
         self.profile_model = profile_model
         self.session_manager = NetworkSessionManager()
         self.current_connection_data = None
         self.progress = None
         self.worker = None
-        self.interface_worker = None
 
         self.terminal_view = self.window.device_config_tab.create_new_terminal()
         self.terminal_model = TerminalModel(self.session_manager)
@@ -158,11 +121,11 @@ class MainController:
 
         self.router_interface_model = RouterInterfaceModel(self.session_manager)
 
-        self.router_physical_interface_controller = RouterInterfaceController(
+        self.router_physical_interface_controller = BaseConfigController(
             self.window.device_config_tab.router_interface_view.physical,
             self.router_interface_model.physical
         )
-        self.router_subinterface_controller = RouterInterfaceController(
+        self.router_subinterface_controller = BaseConfigController(
             self.window.device_config_tab.router_interface_view.subinterface,
             self.router_interface_model.subinterface
         )
@@ -204,73 +167,24 @@ class MainController:
         self._setup_connections()
 
     def _setup_connections(self):
-        """
-        Binds UI actions from the window and session manager signals to controller logic.
-        """
         self.window.device_config_tab.close_tab_signal.connect(self.handle_session_close)
         self.window.device_config_tab.reconnect_signal.connect(self.handle_reconnect)
         self.session_manager.error_occurred.connect(self.window.show_error)
         self.session_manager.connection_lost.connect(self.handle_connection_lost)
 
-        self.window.device_config_tab.switch_telnet_view.connection_section.load_interfaces_signal.connect(
-            self.handle_load_switch_telnet_interfaces
-        )
-
-    def handle_load_switch_telnet_interfaces(self):
-        """
-        Fetches physical interfaces from the switch via a background worker and populates the management interface dropdown.
-        """
-        if not self.current_connection_data:
-            self.window.show_error("No active connection to load interfaces.")
-            return
-
-        self.progress = ProgressDialog("Loading interfaces...", self.window)
-        self.progress.show()
-
-        self.interface_worker = InterfaceLoadWorker(self.switch_telnet_model.connection_section)
-
-        def on_finished(interfaces, error_message):
-            """
-            Handles the completion of the background query and updates the UI state.
-            """
-            if self.progress:
-                self.progress.close()
-                self.progress = None
-
-            if error_message:
-                self.window.show_error(f"Failed to load interfaces: {error_message}")
-            elif interfaces:
-                self.window.device_config_tab.switch_telnet_view.connection_section.update_interfaces(interfaces)
-
-            self.interface_worker.deleteLater()
-            self.interface_worker = None
-
-        self.interface_worker.finished_signal.connect(on_finished)
-        self.interface_worker.start()
-
     def handle_session_close(self):
-        """
-        Safely terminates the active network session and returns to the home view.
-        """
         self.current_connection_data = None
         self.session_manager.close_connection()
         self.window.show_home()
 
     def _start_async_connection(self, settings, message, is_reconnect=False, connection_data=None):
-        """
-        Internal method to spawn a QThread worker and safely show an active progress dialog.
-        """
         self.progress = ProgressDialog(message, self.window)
         self.progress.show()
-
         QApplication.processEvents()
 
         self.worker = ConnectionWorker(self.session_manager, settings)
 
         def on_finished(success, error_message):
-            """
-            Handles the completion of the connection task and updates UI state.
-            """
             if self.progress:
                 self.progress.close()
                 self.progress = None
@@ -295,36 +209,24 @@ class MainController:
         self.worker.start()
 
     def handle_reconnect(self):
-        """
-        Attempts to reconnect via a non-blocking background thread.
-        """
         if self.current_connection_data:
             self.session_manager.close_connection()
             netmiko_settings = {k: v for k, v in self.current_connection_data.items() if k != "name"}
             self._start_async_connection(netmiko_settings, "Reconnecting...", is_reconnect=True)
 
     def handle_connection_lost(self, message):
-        """
-        Updates the UI to reflect a disconnected state and prompts the user to reconnect.
-        """
         self.window.device_config_tab.set_connection_status(False)
-
         reply = QMessageBox.question(
             self.window,
             "Connection Lost",
             f"The connection was unexpectedly closed.\nReason: {message}\n\nDo you want to reconnect?",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
-
         if reply == QMessageBox.StandardButton.Yes:
             self.handle_reconnect()
 
     def handle_session_start(self, connection_data):
-        """
-        Initiates a device connection without freezing the UI.
-        """
         self.current_connection_data = connection_data
         netmiko_settings = {k: v for k, v in connection_data.items() if k != "name"}
         name = connection_data.get('name', 'Device')
-        self._start_async_connection(netmiko_settings, f"Connecting to {name}...", is_reconnect=False,
-                                     connection_data=connection_data)
+        self._start_async_connection(netmiko_settings, f"Connecting to {name}...", is_reconnect=False, connection_data=connection_data)
