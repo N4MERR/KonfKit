@@ -1,79 +1,7 @@
-from PySide6.QtCore import QThread, Signal
+from PySide6.QtWidgets import QDialog
 from view.device_configuration_views.preview_dialog import PreviewDialog
 from view.progress_dialog import ProgressDialog
-
-
-class ConfigApplyWorker(QThread):
-    """
-    Native PySide worker class to handle applying configurations asynchronously.
-    """
-    finished_signal = Signal(bool, str)
-
-    def __init__(self, session_manager, commands):
-        """
-        Initializes the configuration application worker.
-        """
-        super().__init__()
-        self.session_manager = session_manager
-        self.commands = commands
-
-    def run(self):
-        """
-        Executes the configuration commands against the target device.
-        """
-        try:
-            output = self.session_manager.send_command_set(self.commands)
-            self.finished_signal.emit(True, output)
-        except Exception as e:
-            self.finished_signal.emit(False, str(e))
-
-
-class InterfaceLoadWorker(QThread):
-    """
-    Universal native PySide worker class to handle interface loading asynchronously.
-    """
-    finished_signal = Signal(list, str)
-
-    def __init__(self, model):
-        """
-        Initializes the interface loading worker.
-        """
-        super().__init__()
-        self.model = model
-
-    def run(self):
-        """
-        Executes the interface querying logic defined in the specific model.
-        """
-        try:
-            interfaces = self.model.get_interfaces()
-            self.finished_signal.emit(interfaces if interfaces is not None else [], "")
-        except Exception as e:
-            self.finished_signal.emit([], str(e))
-
-
-class VlanLoadWorker(QThread):
-    """
-    Universal native PySide worker class to handle loading VLANs asynchronously.
-    """
-    finished_signal = Signal(list, str)
-
-    def __init__(self, model):
-        """
-        Initializes the VLAN loading worker.
-        """
-        super().__init__()
-        self.model = model
-
-    def run(self):
-        """
-        Executes the VLAN querying logic defined in the specific model.
-        """
-        try:
-            vlans = self.model.get_vlans()
-            self.finished_signal.emit(vlans if vlans is not None else [], "")
-        except Exception as e:
-            self.finished_signal.emit([], str(e))
+from .workers import ConfigApplyWorker, InterfaceLoadWorker, VlanLoadWorker
 
 
 class BaseConfigController:
@@ -151,6 +79,7 @@ class BaseConfigController:
     def handle_preview(self, data=None):
         """
         Validates UI inputs and constructs a preview dialog for generated device commands.
+        If the user accepts the dialog, the configuration is applied without re-validation.
         """
         if data is None or not isinstance(data, dict):
             if not self.view.validate_all():
@@ -160,7 +89,8 @@ class BaseConfigController:
         commands = self.model.generate_commands(**data)
         if commands:
             preview = PreviewDialog("\n".join(commands), self.view)
-            preview.exec()
+            if preview.exec() == QDialog.Accepted:
+                self._apply_direct(commands)
         else:
             self._show_error("No commands generated. Check configuration logic.")
 
@@ -179,6 +109,12 @@ class BaseConfigController:
             self._show_error("No configuration commands generated.")
             return
 
+        self._apply_direct(commands)
+
+    def _apply_direct(self, commands: list[str]):
+        """
+        Internal helper to deploy a set of commands without further validation or UI data retrieval.
+        """
         self._show_progress("Applying configuration...")
         self.worker = ConfigApplyWorker(self.model.session_manager, commands)
 
