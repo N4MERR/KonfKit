@@ -236,7 +236,7 @@ class DeviceConfigTab(QWidget):
             "System Setup": {
                 "General Settings": self.switch_basic_settings
             },
-            "EtherChannel": {
+            "Ether Channel": {
                 "EtherChannel": self.switch_etherchannel_view
             },
             "SSH": {
