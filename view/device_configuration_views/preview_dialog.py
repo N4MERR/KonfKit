@@ -1,4 +1,7 @@
-from PySide6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QPlainTextEdit, QLabel, QFrame
+from PySide6.QtWidgets import (
+    QDialog, QVBoxLayout, QHBoxLayout, QPushButton,
+    QPlainTextEdit, QLabel, QFrame, QSizePolicy
+)
 from PySide6.QtCore import Qt
 
 
@@ -47,26 +50,26 @@ class PreviewDialog(QDialog):
         self.apply_btn = QPushButton("Apply")
 
         self.close_btn.setStyleSheet(
-            "QPushButton { background-color: #d32f2f; color: white; font-weight: bold; border-radius: 4px; border: none; padding: 8px 15px; } "
+            "QPushButton { background-color: #d32f2f; color: white; font-weight: bold; border-radius: 4px; border: none; padding: 8px 20px; min-height: 32px; } "
             "QPushButton:hover { background-color: #b71c1c; }"
         )
         self.apply_btn.setStyleSheet(
-            "QPushButton { background-color: #0078d4; color: white; font-weight: bold; border-radius: 4px; border: none; padding: 8px 15px; } "
+            "QPushButton { background-color: #0078d4; color: white; font-weight: bold; border-radius: 4px; border: none; padding: 8px 20px; min-height: 32px; } "
             "QPushButton:hover { background-color: #005a9e; }"
         )
 
         self.close_btn.setCursor(Qt.PointingHandCursor)
         self.apply_btn.setCursor(Qt.PointingHandCursor)
 
-        self.close_btn.setMinimumHeight(35)
-        self.apply_btn.setMinimumHeight(35)
+        self.close_btn.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        self.apply_btn.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
 
         self.close_btn.clicked.connect(self.reject)
         self.apply_btn.clicked.connect(self.accept)
 
-        self.button_layout.addStretch()
-        self.button_layout.addWidget(self.close_btn)
-        self.button_layout.addWidget(self.apply_btn)
+        self.button_layout.addStretch(10)
+        self.button_layout.addWidget(self.close_btn, 1)
+        self.button_layout.addWidget(self.apply_btn, 1)
 
         self.main_layout.addLayout(self.button_layout)
 
