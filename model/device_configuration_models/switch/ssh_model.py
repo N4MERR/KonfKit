@@ -1,14 +1,15 @@
 from model.device_configuration_models.base_config_model import BaseConfigModel
+from model.device_configuration_models.router.router_interface_model import BaseRouterInterfaceModel
 
 
-class SSHConnectionModel(BaseConfigModel):
+class SSHConnectionModel(BaseRouterInterfaceModel):
     """
-    Model handling the logic for generating Cisco IOS commands for the SSH connection section.
+    Model handling the logic for generating Cisco IOS commands for the switch SSH connection section.
     """
 
-    def generate_commands(self, **data):
+    def generate_commands(self, **data) -> list[str]:
         """
-        Transforms validated user input into global SSH configuration commands.
+        Transforms validated user input into global SSH configuration and VLAN assignments for switches.
         """
         commands = []
 
@@ -30,6 +31,29 @@ class SSHConnectionModel(BaseConfigModel):
         if data.get("ssh_retries_enabled") and data.get("ssh_retries"):
             commands.append(f"ip ssh authentication-retries {data.get('ssh_retries')}")
 
+        vlan_id = str(data.get("vlan_id", "")).strip()
+        ip_address = str(data.get("ip_address", "")).strip()
+        subnet_mask = str(data.get("subnet_mask", "")).strip()
+        default_gateway = str(data.get("default_gateway", "")).strip()
+        management_interface = str(data.get("management_interface", "")).strip()
+
+        if vlan_id:
+            if ip_address and subnet_mask:
+                commands.append(f"interface vlan {vlan_id}")
+                commands.append(f"ip address {ip_address} {subnet_mask}")
+                commands.append("no shutdown")
+                commands.append("exit")
+
+            if management_interface:
+                commands.append(f"interface {management_interface}")
+                commands.append("switchport mode access")
+                commands.append(f"switchport access vlan {vlan_id}")
+                commands.append("no shutdown")
+                commands.append("exit")
+
+        if default_gateway:
+            commands.append(f"ip default-gateway {default_gateway}")
+
         if data.get("vty_enabled"):
             commands.append(f"line vty {data.get('vty_start')} {data.get('vty_end')}")
             commands.append("login local")
@@ -45,7 +69,7 @@ class SSHLoginModel(BaseConfigModel):
     Model handling the logic for generating Cisco IOS commands for the SSH login authentication section.
     """
 
-    def generate_commands(self, **data):
+    def generate_commands(self, **data) -> list[str]:
         """
         Transforms validated user input into SSH local authentication commands.
         """
@@ -62,12 +86,12 @@ class SSHLoginModel(BaseConfigModel):
 
 class SSHModel:
     """
-    Wrapper model aggregating independent SSH configuration models.
+    Wrapper model aggregating independent SSH configuration models for switches.
     """
 
     def __init__(self, session_manager):
         """
-        Instantiates specific SSH configuration models.
+        Instantiates specific SSH configuration models for switches.
         """
         self.global_section = SSHConnectionModel(session_manager)
         self.auth_section = SSHLoginModel(session_manager)

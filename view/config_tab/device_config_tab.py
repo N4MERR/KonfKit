@@ -9,7 +9,8 @@ from view.device_configuration_views.router.dhcp_view import DHCPView
 from view.device_configuration_views.universal.system_settings_view import SystemSettingsView
 from view.device_configuration_views.router.telnet_view import TelnetView as RouterTelnetView
 from view.device_configuration_views.switch.telnet_view import TelnetView as SwitchTelnetView
-from view.device_configuration_views.universal.ssh_view import SSHView
+from view.device_configuration_views.router.ssh_view import SSHView as RouterSSHView
+from view.device_configuration_views.switch.ssh_view import SSHView as SwitchSSHView
 from view.device_configuration_views.router.router_interface_view import RouterInterfaceView
 
 
@@ -22,7 +23,7 @@ class DeviceConfigTab(QWidget):
 
     def __init__(self):
         """
-        Initializes the configuration tab views and layouts.
+        Initializes the configuration tab views and layouts with specific router and switch instances.
         """
         super().__init__()
         self.current_connection = None
@@ -34,8 +35,8 @@ class DeviceConfigTab(QWidget):
         self.router_telnet_view = RouterTelnetView()
         self.switch_telnet_view = SwitchTelnetView()
 
-        self.router_ssh_view = SSHView()
-        self.switch_ssh_view = SSHView()
+        self.router_ssh_view = RouterSSHView()
+        self.switch_ssh_view = SwitchSSHView()
 
         self.router_interface_view = RouterInterfaceView()
 

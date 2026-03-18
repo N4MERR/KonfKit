@@ -10,7 +10,8 @@ from model.device_configuration_models.switch.vlan_model import VLANModel
 from model.device_configuration_models.universal.system_settings_model import SystemSettingsModel
 from model.device_configuration_models.router.telnet_model import TelnetModel as RouterTelnetModel
 from model.device_configuration_models.switch.telnet_model import TelnetModel as SwitchTelnetModel
-from model.device_configuration_models.universal.ssh_model import SSHModel
+from model.device_configuration_models.router.ssh_model import SSHModel as RouterSSHModel
+from model.device_configuration_models.switch.ssh_model import SSHModel as SwitchSSHModel
 from model.device_configuration_models.router.router_interface_model import RouterInterfaceModel
 
 from controller.tab_controllers.terminal_controller import TerminalController
@@ -26,11 +27,17 @@ class ConnectionWorker(QThread):
     finished_signal = Signal(bool, str)
 
     def __init__(self, session_manager, settings):
+        """
+        Initializes the connection worker with the session manager and settings.
+        """
         super().__init__()
         self.session_manager = session_manager
         self.settings = settings
 
     def run(self):
+        """
+        Executes the device connection process in a separate thread.
+        """
         success, message = self.session_manager.connect_device(self.settings)
         self.finished_signal.emit(success, message)
 
@@ -41,6 +48,9 @@ class MainController:
     """
 
     def __init__(self, window, profile_model):
+        """
+        Initializes the primary controller, establishing links between models, views, and sub-controllers.
+        """
         self.window = window
         self.profile_model = profile_model
         self.session_manager = NetworkSessionManager()
@@ -99,24 +109,25 @@ class MainController:
             self.switch_telnet_model.authentication_section
         )
 
-        self.ssh_model = SSHModel(self.session_manager)
+        self.router_ssh_model = RouterSSHModel(self.session_manager)
+        self.switch_ssh_model = SwitchSSHModel(self.session_manager)
 
         self.router_ssh_global_controller = BaseConfigController(
             self.window.device_config_tab.router_ssh_view.global_section,
-            self.ssh_model.global_section
+            self.router_ssh_model.global_section
         )
         self.router_ssh_auth_controller = BaseConfigController(
             self.window.device_config_tab.router_ssh_view.auth_section,
-            self.ssh_model.auth_section
+            self.router_ssh_model.auth_section
         )
 
         self.switch_ssh_global_controller = BaseConfigController(
             self.window.device_config_tab.switch_ssh_view.global_section,
-            self.ssh_model.global_section
+            self.switch_ssh_model.global_section
         )
         self.switch_ssh_auth_controller = BaseConfigController(
             self.window.device_config_tab.switch_ssh_view.auth_section,
-            self.ssh_model.auth_section
+            self.switch_ssh_model.auth_section
         )
 
         self.router_interface_model = RouterInterfaceModel(self.session_manager)
@@ -167,17 +178,26 @@ class MainController:
         self._setup_connections()
 
     def _setup_connections(self):
+        """
+        Binds primary UI signals to their corresponding controller slot methods.
+        """
         self.window.device_config_tab.close_tab_signal.connect(self.handle_session_close)
         self.window.device_config_tab.reconnect_signal.connect(self.handle_reconnect)
         self.session_manager.error_occurred.connect(self.window.show_error)
         self.session_manager.connection_lost.connect(self.handle_connection_lost)
 
     def handle_session_close(self):
+        """
+        Clears connection data, shuts down active sessions, and returns to the home view.
+        """
         self.current_connection_data = None
         self.session_manager.close_connection()
         self.window.show_home()
 
     def _start_async_connection(self, settings, message, is_reconnect=False, connection_data=None):
+        """
+        Initializes an asynchronous connection attempt with user feedback via a progress dialog.
+        """
         self.progress = ProgressDialog(message, self.window)
         self.progress.show()
         QApplication.processEvents()
@@ -209,12 +229,18 @@ class MainController:
         self.worker.start()
 
     def handle_reconnect(self):
+        """
+        Attempts to restart the existing session parameters if a valid connection state exists.
+        """
         if self.current_connection_data:
             self.session_manager.close_connection()
             netmiko_settings = {k: v for k, v in self.current_connection_data.items() if k != "name"}
             self._start_async_connection(netmiko_settings, "Reconnecting...", is_reconnect=True)
 
     def handle_connection_lost(self, message):
+        """
+        Alerts the user of an unexpected disconnect and provides an option to immediately reconnect.
+        """
         self.window.device_config_tab.set_connection_status(False)
         reply = QMessageBox.question(
             self.window,
@@ -226,6 +252,9 @@ class MainController:
             self.handle_reconnect()
 
     def handle_session_start(self, connection_data):
+        """
+        Initiates a new device session from connection profile data.
+        """
         self.current_connection_data = connection_data
         netmiko_settings = {k: v for k, v in connection_data.items() if k != "name"}
         name = connection_data.get('name', 'Device')
