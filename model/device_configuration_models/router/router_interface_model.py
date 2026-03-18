@@ -1,32 +1,7 @@
-import re
-from model.device_configuration_models.base_config_model import BaseConfigModel
+from model.device_configuration_models.base_interface_model import BaseInterfaceModel
 
 
-class BaseRouterInterfaceModel(BaseConfigModel):
-    """
-    Base model providing the utility to fetch interface lists from a router while ignoring virtual interfaces like VLANs.
-    """
-
-    def get_interfaces(self) -> list[str]:
-        """
-        Queries the device for a list of IP interfaces, parses the output, and excludes VLANs.
-        """
-        output = self.session_manager.send_command("show ip interface brief")
-        if not output:
-            return []
-
-        interfaces = []
-        for line in output.split('\n'):
-            match = re.match(r'^([A-Za-z]+\s*\d+(?:/\d+)*)\s+', line.strip())
-            if match:
-                iface = match.group(1).replace(" ", "")
-                if not iface.lower().startswith("vlan"):
-                    interfaces.append(iface)
-
-        return interfaces
-
-
-class RouterPhysicalInterfaceModel(BaseRouterInterfaceModel):
+class RouterPhysicalInterfaceModel(BaseInterfaceModel):
     """
     Model handling the command generation for dual-stack physical router interfaces.
     """
@@ -61,7 +36,7 @@ class RouterPhysicalInterfaceModel(BaseRouterInterfaceModel):
         return commands
 
 
-class RouterSubinterfaceModel(BaseRouterInterfaceModel):
+class RouterSubinterfaceModel(BaseInterfaceModel):
     """
     Model handling the command generation for dot1Q dual-stack subinterfaces.
     """

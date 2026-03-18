@@ -1,11 +1,11 @@
 from model.device_configuration_models.base_config_model import BaseConfigModel
-from model.device_configuration_models.router.router_interface_model import BaseRouterInterfaceModel
+from model.device_configuration_models.base_interface_model import BaseInterfaceModel
 
 
-class TelnetConnectionModel(BaseRouterInterfaceModel):
+class TelnetConnectionModel(BaseInterfaceModel):
     """
     Model for generating VTY line commands and management interface configuration for Telnet.
-    Inherits from BaseRouterInterfaceModel to cleanly reuse device interface querying logic.
+    Inherits from BaseInterfaceModel to cleanly reuse device interface querying logic.
     """
 
     def generate_commands(self, **data) -> list[str]:

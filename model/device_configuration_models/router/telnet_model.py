@@ -1,8 +1,8 @@
 from model.device_configuration_models.base_config_model import BaseConfigModel
-from model.device_configuration_models.router.router_interface_model import BaseRouterInterfaceModel
+from model.device_configuration_models.base_interface_model import BaseInterfaceModel
 
 
-class TelnetConnectionModel(BaseRouterInterfaceModel):
+class TelnetConnectionModel(BaseInterfaceModel):
     """
     Model for generating VTY line commands and interface IP for Telnet on routers.
     """
