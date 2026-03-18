@@ -12,6 +12,7 @@ from view.device_configuration_views.switch.telnet_view import TelnetView as Swi
 from view.device_configuration_views.router.ssh_view import SSHView as RouterSSHView
 from view.device_configuration_views.switch.ssh_view import SSHView as SwitchSSHView
 from view.device_configuration_views.router.router_interface_view import RouterInterfaceView
+from view.device_configuration_views.switch.etherchannel_view import EtherChannelView
 
 
 class DeviceConfigTab(QWidget):
@@ -39,6 +40,7 @@ class DeviceConfigTab(QWidget):
         self.switch_ssh_view = SwitchSSHView()
 
         self.router_interface_view = RouterInterfaceView()
+        self.switch_etherchannel_view = EtherChannelView()
 
         self.ospf_view = OSPFView()
         self.dhcp_view = DHCPView()
@@ -233,6 +235,9 @@ class DeviceConfigTab(QWidget):
         switch_items = {
             "System Setup": {
                 "General Settings": self.switch_basic_settings
+            },
+            "EtherChannel": {
+                "EtherChannel": self.switch_etherchannel_view
             },
             "SSH": {
                 "Global Settings": self.switch_ssh_view.global_section,

@@ -13,6 +13,7 @@ from model.device_configuration_models.switch.telnet_model import TelnetModel as
 from model.device_configuration_models.router.ssh_model import SSHModel as RouterSSHModel
 from model.device_configuration_models.switch.ssh_model import SSHModel as SwitchSSHModel
 from model.device_configuration_models.router.router_interface_model import RouterInterfaceModel
+from model.device_configuration_models.switch.etherchannel_model import EtherChannelModel
 
 from controller.tab_controllers.terminal_controller import TerminalController
 from controller.tab_controllers.connection_profile_controller import ConnectionProfileController
@@ -141,6 +142,12 @@ class MainController:
             self.router_interface_model.subinterface
         )
 
+        self.etherchannel_model = EtherChannelModel(self.session_manager)
+        self.etherchannel_controller = BaseConfigController(
+            self.window.device_config_tab.switch_etherchannel_view,
+            self.etherchannel_model
+        )
+
         self.ospf_model = OSPFModel(self.session_manager)
 
         self.ospf_basic_controller = BaseConfigController(
@@ -258,4 +265,5 @@ class MainController:
         self.current_connection_data = connection_data
         netmiko_settings = {k: v for k, v in connection_data.items() if k != "name"}
         name = connection_data.get('name', 'Device')
-        self._start_async_connection(netmiko_settings, f"Connecting to {name}...", is_reconnect=False, connection_data=connection_data)
+        self._start_async_connection(netmiko_settings, f"Connecting to {name}...", is_reconnect=False,
+                                     connection_data=connection_data)
