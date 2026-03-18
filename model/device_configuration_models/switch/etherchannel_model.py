@@ -25,7 +25,8 @@ class EtherChannelModel(BaseInterfaceModel):
 
     def generate_commands(self, **data) -> list[str]:
         """
-        Transforms selected interfaces into a grouped range command, safely shuts them down, applies the channel mode and trunking, and brings them back up.
+        Transforms selected interfaces into a grouped range command, shuts them down, binds them to a channel group,
+        brings them up, and then applies trunking parameters exclusively to the logical Port-channel interface.
         """
         commands = []
 
@@ -39,15 +40,16 @@ class EtherChannelModel(BaseInterfaceModel):
             commands.append(f"interface range {range_string}")
             commands.append("shutdown")
             commands.append(f"channel-group {channel_group} mode {channel_mode}")
+            commands.append("no shutdown")
+            commands.append("exit")
 
             allowed_vlans = data.get("allowed_vlans", [])
             if allowed_vlans:
+                commands.append(f"interface Port-channel {channel_group}")
                 commands.append("switchport mode trunk")
                 vlan_string = ",".join(allowed_vlans)
                 commands.append(f"switchport trunk allowed vlan {vlan_string}")
-
-            commands.append("no shutdown")
-            commands.append("exit")
+                commands.append("exit")
 
         commands.extend(super().generate_commands(**data))
         return commands
