@@ -14,6 +14,7 @@ from model.device_configuration_models.router.ssh_model import SSHModel as Route
 from model.device_configuration_models.switch.ssh_model import SSHModel as SwitchSSHModel
 from model.device_configuration_models.router.router_interface_model import RouterInterfaceModel
 from model.device_configuration_models.switch.etherchannel_model import EtherChannelModel
+from model.device_configuration_models.router.hsrp_model import HSRPModel
 
 from controller.tab_controllers.terminal_controller import TerminalController
 from controller.tab_controllers.connection_profile_controller import ConnectionProfileController
@@ -186,6 +187,12 @@ class MainController:
         self.interface_vlan_controller = BaseConfigController(
             self.window.device_config_tab.vlan_view.interface_vlan,
             self.vlan_model.interface_vlan_model
+        )
+
+        self.hsrp_model = HSRPModel(self.session_manager)
+        self.hsrp_controller = BaseConfigController(
+            self.window.device_config_tab.hsrp_view,
+            self.hsrp_model
         )
 
         self._setup_connections()

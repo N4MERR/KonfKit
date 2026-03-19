@@ -13,6 +13,7 @@ from view.device_configuration_views.router.ssh_view import SSHView as RouterSSH
 from view.device_configuration_views.switch.ssh_view import SSHView as SwitchSSHView
 from view.device_configuration_views.router.router_interface_view import RouterInterfaceView
 from view.device_configuration_views.switch.etherchannel_view import EtherChannelView
+from view.device_configuration_views.router.hsrp_view import HSRPView
 
 
 class DeviceConfigTab(QWidget):
@@ -44,6 +45,7 @@ class DeviceConfigTab(QWidget):
 
         self.ospf_view = OSPFView()
         self.dhcp_view = DHCPView()
+        self.hsrp_view = HSRPView()
 
         self.vlan_view = VlanView()
 
@@ -222,6 +224,9 @@ class DeviceConfigTab(QWidget):
                 "Basic Config": self.ospf_view.basic_config,
                 "Router ID": self.ospf_view.router_id,
                 "Passive Interfaces": self.ospf_view.passive_interfaces,
+            },
+            "HSRP": {
+                "HSRP Configuration": self.hsrp_view
             }
         }
         self.router_section = ConfigSection(router_items)
