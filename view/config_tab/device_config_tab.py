@@ -2,7 +2,7 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QL
 from PySide6.QtCore import Signal, Qt
 
 from view.config_tab.config_section import ConfigSection
-from view.device_configuration_views.switch.vlan_view import VLANView
+from view.device_configuration_views.switch.vlan_view import VlanView
 from view.terminal_view import TerminalView
 from view.device_configuration_views.router.ospf_view import OSPFView
 from view.device_configuration_views.router.dhcp_view import DHCPView
@@ -45,7 +45,7 @@ class DeviceConfigTab(QWidget):
         self.ospf_view = OSPFView()
         self.dhcp_view = DHCPView()
 
-        self.vlan_view = VLANView()
+        self.vlan_view = VlanView()
 
         self._setup_ui()
 
@@ -248,7 +248,8 @@ class DeviceConfigTab(QWidget):
                 "Telnet Login": self.switch_telnet_view.authentication_section
             },
             "VLAN": {
-                "VLAN Database": self.vlan_view
+                "Create VLAN": self.vlan_view.create_vlan,
+                "Interface Configuration": self.vlan_view.interface_vlan
             }
         }
         self.switch_section = ConfigSection(switch_items)
@@ -357,5 +358,5 @@ class DeviceConfigTab(QWidget):
             self.reconnect_btn.show()
 
         for btn in self.findChildren(QPushButton):
-            if btn.text() in ["Apply", "Preview", "Apply Configuration", "Load Interfaces"]:
+            if btn.text() in ["Apply", "Preview", "Apply Configuration", "Load Interfaces", "Load VLANs"]:
                 btn.setEnabled(is_connected)

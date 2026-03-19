@@ -35,19 +35,45 @@ class MultiSelectListField(BaseInputField):
         """
         Automatically enables the field's radio indicator if any list items become checked.
         """
-        if self.get_value() and not self.radio.isChecked():
+        if hasattr(self, 'radio') and self.get_value() and not self.radio.isChecked():
             self.radio.setChecked(True)
 
     def populate_items(self, items: list[str]):
         """
-        Populates the list widget with checkable items.
+        Populates the list widget with checkable items and resets their standard flags.
         """
         self.input_widget.clear()
         for item_text in items:
             item = QListWidgetItem(item_text)
-            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
+            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable | Qt.ItemFlag.ItemIsEnabled)
             item.setCheckState(Qt.CheckState.Unchecked)
             self.input_widget.addItem(item)
+
+    def force_select_and_lock(self, text: str):
+        """
+        Forces an item to be checked and prevents the user from modifying its state by disabling it to appear grayed out.
+        """
+        self.input_widget.blockSignals(True)
+        for index in range(self.input_widget.count()):
+            item = self.input_widget.item(index)
+            if item.text() == text:
+                item.setCheckState(Qt.CheckState.Checked)
+                item.setFlags(item.flags() & ~(Qt.ItemFlag.ItemIsUserCheckable | Qt.ItemFlag.ItemIsEnabled))
+        self.input_widget.blockSignals(False)
+        self._on_item_changed(None)
+
+    def unlock_and_uncheck_item(self, text: str):
+        """
+        Restores the user's ability to modify the check state, restores normal coloring, and unchecks the previously locked item.
+        """
+        self.input_widget.blockSignals(True)
+        for index in range(self.input_widget.count()):
+            item = self.input_widget.item(index)
+            if item.text() == text:
+                item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable | Qt.ItemFlag.ItemIsEnabled)
+                item.setCheckState(Qt.CheckState.Unchecked)
+        self.input_widget.blockSignals(False)
+        self._on_item_changed(None)
 
     def get_value(self) -> list[str]:
         """
@@ -62,14 +88,16 @@ class MultiSelectListField(BaseInputField):
 
     def reset(self):
         """
-        Unchecks all items in the list widget cleanly.
+        Unchecks all items in the list widget cleanly and restores normal interactive flags.
         """
         self.input_widget.blockSignals(True)
         for index in range(self.input_widget.count()):
             item = self.input_widget.item(index)
             item.setCheckState(Qt.CheckState.Unchecked)
+            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable | Qt.ItemFlag.ItemIsEnabled)
         self.input_widget.blockSignals(False)
-        self.radio.setChecked(False)
+        if hasattr(self, 'radio'):
+            self.radio.setChecked(False)
         self.clear_highlight()
 
     def _run_validation(self, value: list[str]) -> bool:

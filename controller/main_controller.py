@@ -6,7 +6,7 @@ from model.network_session_manager import NetworkSessionManager
 from model.terminal_model import TerminalModel
 from model.device_configuration_models.router.ospf_model import OSPFModel
 from model.device_configuration_models.router.dhcp_model import DHCPModel
-from model.device_configuration_models.switch.vlan_model import VLANModel
+from model.device_configuration_models.switch.vlan_model import VlanModel
 from model.device_configuration_models.universal.system_settings_model import SystemSettingsModel
 from model.device_configuration_models.router.telnet_model import TelnetModel as RouterTelnetModel
 from model.device_configuration_models.switch.telnet_model import TelnetModel as SwitchTelnetModel
@@ -176,10 +176,16 @@ class MainController:
             self.dhcp_model.dhcp_excluded
         )
 
-        self.vlan_model = VLANModel(self.session_manager)
-        self.vlan_controller = BaseConfigController(
-            self.window.device_config_tab.vlan_view,
-            self.vlan_model
+        self.vlan_model = VlanModel(self.session_manager)
+
+        self.create_vlan_controller = BaseConfigController(
+            self.window.device_config_tab.vlan_view.create_vlan,
+            self.vlan_model.create_vlan_model
+        )
+
+        self.interface_vlan_controller = BaseConfigController(
+            self.window.device_config_tab.vlan_view.interface_vlan,
+            self.vlan_model.interface_vlan_model
         )
 
         self._setup_connections()
