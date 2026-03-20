@@ -11,6 +11,7 @@ from model.network_session_manager import NetworkSessionManager
 class ConnectionProfileController(QObject):
     """
     Controller managing connection profiles and testing connectivity via NetworkSessionManager.
+    Implements secure UI handling for passwords.
     """
 
     def __init__(self, view, model, terminal_callback):
@@ -68,9 +69,32 @@ class ConnectionProfileController(QObject):
             data = dialog.get_data()
             self.handle_connect_profile(data)
 
+    def _setup_password_field(self, field, existing_value):
+        """
+        Leaves the password field blank and sets an appropriate placeholder text based on existing data.
+        Dynamically makes the field optional if a password exists so validation does not block saves.
+        """
+        field.input_widget.setText("")
+        if existing_value:
+            field.input_widget.setPlaceholderText("Leave blank to keep current")
+            field.is_optional = True
+        else:
+            field.input_widget.setPlaceholderText("Enter password")
+
+    def _restore_blank_passwords(self, new_data, old_data):
+        """
+        Restores original passwords into the payload if the user left the input fields blank during edit.
+        """
+        if not new_data.get('password') and old_data.get('password'):
+            new_data['password'] = old_data.get('password')
+        if 'secret' in new_data and not new_data.get('secret') and old_data.get('secret'):
+            new_data['secret'] = old_data.get('secret')
+        return new_data
+
     def handle_edit_profile(self, data):
         """
         Populates a dialog with existing profile data for editing.
+        Implements the Leave Blank approach for sensitive fields.
         """
         device_type = data.get('device_type', '')
         if 'telnet' in device_type:
@@ -87,8 +111,8 @@ class ConnectionProfileController(QObject):
                 dialog.auth_mode.input_widget.setCurrentText("No Login")
 
             dialog.user_input.input_widget.setText(data.get('username', ''))
-            dialog.pass_input.input_widget.setText(data.get('password', ''))
-            dialog.enable_pass_input.input_widget.setText(data.get('secret', ''))
+            self._setup_password_field(dialog.pass_input, data.get('password'))
+            self._setup_password_field(dialog.enable_pass_input, data.get('secret'))
 
         elif 'serial' in device_type:
             dialog = SerialConnectionDialog(self.view)
@@ -104,13 +128,13 @@ class ConnectionProfileController(QObject):
                 dialog.auth_mode.input_widget.setCurrentText("No Login")
 
             dialog.user_input.input_widget.setText(data.get('username', ''))
-            dialog.pass_input.input_widget.setText(data.get('password', ''))
+            self._setup_password_field(dialog.pass_input, data.get('password'))
 
             if data.get('secret'):
                 dialog.enable_pass_input.radio.setChecked(True)
-                dialog.enable_pass_input.input_widget.setText(data.get('secret'))
             else:
                 dialog.enable_pass_input.radio.setChecked(False)
+            self._setup_password_field(dialog.enable_pass_input, data.get('secret'))
 
         else:
             dialog = SSHConnectionDialog(self.view)
@@ -118,18 +142,19 @@ class ConnectionProfileController(QObject):
             dialog.ip_input.input_widget.setText(data['host'])
             dialog.port_input.input_widget.setText(str(data.get('port', 22)))
             dialog.user_input.input_widget.setText(data.get('username', ''))
-            dialog.pass_input.input_widget.setText(data.get('password', ''))
-            dialog.enable_pass_input.input_widget.setText(data.get('secret', ''))
+            self._setup_password_field(dialog.pass_input, data.get('password'))
+            self._setup_password_field(dialog.enable_pass_input, data.get('secret'))
 
-        dialog.test_requested.connect(lambda test_data, d=dialog: self.run_test_process(test_data, "Testing connection...", d))
+        dialog.test_requested.connect(lambda test_data, d=dialog: self.run_test_process(self._restore_blank_passwords(test_data, data), "Testing connection...", d))
         result = dialog.exec()
 
         if result == 10:
-            new_data = dialog.get_data()
+            new_data = self._restore_blank_passwords(dialog.get_data(), data)
             self.model.save_profile(new_data)
             self.refresh_ui()
         elif result == 20:
-            self.handle_connect_profile(dialog.get_data())
+            connect_data = self._restore_blank_passwords(dialog.get_data(), data)
+            self.handle_connect_profile(connect_data)
 
     def handle_delete_profile(self, data):
         """

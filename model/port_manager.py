@@ -17,5 +17,4 @@ class PortManager:
         :return: List of connected serial ports.
         """
         ports = serial.tools.list_ports.comports()
-        logger.info("listing ports")
         return ports
