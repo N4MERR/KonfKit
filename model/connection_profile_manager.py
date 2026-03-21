@@ -6,7 +6,6 @@ from PySide6.QtCore import QObject, Signal
 
 logger = logging.getLogger(__name__)
 
-
 class ProfileManager(QObject):
     """
     Manages the loading, saving, and deletion of connection profiles using Netmiko-compatible keys.

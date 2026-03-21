@@ -15,6 +15,7 @@ from model.device_configuration_models.switch.ssh_model import SSHModel as Switc
 from model.device_configuration_models.router.router_interface_model import RouterInterfaceModel
 from model.device_configuration_models.switch.etherchannel_model import EtherChannelModel
 from model.device_configuration_models.router.hsrp_model import HSRPModel
+from model.device_configuration_models.router.acl_model import ACLModel
 
 from controller.tab_controllers.terminal_controller import TerminalController
 from controller.tab_controllers.connection_profile_controller import ConnectionProfileController
@@ -193,6 +194,12 @@ class MainController:
         self.hsrp_controller = BaseConfigController(
             self.window.device_config_tab.hsrp_view,
             self.hsrp_model
+        )
+
+        self.acl_model = ACLModel(self.session_manager)
+        self.acl_controller = BaseConfigController(
+            self.window.device_config_tab.acl_view,
+            self.acl_model
         )
 
         self._setup_connections()

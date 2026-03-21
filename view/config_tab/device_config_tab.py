@@ -14,6 +14,7 @@ from view.device_configuration_views.switch.ssh_view import SSHView as SwitchSSH
 from view.device_configuration_views.router.router_interface_view import RouterInterfaceView
 from view.device_configuration_views.switch.etherchannel_view import EtherChannelView
 from view.device_configuration_views.router.hsrp_view import HSRPView
+from view.device_configuration_views.router.acl_view import ACLView
 
 
 class DeviceConfigTab(QWidget):
@@ -46,6 +47,7 @@ class DeviceConfigTab(QWidget):
         self.ospf_view = OSPFView()
         self.dhcp_view = DHCPView()
         self.hsrp_view = HSRPView()
+        self.acl_view = ACLView()
 
         self.vlan_view = VlanView()
 
@@ -227,6 +229,9 @@ class DeviceConfigTab(QWidget):
             },
             "HSRP": {
                 "HSRP Configuration": self.hsrp_view
+            },
+            "ACL": {
+                "Access Control Lists": self.acl_view
             }
         }
         self.router_section = ConfigSection(router_items)
