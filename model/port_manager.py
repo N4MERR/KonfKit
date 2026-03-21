@@ -1,14 +1,12 @@
 import logging
-import sys
-
 import serial.tools.list_ports
 
-LOG_LEVEL = logging.DEBUG
-
-logging.basicConfig(stream=sys.stdout, level=LOG_LEVEL, format="%(asctime)s [%(levelname)s] %(message)s")
-logger = logging.getLogger("port_manager")
+logger = logging.getLogger(__name__)
 
 class PortManager:
+    """
+    Manages the discovery and listing of available serial COM ports on the host system.
+    """
 
     @staticmethod
     def list_ports() -> list:
