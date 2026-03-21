@@ -1,20 +1,21 @@
 from PySide6.QtWidgets import QPushButton
 from PySide6.QtCore import Signal
 from view.device_configuration_views.base_config_view import BaseConfigView
-from view.device_configuration_views.input_fields.ip_address_field import IPAddressField
-from view.device_configuration_views.input_fields.subnet_mask_field import SubnetMaskField
+from view.device_configuration_views.input_fields.adaptive_ip_address_field import AdaptiveIPAddressField
+from view.device_configuration_views.input_fields.adaptive_subnet_mask_field import AdaptiveSubnetMaskField
 from view.device_configuration_views.input_fields.dropdown_field import DropdownField
+from utils.input_validator import InputValidator
 
 
 class StaticRoutingView(BaseConfigView):
     """
-    View handling router static routing configuration with dynamic next hop selection.
+    View handling dual-stack router static routing configuration with dynamic next hop selection.
     """
     load_interfaces_signal = Signal()
 
     def __init__(self):
         """
-        Initializes the static routing view with dynamic fields for next hop type and a load interfaces button.
+        Initializes the static routing view with dynamic fields for IP version and next hop type.
         """
         super().__init__()
 
@@ -27,13 +28,13 @@ class StaticRoutingView(BaseConfigView):
         self.load_interfaces_btn.clicked.connect(self.load_interfaces_signal.emit)
         self.button_layout.insertWidget(0, self.load_interfaces_btn)
 
-        self.add_field("network", IPAddressField("Network IP:", is_optional=False))
-        self.add_field("mask", SubnetMaskField("Subnet Mask:", is_optional=False))
+        self.add_field("network", AdaptiveIPAddressField("Network IP:", is_optional=False))
+        self.add_field("mask", AdaptiveSubnetMaskField("Subnet Mask / Prefix:", is_optional=False))
 
         self.next_hop_type_field = DropdownField("Next Hop Type:", ["IP Address", "Interface"], is_optional=False)
         self.add_field("next_hop_type", self.next_hop_type_field)
 
-        self.next_hop_ip_field = IPAddressField("Next Hop IP:", is_optional=False)
+        self.next_hop_ip_field = AdaptiveIPAddressField("Next Hop IP:", is_optional=False)
         self.add_field("next_hop_ip", self.next_hop_ip_field)
 
         self.next_hop_interface_field = DropdownField("Next Hop Interface:", [], is_optional=False)
@@ -65,7 +66,7 @@ class StaticRoutingView(BaseConfigView):
 
     def validate_all(self):
         """
-        Overrides the base validation to ensure hidden fields do not block configuration submission.
+        Validates individual fields and enforces cross-field IPv4/IPv6 consistency using native field error handling.
         """
         is_valid = True
 
@@ -86,6 +87,28 @@ class StaticRoutingView(BaseConfigView):
             if not self.next_hop_interface_field.validate():
                 is_valid = False
 
+        if not is_valid:
+            return False
+
+        network_version = self.fields["network"].get_ip_version()
+        mask_val = self.fields["mask"].get_value()
+
+        if network_version == "ipv4":
+            if not InputValidator.is_valid_mask(mask_val):
+                self.fields["mask"].highlight_error("Invalid mask or prefix")
+                is_valid = False
+            if hop_type == "IP Address" and self.next_hop_ip_field.get_ip_version() != "ipv4":
+                self.next_hop_ip_field.highlight_error("Invalid IP address")
+                is_valid = False
+
+        elif network_version == "ipv6":
+            if not InputValidator.is_valid_ipv6_prefix(mask_val):
+                self.fields["mask"].highlight_error("Invalid mask or prefix")
+                is_valid = False
+            if hop_type == "IP Address" and self.next_hop_ip_field.get_ip_version() != "ipv6":
+                self.next_hop_ip_field.highlight_error("Invalid IP address")
+                is_valid = False
+
         return is_valid
 
     def update_interfaces(self, interfaces: list[str]):
@@ -97,13 +120,14 @@ class StaticRoutingView(BaseConfigView):
 
     def get_data(self) -> dict:
         """
-        Retrieves data for static routing configuration dynamically based on the selected next hop type.
+        Retrieves routing data alongside the resolved IP version.
         """
         hop_type = self.next_hop_type_field.get_value()
         next_hop_val = self.next_hop_ip_field.get_value() if hop_type == "IP Address" else self.next_hop_interface_field.get_value()
 
         return {
             "type": "static_routing",
+            "version": self.fields["network"].get_ip_version(),
             "network": self.fields["network"].get_value(),
             "mask": self.fields["mask"].get_value(),
             "next_hop": next_hop_val,
