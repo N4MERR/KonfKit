@@ -7,10 +7,8 @@ from view.terminal_view import TerminalView
 from view.device_configuration_views.router.ospf_view import OSPFView
 from view.device_configuration_views.router.dhcp_view import DHCPView
 from view.device_configuration_views.universal.system_settings_view import SystemSettingsView
-from view.device_configuration_views.router.telnet_view import TelnetView as RouterTelnetView
-from view.device_configuration_views.switch.telnet_view import TelnetView as SwitchTelnetView
-from view.device_configuration_views.router.ssh_view import SSHView as RouterSSHView
-from view.device_configuration_views.switch.ssh_view import SSHView as SwitchSSHView
+from view.device_configuration_views.universal.telnet_view import TelnetView
+from view.device_configuration_views.universal.ssh_view import SSHView
 from view.device_configuration_views.router.router_interface_view import RouterInterfaceView
 from view.device_configuration_views.switch.etherchannel_view import EtherChannelView
 from view.device_configuration_views.router.hsrp_view import HSRPView
@@ -36,11 +34,11 @@ class DeviceConfigTab(QWidget):
         self.router_basic_settings = SystemSettingsView()
         self.switch_basic_settings = SystemSettingsView()
 
-        self.router_telnet_view = RouterTelnetView()
-        self.switch_telnet_view = SwitchTelnetView()
+        self.router_telnet_view = TelnetView()
+        self.switch_telnet_view = TelnetView()
 
-        self.router_ssh_view = RouterSSHView()
-        self.switch_ssh_view = SwitchSSHView()
+        self.router_ssh_view = SSHView()
+        self.switch_ssh_view = SSHView()
 
         self.router_interface_view = RouterInterfaceView()
         self.switch_etherchannel_view = EtherChannelView()
@@ -217,11 +215,11 @@ class DeviceConfigTab(QWidget):
             },
             "SSH": {
                 "SSH Connection": self.router_ssh_view.global_section,
-                "SSH Login": self.router_ssh_view.auth_section
+                "Login": self.router_ssh_view.auth_section
             },
             "Telnet": {
                 "Telnet Connection": self.router_telnet_view.connection_section,
-                "Telnet Login": self.router_telnet_view.login_section
+                "Login": self.router_telnet_view.login_section
             },
             "DHCP": {
                 "DHCP Server": self.dhcp_view.pool_view,
@@ -255,12 +253,12 @@ class DeviceConfigTab(QWidget):
                 "EtherChannel": self.switch_etherchannel_view
             },
             "SSH": {
-                "Global Settings": self.switch_ssh_view.global_section,
-                "Authentication": self.switch_ssh_view.auth_section
+                "SSH Connection": self.switch_ssh_view.global_section,
+                "Login": self.switch_ssh_view.auth_section
             },
             "Telnet": {
                 "Telnet Connection": self.switch_telnet_view.connection_section,
-                "Telnet Login": self.switch_telnet_view.authentication_section
+                "Login": self.switch_telnet_view.login_section
             },
             "VLAN": {
                 "Create VLAN": self.vlan_view.create_vlan,

@@ -1,15 +1,14 @@
 from model.device_configuration_models.base_config_model import BaseConfigModel
-from model.device_configuration_models.base_interface_model import BaseInterfaceModel
 
 
-class TelnetConnectionModel(BaseInterfaceModel):
+class TelnetConnectionModel(BaseConfigModel):
     """
-    Model for generating VTY line commands and interface IP for Telnet on routers.
+    Model for generating VTY line commands for Telnet on devices.
     """
 
     def generate_commands(self, **data) -> list[str]:
         """
-        Generates commands for line range, transport, line passwords, login method, local user, and interface IP.
+        Generates commands for line range, transport, line passwords, login method, and local user.
         """
         commands = []
 
@@ -45,16 +44,6 @@ class TelnetConnectionModel(BaseInterfaceModel):
             commands.append("transport input telnet")
             commands.append("exit")
 
-        interface = str(data.get("interface", "")).strip()
-        ip_address = str(data.get("ip_address", "")).strip()
-        subnet_mask = str(data.get("subnet_mask", "")).strip()
-
-        if interface and ip_address and subnet_mask:
-            commands.append(f"interface {interface}")
-            commands.append(f"ip address {ip_address} {subnet_mask}")
-            commands.append("no shutdown")
-            commands.append("exit")
-
         commands.extend(super().generate_commands(**data))
         return commands
 
@@ -84,7 +73,7 @@ class TelnetLoginModel(BaseConfigModel):
 
 class TelnetModel:
     """
-    Wrapper model aggregating independent Telnet configuration models for routers.
+    Wrapper model aggregating independent Telnet configuration models for devices.
     """
 
     def __init__(self, session_manager):

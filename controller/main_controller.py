@@ -9,10 +9,8 @@ from model.device_configuration_models.router.dhcp_model import DHCPModel
 from model.device_configuration_models.router.static_routing_model import StaticRoutingModel
 from model.device_configuration_models.switch.vlan_model import VlanModel
 from model.device_configuration_models.universal.system_settings_model import SystemSettingsModel
-from model.device_configuration_models.router.telnet_model import TelnetModel as RouterTelnetModel
-from model.device_configuration_models.switch.telnet_model import TelnetModel as SwitchTelnetModel
-from model.device_configuration_models.router.ssh_model import SSHModel as RouterSSHModel
-from model.device_configuration_models.switch.ssh_model import SSHModel as SwitchSSHModel
+from model.device_configuration_models.universal.telnet_model import TelnetModel
+from model.device_configuration_models.universal.ssh_model import SSHModel
 from model.device_configuration_models.router.router_interface_model import RouterInterfaceModel
 from model.device_configuration_models.switch.etherchannel_model import EtherChannelModel
 from model.device_configuration_models.router.hsrp_model import HSRPModel
@@ -92,8 +90,8 @@ class MainController:
             self.basic_settings_model
         )
 
-        self.router_telnet_model = RouterTelnetModel(self.session_manager)
-        self.switch_telnet_model = SwitchTelnetModel(self.session_manager)
+        self.router_telnet_model = TelnetModel(self.session_manager)
+        self.switch_telnet_model = TelnetModel(self.session_manager)
 
         self.router_telnet_connection_controller = BaseConfigController(
             self.window.device_config_tab.router_telnet_view.connection_section,
@@ -109,12 +107,12 @@ class MainController:
             self.switch_telnet_model.connection_section
         )
         self.switch_telnet_login_controller = BaseConfigController(
-            self.window.device_config_tab.switch_telnet_view.authentication_section,
-            self.switch_telnet_model.authentication_section
+            self.window.device_config_tab.switch_telnet_view.login_section,
+            self.switch_telnet_model.login_section
         )
 
-        self.router_ssh_model = RouterSSHModel(self.session_manager)
-        self.switch_ssh_model = SwitchSSHModel(self.session_manager)
+        self.router_ssh_model = SSHModel(self.session_manager)
+        self.switch_ssh_model = SSHModel(self.session_manager)
 
         self.router_ssh_global_controller = BaseConfigController(
             self.window.device_config_tab.router_ssh_view.global_section,
