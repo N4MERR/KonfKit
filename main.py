@@ -1,16 +1,27 @@
 import sys
 import logging
 import traceback
+from pathlib import Path
 import qdarktheme
 from PySide6.QtWidgets import QApplication, QMessageBox
 from view.main_window import MainWindow
 from controller.main_controller import MainController
 from model.connection_profile_manager import ProfileManager
 
-app_handler = logging.FileHandler("application.log", mode='a', encoding='utf-8')
+def get_app_dir():
+    """
+    Determines the directory of the application, ensuring accurate paths when compiled to an executable.
+    """
+    if getattr(sys, 'frozen', False):
+        return Path(sys.executable).parent
+    return Path(__file__).resolve().parent
+
+APP_DIR = get_app_dir()
+
+app_handler = logging.FileHandler(APP_DIR / "application.log", mode='a', encoding='utf-8')
 app_handler.setLevel(logging.INFO)
 
-error_handler = logging.FileHandler("error.log", mode='a', encoding='utf-8')
+error_handler = logging.FileHandler(APP_DIR / "error.log", mode='a', encoding='utf-8')
 error_handler.setLevel(logging.ERROR)
 
 stream_handler = logging.StreamHandler(sys.stdout)
@@ -51,7 +62,7 @@ if __name__ == "__main__":
     qdarktheme.setup_theme("dark")
 
     window = MainWindow()
-    profile_model = ProfileManager()
+    profile_model = ProfileManager(filename=str(APP_DIR / "connections.json"))
     controller = MainController(window, profile_model)
     window.show()
     sys.exit(app.exec())
