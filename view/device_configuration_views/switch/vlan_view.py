@@ -3,8 +3,7 @@ from view.device_configuration_views.input_fields.dropdown_field import Dropdown
 from view.device_configuration_views.input_fields.multi_select_list_field import MultiSelectListField
 from view.device_configuration_views.input_fields.ranged_number_field import RangedNumberField
 from view.device_configuration_views.input_fields.base_input_field import BaseInputField
-from view.device_configuration_views.input_fields.ip_address_field import IPAddressField
-from view.device_configuration_views.input_fields.subnet_mask_field import SubnetMaskField
+from view.device_configuration_views.input_fields.dual_stack_ip_field import DualStackIPField
 from PySide6.QtWidgets import QPushButton
 from PySide6.QtCore import Signal
 
@@ -16,7 +15,7 @@ class CreateVlanView(BaseConfigView):
 
     def __init__(self):
         """
-        Initializes the fields for VLAN ID, Name, IP Address, and Subnet Mask, enforcing their dynamic states.
+        Initializes the fields for VLAN ID, Name, and dual-stack IP configuration.
         """
         super().__init__()
 
@@ -26,45 +25,46 @@ class CreateVlanView(BaseConfigView):
         self.vlan_name_field = BaseInputField("VLAN Name:", is_optional=True)
         self.add_field("vlan_name", self.vlan_name_field)
 
-        self.vlan_ip_field = IPAddressField("VLAN IP Address:", is_optional=True)
-        self.add_field("vlan_ip", self.vlan_ip_field)
+        self.dual_stack_ip_field = DualStackIPField()
+        self.add_field("dual_stack_ip", self.dual_stack_ip_field)
 
-        self.vlan_mask_field = SubnetMaskField("Subnet Mask:", is_optional=True)
-        self.add_field("vlan_mask", self.vlan_mask_field)
-
-        if hasattr(self.vlan_mask_field, 'radio'):
-            self.vlan_mask_field.radio.setEnabled(False)
-
-        if hasattr(self.vlan_ip_field, 'radio'):
-            self.vlan_ip_field.radio.toggled.connect(self._sync_subnet_mask_state)
-            self._sync_subnet_mask_state(self.vlan_ip_field.radio.isChecked())
-
-    def _sync_subnet_mask_state(self, checked: bool):
+    def validate_all(self):
         """
-        Synchronizes the state of the subnet mask field with the IP address field.
+        Validates VLAN creation fields, treating dual-stack IP as optional if no stacks are checked.
         """
-        if hasattr(self.vlan_mask_field, 'input_widget'):
-            self.vlan_mask_field.input_widget.setEnabled(checked)
+        is_valid = True
 
-        if hasattr(self.vlan_mask_field, 'radio'):
-            self.vlan_mask_field.radio.setChecked(checked)
+        if not self.vlan_id_field.validate():
+            is_valid = False
 
-        if not checked and hasattr(self.vlan_mask_field, 'input_widget'):
-            self.vlan_mask_field.input_widget.clear()
+        if hasattr(self.vlan_name_field, 'radio') and self.vlan_name_field.radio.isChecked():
+            if not self.vlan_name_field.validate():
+                is_valid = False
+
+        ipv4_checked = self.dual_stack_ip_field.ipv4_field.radio.isChecked()
+        ipv6_checked = self.dual_stack_ip_field.ipv6_field.radio.isChecked()
+
+        if ipv4_checked or ipv6_checked:
+            if not self.dual_stack_ip_field.validate():
+                is_valid = False
+        else:
+            self.dual_stack_ip_field.clear_highlight()
+
+        return is_valid
 
     def get_data(self) -> dict:
         """
         Retrieves the VLAN creation configuration data from the input fields.
         """
+        ip_data = self.dual_stack_ip_field.get_value()
         return {
             "type": "create_vlan",
             "vlan_id": self.vlan_id_field.get_value(),
-            "vlan_name": self.vlan_name_field.get_value() if hasattr(self.vlan_name_field,
-                                                                     'radio') and self.vlan_name_field.radio.isChecked() else None,
-            "vlan_ip": self.vlan_ip_field.get_value() if hasattr(self.vlan_ip_field,
-                                                                 'radio') and self.vlan_ip_field.radio.isChecked() else None,
-            "vlan_mask": self.vlan_mask_field.get_value() if hasattr(self.vlan_mask_field,
-                                                                     'radio') and self.vlan_mask_field.radio.isChecked() else None,
+            "vlan_name": self.vlan_name_field.get_value() if hasattr(self.vlan_name_field, 'radio') and self.vlan_name_field.radio.isChecked() else None,
+            "ipv4": ip_data.get("ipv4"),
+            "ipv4_mask": ip_data.get("ipv4_mask"),
+            "ipv6": ip_data.get("ipv6"),
+            "ipv6_prefix": ip_data.get("ipv6_prefix"),
             "_save_configuration": self.save_configuration_cb.isChecked()
         }
 

@@ -16,8 +16,10 @@ class CreateVlanModel(BaseConfigModel):
 
         vlan_id = data.get("vlan_id")
         vlan_name = data.get("vlan_name")
-        vlan_ip = data.get("vlan_ip")
-        vlan_mask = data.get("vlan_mask")
+        ipv4 = data.get("ipv4")
+        ipv4_mask = data.get("ipv4_mask")
+        ipv6 = data.get("ipv6")
+        ipv6_prefix = data.get("ipv6_prefix")
 
         if vlan_id:
             commands.append(f"vlan {vlan_id}")
@@ -25,9 +27,12 @@ class CreateVlanModel(BaseConfigModel):
                 commands.append(f"name {vlan_name}")
             commands.append("exit")
 
-            if vlan_ip and vlan_mask:
+            if (ipv4 and ipv4_mask) or (ipv6 and ipv6_prefix):
                 commands.append(f"interface vlan {vlan_id}")
-                commands.append(f"ip address {vlan_ip} {vlan_mask}")
+                if ipv4 and ipv4_mask:
+                    commands.append(f"ip address {ipv4} {ipv4_mask}")
+                if ipv6 and ipv6_prefix:
+                    commands.append(f"ipv6 address {ipv6}/{ipv6_prefix}")
                 commands.append("no shutdown")
                 commands.append("exit")
 
