@@ -6,6 +6,7 @@ from model.network_session_manager import NetworkSessionManager
 from model.terminal_model import TerminalModel
 from model.device_configuration_models.router.ospf_model import OSPFModel
 from model.device_configuration_models.router.dhcp_model import DHCPModel
+from model.device_configuration_models.router.static_routing_model import StaticRoutingModel
 from model.device_configuration_models.switch.vlan_model import VlanModel
 from model.device_configuration_models.universal.system_settings_model import SystemSettingsModel
 from model.device_configuration_models.router.telnet_model import TelnetModel as RouterTelnetModel
@@ -176,6 +177,12 @@ class MainController:
         self.dhcp_excluded_controller = BaseConfigController(
             self.window.device_config_tab.dhcp_view.excluded_view,
             self.dhcp_model.dhcp_excluded
+        )
+
+        self.static_routing_model = StaticRoutingModel(self.session_manager)
+        self.static_routing_controller = BaseConfigController(
+            self.window.device_config_tab.static_routing_view,
+            self.static_routing_model
         )
 
         self.vlan_model = VlanModel(self.session_manager)

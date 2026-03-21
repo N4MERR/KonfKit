@@ -15,6 +15,7 @@ from view.device_configuration_views.router.router_interface_view import RouterI
 from view.device_configuration_views.switch.etherchannel_view import EtherChannelView
 from view.device_configuration_views.router.hsrp_view import HSRPView
 from view.device_configuration_views.router.acl_view import ACLView
+from view.device_configuration_views.router.static_routing_view import StaticRoutingView
 
 
 class DeviceConfigTab(QWidget):
@@ -48,6 +49,7 @@ class DeviceConfigTab(QWidget):
         self.dhcp_view = DHCPView()
         self.hsrp_view = HSRPView()
         self.acl_view = ACLView()
+        self.static_routing_view = StaticRoutingView()
 
         self.vlan_view = VlanView()
 
@@ -209,6 +211,9 @@ class DeviceConfigTab(QWidget):
             "Interfaces": {
                 "Physical Interfaces": self.router_interface_view.physical,
                 "Subinterfaces": self.router_interface_view.subinterface
+            },
+            "Routing": {
+                "Static Routing": self.static_routing_view
             },
             "SSH": {
                 "SSH Connection": self.router_ssh_view.global_section,
