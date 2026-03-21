@@ -17,15 +17,18 @@ class RouterPhysicalInterfaceModel(BaseInterfaceModel):
 
         commands.append(f"interface {data.get('interface')}")
 
-        if data.get("ip_enabled") and data.get("ip_address") and data.get("subnet_mask"):
-            commands.append(f"ip address {data.get('ip_address')} {data.get('subnet_mask')}")
+        ip_config = data.get("ip_config", {})
 
-        if data.get("ipv6_enabled") and data.get("ipv6_address") and data.get("ipv6_prefix"):
-            prefix = data.get("ipv6_prefix").lstrip("/")
-            commands.append(f"ipv6 address {data.get('ipv6_address')}/{prefix}")
+        if ip_config.get("ipv4") and ip_config.get("ipv4_mask"):
+            commands.append(f"ip address {ip_config.get('ipv4')} {ip_config.get('ipv4_mask')}")
 
-        if data.get("enable_interface") is not None:
-            if data.get("enable_interface"):
+        if ip_config.get("ipv6") and ip_config.get("ipv6_prefix"):
+            prefix = str(ip_config.get("ipv6_prefix")).lstrip("/")
+            commands.append(f"ipv6 address {ip_config.get('ipv6')}/{prefix}")
+
+        status = data.get("status")
+        if status is not None:
+            if status:
                 commands.append("no shutdown")
             else:
                 commands.append("shutdown")
@@ -47,27 +50,23 @@ class RouterSubinterfaceModel(BaseInterfaceModel):
         """
         commands = []
 
-        if not data.get("interface") or not data.get("subinterface_id"):
+        if data.get("interface") is None or data.get("subinterface") is None:
             return commands
 
-        target_iface = f"{data.get('interface')}.{data.get('subinterface_id')}"
+        target_iface = f"{data.get('interface')}.{data.get('subinterface')}"
         commands.append(f"interface {target_iface}")
 
-        if data.get("vlan_id"):
-            commands.append(f"encapsulation dot1Q {data.get('vlan_id')}")
+        if data.get("vlan"):
+            commands.append(f"encapsulation dot1Q {data.get('vlan')}")
 
-        if data.get("ip_enabled") and data.get("ip_address") and data.get("subnet_mask"):
-            commands.append(f"ip address {data.get('ip_address')} {data.get('subnet_mask')}")
+        ip_config = data.get("ip_config", {})
 
-        if data.get("ipv6_enabled") and data.get("ipv6_address") and data.get("ipv6_prefix"):
-            prefix = data.get("ipv6_prefix").lstrip("/")
-            commands.append(f"ipv6 address {data.get('ipv6_address')}/{prefix}")
+        if ip_config.get("ipv4") and ip_config.get("ipv4_mask"):
+            commands.append(f"ip address {ip_config.get('ipv4')} {ip_config.get('ipv4_mask')}")
 
-        if data.get("enable_interface") is not None:
-            if data.get("enable_interface"):
-                commands.append("no shutdown")
-            else:
-                commands.append("shutdown")
+        if ip_config.get("ipv6") and ip_config.get("ipv6_prefix"):
+            prefix = str(ip_config.get("ipv6_prefix")).lstrip("/")
+            commands.append(f"ipv6 address {ip_config.get('ipv6')}/{prefix}")
 
         commands.append("exit")
 

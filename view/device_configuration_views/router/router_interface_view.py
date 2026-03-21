@@ -1,130 +1,113 @@
-from PySide6.QtWidgets import QPushButton
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton
 from PySide6.QtCore import Signal
 from view.device_configuration_views.base_config_view import BaseConfigView
 from view.device_configuration_views.input_fields.dropdown_field import DropdownField
-from view.device_configuration_views.input_fields.ip_address_field import IPAddressField
-from view.device_configuration_views.input_fields.ipv6_address_field import IPv6AddressField
-from view.device_configuration_views.input_fields.ipv6_prefix_length_field import IPv6PrefixField
-from view.device_configuration_views.input_fields.subnet_mask_field import SubnetMaskField
 from view.device_configuration_views.input_fields.number_field import NumberField
-from view.device_configuration_views.input_fields.radio_indicator_field import RadioIndicatorField
+from view.device_configuration_views.input_fields.dual_stack_ip_field import DualStackIPField
 
 
-class BaseRouterInterfaceView(BaseConfigView):
+class RouterPhysicalInterfaceView(BaseConfigView):
     """
-    Base view for loading interfaces and providing the selection dropdown.
+    View handling physical router interface settings.
     """
     load_interfaces_signal = Signal()
 
     def __init__(self):
+        """
+        Initializes physical interface configuration UI components.
+        """
         super().__init__()
 
-        self.refresh_btn = QPushButton("Load Interfaces")
-        self.refresh_btn.setStyleSheet(
+        self.load_interfaces_btn = QPushButton("Load Interfaces")
+        self.load_interfaces_btn.setStyleSheet(
             "QPushButton { background-color: #cccccc; color: black; border: 1px solid #8a8886; border-radius: 4px; padding: 6px; font-weight: bold; }"
             "QPushButton:hover { background-color: #b3b3b3; }"
             "QPushButton:disabled { background-color: #e6e6e6; color: #a0a0a0; border: 1px solid #c0c0c0; }"
         )
-        self.refresh_btn.clicked.connect(self.load_interfaces_signal.emit)
-        self.button_layout.insertWidget(0, self.refresh_btn)
+        self.load_interfaces_btn.clicked.connect(self.load_interfaces_signal.emit)
+        self.button_layout.insertWidget(0, self.load_interfaces_btn)
 
-        self.interface_dropdown = DropdownField("Select Interface:", [], is_optional=False)
-        self.add_field("interface", self.interface_dropdown)
+        self.add_field("interface", DropdownField("Interface:", [], is_optional=False))
+
+        self.dual_stack_ip = DualStackIPField()
+        self.add_field("ip_config", self.dual_stack_ip)
 
     def update_interfaces(self, interfaces: list[str]):
-        self.interface_dropdown.input_widget.clear()
-        self.interface_dropdown.input_widget.addItems(interfaces)
-
-    def validate_all(self) -> bool:
-        ipv4_enabled = self.fields["ip_address"].radio.isChecked()
-        ipv6_enabled = self.fields["ipv6_address"].radio.isChecked()
-
-        self.fields["subnet_mask"].is_optional = not ipv4_enabled
-        self.fields["ipv6_prefix"].is_optional = not ipv6_enabled
-
-        base_valid = super().validate_all()
-
-        if not ipv4_enabled and not ipv6_enabled:
-            self.fields["ip_address"].set_error_message("At least one address is required")
-            self.fields["ipv6_address"].set_error_message("At least one address is required")
-            self.fields["ip_address"].highlight_error("At least one address is required")
-            self.fields["ipv6_address"].highlight_error("At least one address is required")
-            return False
-
-        self.fields["ip_address"].set_error_message("Invalid IP address")
-        self.fields["ipv6_address"].set_error_message("Invalid IPv6 address")
-
-        return base_valid
-
-
-class RouterPhysicalInterfaceView(BaseRouterInterfaceView):
-    """
-    View dedicated to configuring standard physical interfaces on the router.
-    """
-    def __init__(self):
-        super().__init__()
-
-        ipv4_field = IPAddressField("IPv4 Address:", is_optional=True)
-        self.add_field("ip_address", ipv4_field)
-        self.add_field("subnet_mask", SubnetMaskField("Subnet Mask:", is_optional=False, linked_ip_field=ipv4_field))
-
-        ipv6_field = IPv6AddressField("IPv6 Address:", is_optional=True)
-        self.add_field("ipv6_address", ipv6_field)
-        self.add_field("ipv6_prefix", IPv6PrefixField("IPv6 Prefix:", is_optional=False, linked_ip_field=ipv6_field))
-
-        self.enable_interface = RadioIndicatorField("Enable Interface (no shutdown)")
-        self.form_layout.insertWidget(self.form_layout.count() - 1, self.enable_interface)
+        """
+        Updates the interface dropdown with retrieved device data.
+        """
+        self.fields["interface"].input_widget.clear()
+        self.fields["interface"].input_widget.addItems(interfaces)
 
     def get_data(self) -> dict:
+        """
+        Retrieves interface configuration data including the bundled IP definitions.
+        """
         return {
-            "type": "physical",
+            "type": "router_physical_interface",
             "interface": self.fields["interface"].get_value(),
-            "ip_address": self.fields["ip_address"].get_value(),
-            "ip_enabled": self.fields["ip_address"].radio.isChecked(),
-            "subnet_mask": self.fields["subnet_mask"].get_value(),
-            "ipv6_address": self.fields["ipv6_address"].get_value(),
-            "ipv6_enabled": self.fields["ipv6_address"].radio.isChecked(),
-            "ipv6_prefix": self.fields["ipv6_prefix"].get_value(),
-            "enable_interface": self.enable_interface.isChecked(),
+            "ip_config": self.fields["ip_config"].get_value(),
             "_save_configuration": self.save_configuration_cb.isChecked()
         }
 
 
-class RouterSubinterfaceView(BaseRouterInterfaceView):
+class RouterSubinterfaceView(BaseConfigView):
     """
-    View dedicated to configuring 802.1Q subinterfaces on the router.
+    View handling 802.1Q router subinterface settings.
     """
+    load_interfaces_signal = Signal()
+
     def __init__(self):
+        """
+        Initializes subinterface configuration UI components.
+        """
         super().__init__()
 
-        self.add_field("subinterface_id", NumberField("Subinterface ID:", is_optional=False))
-        self.add_field("vlan_id", NumberField("VLAN ID (dot1Q):", is_optional=False))
+        self.load_interfaces_btn = QPushButton("Load Interfaces")
+        self.load_interfaces_btn.setStyleSheet(
+            "QPushButton { background-color: #cccccc; color: black; border: 1px solid #8a8886; border-radius: 4px; padding: 6px; font-weight: bold; }"
+            "QPushButton:hover { background-color: #b3b3b3; }"
+            "QPushButton:disabled { background-color: #e6e6e6; color: #a0a0a0; border: 1px solid #c0c0c0; }"
+        )
+        self.load_interfaces_btn.clicked.connect(self.load_interfaces_signal.emit)
+        self.button_layout.insertWidget(0, self.load_interfaces_btn)
 
-        ipv4_field = IPAddressField("IPv4 Address:", is_optional=True)
-        self.add_field("ip_address", ipv4_field)
-        self.add_field("subnet_mask", SubnetMaskField("Subnet Mask:", is_optional=False, linked_ip_field=ipv4_field))
+        self.add_field("interface", DropdownField("Parent Interface:", [], is_optional=False))
+        self.add_field("subinterface", NumberField("Subinterface ID:", is_optional=False))
+        self.add_field("vlan", NumberField("VLAN ID (802.1Q):", is_optional=False))
 
-        ipv6_field = IPv6AddressField("IPv6 Address:", is_optional=True)
-        self.add_field("ipv6_address", ipv6_field)
-        self.add_field("ipv6_prefix", IPv6PrefixField("IPv6 Prefix:", is_optional=False, linked_ip_field=ipv6_field))
+        self.dual_stack_ip = DualStackIPField()
+        self.add_field("ip_config", self.dual_stack_ip)
+
+    def update_interfaces(self, interfaces: list[str]):
+        """
+        Updates the interface dropdown with retrieved device data.
+        """
+        self.fields["interface"].input_widget.clear()
+        self.fields["interface"].input_widget.addItems(interfaces)
 
     def get_data(self) -> dict:
+        """
+        Retrieves subinterface configuration data including the bundled IP definitions.
+        """
         return {
-            "type": "subinterface",
+            "type": "router_subinterface",
             "interface": self.fields["interface"].get_value(),
-            "subinterface_id": self.fields["subinterface_id"].get_value(),
-            "vlan_id": self.fields["vlan_id"].get_value(),
-            "ip_address": self.fields["ip_address"].get_value(),
-            "ip_enabled": self.fields["ip_address"].radio.isChecked(),
-            "subnet_mask": self.fields["subnet_mask"].get_value(),
-            "ipv6_address": self.fields["ipv6_address"].get_value(),
-            "ipv6_enabled": self.fields["ipv6_address"].radio.isChecked(),
-            "ipv6_prefix": self.fields["ipv6_prefix"].get_value(),
+            "subinterface": self.fields["subinterface"].get_value(),
+            "vlan": self.fields["vlan"].get_value(),
+            "ip_config": self.fields["ip_config"].get_value(),
             "_save_configuration": self.save_configuration_cb.isChecked()
         }
 
 
 class RouterInterfaceView:
+    """
+    Container view holding physical and subinterface configuration panes.
+    """
+
     def __init__(self):
+        """
+        Initializes both physical and subinterface view instances.
+        """
         self.physical = RouterPhysicalInterfaceView()
         self.subinterface = RouterSubinterfaceView()
