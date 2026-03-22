@@ -4,6 +4,7 @@ from view.device_configuration_views.base_config_view import BaseConfigView
 from view.device_configuration_views.input_fields.dropdown_field import DropdownField
 from view.device_configuration_views.input_fields.ip_address_field import IPAddressField
 from view.device_configuration_views.input_fields.base_input_field import BaseInputField
+from view.device_configuration_views.input_fields.subnet_mask_field import SubnetMaskField
 from view.device_configuration_views.input_fields.toggle_field import ToggleField
 
 
@@ -72,7 +73,7 @@ class NATPoolCreationView(BaseConfigView):
         self.end_ip = IPAddressField("End IP:", is_optional=False)
         self.add_field("end_ip", self.end_ip)
 
-        self.netmask = IPAddressField("Netmask:", is_optional=False)
+        self.netmask = SubnetMaskField("Netmask:", is_optional=False)
         self.add_field("netmask", self.netmask)
 
     def get_data(self) -> dict:
