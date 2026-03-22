@@ -28,8 +28,8 @@ class HSRPView(BaseConfigView):
         self.load_interfaces_btn.clicked.connect(self.load_interfaces_signal.emit)
         self.button_layout.insertWidget(0, self.load_interfaces_btn)
 
-        self.add_field("interface", DropdownField("Target Interface:", [], is_optional=False))
-        self.add_field("group_id", NumberField("Standby Group ID:", is_optional=False))
+        self.add_field("interface", DropdownField("Interface:", [], is_optional=False))
+        self.add_field("group_id", NumberField("Standby ID:", is_optional=False))
 
         self.virtual_ip_field = AdaptiveIPAddressField("Virtual IP Address:", is_optional=False)
         self.add_field("virtual_ip", self.virtual_ip_field)
