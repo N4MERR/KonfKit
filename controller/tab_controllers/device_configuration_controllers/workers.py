@@ -72,3 +72,51 @@ class VlanLoadWorker(QThread):
             self.finished_signal.emit(vlans if vlans is not None else [], "")
         except Exception as e:
             self.finished_signal.emit([], str(e))
+
+
+class ACLLoadWorker(QThread):
+    """
+    Native PySide worker class to handle loading Access Control Lists asynchronously.
+    """
+    finished_signal = Signal(list, str)
+
+    def __init__(self, model):
+        """
+        Initializes the ACL loading worker with the specific device model.
+        """
+        super().__init__()
+        self.model = model
+
+    def run(self):
+        """
+        Executes the ACL querying logic defined in the specific model.
+        """
+        try:
+            acls = self.model.get_acls()
+            self.finished_signal.emit(acls if acls is not None else [], "")
+        except Exception as e:
+            self.finished_signal.emit([], str(e))
+
+
+class PoolLoadWorker(QThread):
+    """
+    Native PySide worker class to handle loading NAT Pools asynchronously.
+    """
+    finished_signal = Signal(list, str)
+
+    def __init__(self, model):
+        """
+        Initializes the NAT pool loading worker with the specific device model.
+        """
+        super().__init__()
+        self.model = model
+
+    def run(self):
+        """
+        Executes the NAT pool querying logic defined in the specific model.
+        """
+        try:
+            pools = self.model.get_pools()
+            self.finished_signal.emit(pools if pools is not None else [], "")
+        except Exception as e:
+            self.finished_signal.emit([], str(e))

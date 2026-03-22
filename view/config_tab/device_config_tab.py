@@ -14,6 +14,7 @@ from view.device_configuration_views.switch.etherchannel_view import EtherChanne
 from view.device_configuration_views.router.hsrp_view import HSRPView
 from view.device_configuration_views.router.acl_view import ACLView
 from view.device_configuration_views.router.static_routing_view import StaticRoutingView
+from view.device_configuration_views.router.nat_view import NATView
 
 
 class DeviceConfigTab(QWidget):
@@ -48,6 +49,7 @@ class DeviceConfigTab(QWidget):
         self.hsrp_view = HSRPView()
         self.acl_view = ACLView()
         self.static_routing_view = StaticRoutingView()
+        self.nat_view = NATView()
 
         self.vlan_view = VlanView()
 
@@ -235,6 +237,11 @@ class DeviceConfigTab(QWidget):
             },
             "ACL": {
                 "Access Control Lists": self.acl_view
+            },
+            "NAT": {
+                "Interface Roles": self.nat_view.interface_role,
+                "Pool Creation": self.nat_view.pool_creation,
+                "Translation Rules": self.nat_view.translation_rule
             }
         }
         self.router_section = ConfigSection(router_items)
@@ -371,5 +378,5 @@ class DeviceConfigTab(QWidget):
             self.reconnect_btn.show()
 
         for btn in self.findChildren(QPushButton):
-            if btn.text() in ["Apply", "Preview", "Apply Configuration", "Load Interfaces", "Load VLANs"]:
+            if btn.text() in ["Apply", "Preview", "Apply Configuration", "Load Interfaces", "Load VLANs", "Load"]:
                 btn.setEnabled(is_connected)

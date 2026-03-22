@@ -15,11 +15,13 @@ from model.device_configuration_models.router.router_interface_model import Rout
 from model.device_configuration_models.switch.etherchannel_model import EtherChannelModel
 from model.device_configuration_models.router.hsrp_model import HSRPModel
 from model.device_configuration_models.router.acl_model import ACLModel
+from model.device_configuration_models.router.nat_model import NATModel
 
 from controller.tab_controllers.terminal_controller import TerminalController
 from controller.tab_controllers.connection_profile_controller import ConnectionProfileController
 from controller.tab_controllers.device_configuration_controllers.base_config_controller import BaseConfigController
 from controller.tab_controllers.password_reset_controller import PasswordResetController
+from controller.tab_controllers.device_configuration_controllers.nat_controller import NATController
 
 
 class ConnectionWorker(QThread):
@@ -207,6 +209,12 @@ class MainController:
             self.acl_model
         )
 
+        self.nat_model = NATModel(self.session_manager)
+        self.nat_controller = NATController(
+            self.window.device_config_tab.nat_view,
+            self.nat_model
+        )
+
         self._setup_connections()
 
     def _setup_connections(self):
@@ -237,6 +245,9 @@ class MainController:
         self.worker = ConnectionWorker(self.session_manager, settings)
 
         def on_finished(success, error_message):
+            """
+            Callback to handle UI state updates when the connection worker finishes.
+            """
             if self.progress:
                 self.progress.close()
                 self.progress = None
