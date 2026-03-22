@@ -2,9 +2,11 @@ from view.device_configuration_views.base_config_view import BaseConfigView
 from view.device_configuration_views.input_fields.acl_name_fields import NamedAclIdField, ExtendedAclIdField, \
     StandardAclIdField
 from view.device_configuration_views.input_fields.dropdown_field import DropdownField
-from view.device_configuration_views.input_fields.ip_address_field import IPAddressField
-from view.device_configuration_views.input_fields.wildcard_mask_field import WildcardMaskField
+from view.device_configuration_views.input_fields.adaptive_ip_address_field import AdaptiveIPAddressField
+from view.device_configuration_views.input_fields.adaptive_wildcard_mask_field import AdaptiveWildcardMaskField
 from view.device_configuration_views.input_fields.number_field import NumberField
+from utils.input_validator import InputValidator
+from PySide6.QtCore import QEvent
 
 
 class ACLView(BaseConfigView):
@@ -27,15 +29,15 @@ class ACLView(BaseConfigView):
         self.add_field("action", DropdownField("Action:", ["permit", "deny"], is_optional=False))
 
         self.add_field("source_type", DropdownField("Source Selection:", ["any", "host", "ip"], is_optional=False))
-        self.add_field("source_ip", IPAddressField("Source IP Address:", is_optional=False))
-        self.add_field("source_wildcard", WildcardMaskField("Source Wildcard Mask:", is_optional=False))
+        self.add_field("source_ip", AdaptiveIPAddressField("Source IP address:", is_optional=False))
+        self.add_field("source_wildcard", AdaptiveWildcardMaskField("Source Wildcard/Prefix:", is_optional=False))
 
         self.add_field("protocol", DropdownField("Protocol:", ["ip", "tcp", "udp", "icmp"], is_optional=False))
 
         self.add_field("destination_type",
                        DropdownField("Destination Selection:", ["any", "host", "ip"], is_optional=False))
-        self.add_field("destination_ip", IPAddressField("Destination IP Address:", is_optional=False))
-        self.add_field("destination_wildcard", WildcardMaskField("Destination Wildcard Mask:", is_optional=False))
+        self.add_field("destination_ip", AdaptiveIPAddressField("Destination IP Address:", is_optional=False))
+        self.add_field("destination_wildcard", AdaptiveWildcardMaskField("Destination Wildcard/Prefix:", is_optional=False))
 
         self.add_field("port_operator",
                        DropdownField("Port Operator:", ["eq (equal)", "gt (greater)", "lt (less)", "ne (not equal)"],
@@ -102,7 +104,7 @@ class ACLView(BaseConfigView):
 
     def _connect_signals(self):
         """
-        Binds dropdown state changes to specific visibility update handlers.
+        Binds dropdown state changes to specific visibility update handlers and custom event filters.
         """
         type_field = self.fields.get("acl_type")
         if type_field and hasattr(type_field, "input_widget"):
@@ -112,6 +114,23 @@ class ACLView(BaseConfigView):
             field = self.fields.get(field_name)
             if field and hasattr(field, "input_widget"):
                 field.input_widget.currentIndexChanged.connect(self._update_visibility)
+
+        self.fields["source_ip"].input_widget.installEventFilter(self)
+        self.fields["destination_ip"].input_widget.installEventFilter(self)
+
+    def eventFilter(self, source, event):
+        """
+        Intercepts events to cross-clear IP mismatch highlights securely.
+        """
+        if event.type() in [QEvent.MouseButtonPress, QEvent.FocusIn]:
+            src_ip = self.fields.get("source_ip")
+            dst_ip = self.fields.get("destination_ip")
+            if src_ip and dst_ip:
+                if source is src_ip.input_widget and dst_ip.error_label.text() == "IP versions must match.":
+                    dst_ip.clear_highlight()
+                elif source is dst_ip.input_widget and src_ip.error_label.text() == "IP versions must match.":
+                    src_ip.clear_highlight()
+        return super().eventFilter(source, event)
 
     def _update_visibility(self):
         """
@@ -142,13 +161,51 @@ class ACLView(BaseConfigView):
 
     def validate_all(self) -> bool:
         """
-        Overrides base validation to only enforce checks on actively visible fields.
+        Overrides base validation to only enforce checks on actively visible fields
+        and ensures that IP versions and their respective masks/prefixes match.
         """
         is_valid = True
         for field in self.fields.values():
             if field.isVisible() and hasattr(field, 'validate'):
                 if not field.validate():
                     is_valid = False
+
+        source_ip_field = self.fields["source_ip"]
+        source_wildcard_field = self.fields["source_wildcard"]
+        dest_ip_field = self.fields["destination_ip"]
+        dest_wildcard_field = self.fields["destination_wildcard"]
+
+        if source_ip_field.isVisible() and source_wildcard_field.isVisible():
+            src_version = source_ip_field.get_ip_version()
+            src_mask = source_wildcard_field.get_value()
+            if src_version == "ipv4" and not (InputValidator.is_valid_wildcard_mask(src_mask) or str(src_mask).strip().lower() in ["any", "host"]):
+                source_wildcard_field.highlight_error("Must be an IPv4 wildcard mask.")
+                is_valid = False
+            elif src_version == "ipv6" and not (InputValidator.is_valid_ipv6_prefix(src_mask) or str(src_mask).strip().lower() in ["any", "host"]):
+                source_wildcard_field.highlight_error("Must be an IPv6 prefix length.")
+                is_valid = False
+
+        if dest_ip_field.isVisible() and dest_wildcard_field.isVisible():
+            dst_version = dest_ip_field.get_ip_version()
+            dst_mask = dest_wildcard_field.get_value()
+            if dst_version == "ipv4" and not (InputValidator.is_valid_wildcard_mask(dst_mask) or str(dst_mask).strip().lower() in ["any", "host"]):
+                dest_wildcard_field.highlight_error("Must be an IPv4 wildcard mask.")
+                is_valid = False
+            elif dst_version == "ipv6" and not (InputValidator.is_valid_ipv6_prefix(dst_mask) or str(dst_mask).strip().lower() in ["any", "host"]):
+                dest_wildcard_field.highlight_error("Must be an IPv6 prefix length.")
+                is_valid = False
+
+        if source_ip_field.isVisible() and dest_ip_field.isVisible():
+            src_version = source_ip_field.get_ip_version()
+            dst_version = dest_ip_field.get_ip_version()
+
+            if src_version != "unknown" and dst_version != "unknown" and src_version != dst_version:
+                if hasattr(source_ip_field, 'highlight_error'):
+                    source_ip_field.highlight_error("IP versions must match.")
+                if hasattr(dest_ip_field, 'highlight_error'):
+                    dest_ip_field.highlight_error("IP versions must match.")
+                is_valid = False
+
         return is_valid
 
     def get_data(self) -> dict:
