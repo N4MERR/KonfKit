@@ -1,20 +1,20 @@
-# rocnikovy_projekt_new/view/device_configuration_views/input_fields/toggle_field.py
-from PySide6.QtWidgets import QRadioButton
+from PySide6.QtWidgets import QCheckBox
 from PySide6.QtCore import Signal
 from view.device_configuration_views.input_fields.base_input_field import BaseInputField
 
+
 class ToggleField(BaseInputField):
     """
-    A binary toggle field component for the standard configuration UI.
-    Proxies the toggled signal from the underlying RadioButton.
+    A binary toggle field component for the standard configuration UI utilizing a checkbox.
+    Proxies the toggled signal from the underlying QCheckBox.
     """
     toggled = Signal(bool)
 
-    def _create_input_widget(self) -> QRadioButton:
+    def _create_input_widget(self) -> QCheckBox:
         """
-        Creates and returns a QRadioButton as the primary input widget.
+        Creates and returns a QCheckBox as the primary input widget.
         """
-        widget = QRadioButton()
+        widget = QCheckBox()
         return widget
 
     def _setup_connections(self):
@@ -28,7 +28,8 @@ class ToggleField(BaseInputField):
         """
         Syncs the radio indicator state and emits the public proxy signal.
         """
-        self.radio.setChecked(checked)
+        if hasattr(self, 'radio') and self.radio:
+            self.radio.setChecked(checked)
         self.toggled.emit(checked)
 
     def isChecked(self) -> bool:

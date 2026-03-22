@@ -35,7 +35,7 @@ class HSRPView(BaseConfigView):
         self.add_field("virtual_ip", self.virtual_ip_field)
 
         self.add_field("priority", NumberField("Priority (0-255):", is_optional=True))
-        self.add_field("preempt", ToggleField("Enable Preempt:", is_optional=True))
+        self.add_field("preempt", ToggleField("Enable Preempt:", is_optional=False))
 
     def update_interfaces(self, interfaces: list[str]):
         """
@@ -55,6 +55,6 @@ class HSRPView(BaseConfigView):
             "virtual_ip": self.virtual_ip_field.get_value(),
             "version": self.virtual_ip_field.get_ip_version(),
             "priority": self.fields["priority"].get_value() if self.fields["priority"].radio.isChecked() else None,
-            "preempt": self.fields["preempt"].get_value() if self.fields["preempt"].radio.isChecked() else None,
+            "preempt": self.fields["preempt"].get_value(),
             "_save_configuration": self.save_configuration_cb.isChecked()
         }
