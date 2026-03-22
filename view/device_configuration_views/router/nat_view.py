@@ -128,7 +128,7 @@ class NATTranslationRuleView(BaseConfigView):
         self.load_pools_btn.clicked.connect(self.load_pools_signal.emit)
         self.button_layout.insertWidget(2, self.load_pools_btn)
 
-        self.source_type_field = DropdownField("Source Type:", ["static", "list"], is_optional=False)
+        self.source_type_field = DropdownField("Source:", ["static", "access control list"], is_optional=False)
         self.add_field("source_type", self.source_type_field)
         self.source_type_field.input_widget.currentTextChanged.connect(self._toggle_fields)
 
@@ -138,17 +138,17 @@ class NATTranslationRuleView(BaseConfigView):
         self.outside_ip = IPAddressField("Outside Global IP:", is_optional=False)
         self.add_field("outside_ip", self.outside_ip)
 
-        self.acl_field = DropdownField("Select ACL:", [], is_optional=False)
+        self.acl_field = DropdownField("ACL:", [], is_optional=False)
         self.add_field("acl", self.acl_field)
 
         self.mapping_type_field = DropdownField("Map to:", ["interface", "pool"], is_optional=False)
         self.add_field("mapping_type", self.mapping_type_field)
         self.mapping_type_field.input_widget.currentTextChanged.connect(self._toggle_fields)
 
-        self.target_interface_field = DropdownField("Target Interface:", [], is_optional=False)
+        self.target_interface_field = DropdownField("Interface:", [], is_optional=False)
         self.add_field("target_interface", self.target_interface_field)
 
-        self.pool_field = DropdownField("Select Pool:", [], is_optional=False)
+        self.pool_field = DropdownField("Pool:", [], is_optional=False)
         self.add_field("pool", self.pool_field)
 
         self.overload_field = ToggleField("Overload:", is_optional=False)
