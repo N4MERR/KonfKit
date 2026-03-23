@@ -1,3 +1,4 @@
+# rocnikovy_projekt_new/controller/tab_controllers/device_configuration_controllers/load_workers.py
 from PySide6.QtCore import QThread, Signal
 
 
@@ -44,6 +45,7 @@ class InterfaceLoadWorker(QThread):
         Executes the interface querying logic defined in the specific model.
         """
         try:
+            self.model.session_manager.send_command("end")
             interfaces = self.model.get_interfaces()
             self.finished_signal.emit(interfaces if interfaces is not None else [], "")
         except Exception as e:
@@ -68,6 +70,7 @@ class VlanLoadWorker(QThread):
         Executes the VLAN querying logic defined in the specific model.
         """
         try:
+            self.model.session_manager.send_command("end")
             vlans = self.model.get_vlans()
             self.finished_signal.emit(vlans if vlans is not None else [], "")
         except Exception as e:
@@ -92,6 +95,7 @@ class ACLLoadWorker(QThread):
         Executes the ACL querying logic defined in the specific model.
         """
         try:
+            self.model.session_manager.send_command("end")
             acls = self.model.get_acls()
             self.finished_signal.emit(acls if acls is not None else [], "")
         except Exception as e:
@@ -116,7 +120,38 @@ class PoolLoadWorker(QThread):
         Executes the NAT pool querying logic defined in the specific model.
         """
         try:
+            self.model.session_manager.send_command("end")
             pools = self.model.get_pools()
             self.finished_signal.emit(pools if pools is not None else [], "")
         except Exception as e:
             self.finished_signal.emit([], str(e))
+
+class NatLoadWorker(QThread):
+    """
+    Asynchronous worker for fetching NAT-specific device data (ACLs and Pools).
+    """
+    finished_signal = Signal(str, list)
+
+    def __init__(self, model, data_type):
+        """
+        Initializes the worker with the model and the specific data category to fetch.
+        """
+        super().__init__()
+        self.model = model
+        self.data_type = data_type
+
+    def run(self):
+        """
+        Executes retrieval logic and ensures signals are emitted even on failure.
+        """
+        try:
+            self.model.session_manager.send_command("end")
+            data = []
+            if self.data_type == "acls":
+                data = self.model.get_acls()
+            elif self.data_type == "pools":
+                data = self.model.get_pools()
+
+            self.finished_signal.emit(self.data_type, data if data is not None else [])
+        except Exception:
+            self.finished_signal.emit(self.data_type, [])

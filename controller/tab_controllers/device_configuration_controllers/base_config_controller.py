@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import QDialog
 from view.device_configuration_views.preview_dialog import PreviewDialog
 from view.progress_dialog import ProgressDialog
-from .workers import ConfigApplyWorker, InterfaceLoadWorker, VlanLoadWorker
+from .load_workers import ConfigApplyWorker, InterfaceLoadWorker, VlanLoadWorker
 
 
 class BaseConfigController:
