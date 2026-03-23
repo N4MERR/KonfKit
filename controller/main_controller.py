@@ -18,7 +18,6 @@ from model.device_configuration_models.router.nat_model import NATModel
 from controller.tab_controllers.terminal_controller import TerminalController
 from controller.tab_controllers.connection_profile_controller import ConnectionProfileController
 from controller.tab_controllers.device_configuration_controllers.base_config_controller import BaseConfigController
-from controller.tab_controllers.password_reset_controller import PasswordResetController
 from controller.tab_controllers.device_configuration_controllers.nat_controller import NATController
 
 
@@ -70,12 +69,6 @@ class MainController:
             self.window.connection_manager_tab,
             self.profile_model,
             self.handle_session_start,
-        )
-
-        self.password_reset_controller = PasswordResetController(
-            self.window.password_reset_tab,
-            self.session_manager,
-            self.window.show_error
         )
 
         self.basic_settings_model = SystemSettingsModel(self.session_manager)

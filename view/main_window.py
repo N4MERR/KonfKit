@@ -1,7 +1,6 @@
 from PySide6.QtWidgets import QMainWindow, QTabWidget, QMessageBox, QStackedWidget, QApplication
 from view.connection_dialogs.connection_manager_tab import ConnectionManagerTab
 from view.config_tab.device_config_tab import DeviceConfigTab
-from view.password_reset_view import PasswordResetView
 from view.progress_dialog import ProgressDialog
 
 
@@ -52,11 +51,9 @@ class MainWindow(QMainWindow):
             }
         """)
 
-        self.password_reset_tab = PasswordResetView()
         self.connection_manager_tab = ConnectionManagerTab()
 
         self.main_tab_widget.addTab(self.connection_manager_tab, "Connection Manager")
-        self.main_tab_widget.addTab(self.password_reset_tab, "Password Resetter")
 
         self.device_config_tab = DeviceConfigTab()
 
