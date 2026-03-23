@@ -49,8 +49,8 @@ def handle_exception(exc_type, exc_value, exc_traceback):
         error_msg = "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
         msg_box = QMessageBox()
         msg_box.setIcon(QMessageBox.Critical)
-        msg_box.setWindowTitle("Critical Error")
-        msg_box.setText("An unexpected error occurred.")
+        msg_box.setWindowTitle("System Error")
+        msg_box.setText("A critical unexpected error occurred. Please check the details and logs.")
         msg_box.setDetailedText(error_msg)
         msg_box.exec()
 

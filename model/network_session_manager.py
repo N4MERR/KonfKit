@@ -265,14 +265,13 @@ class NetworkSessionManager(QObject):
 
                 self.connection.send_config_set(
                     config_commands=cmds,
-                    error_pattern=r"% (Invalid|Incomplete|Ambiguous)"
+                    error_pattern=r"%"
                 )
 
-        except ConfigInvalidException:
-            self.error_occurred.emit("Device rejected one or more configuration commands.")
+        except ConfigInvalidException as e:
+            self.error_occurred.emit(str(e))
         except Exception as e:
-            error_msg = str(e).split('\n')[0].strip()
-            self.error_occurred.emit(error_msg)
+            self.error_occurred.emit(str(e))
         finally:
             self.batch_finished.emit()
 

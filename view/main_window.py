@@ -1,7 +1,8 @@
-from PySide6.QtWidgets import QMainWindow, QTabWidget, QMessageBox, QStackedWidget
+from PySide6.QtWidgets import QMainWindow, QTabWidget, QMessageBox, QStackedWidget, QApplication
 from view.connection_dialogs.connection_manager_tab import ConnectionManagerTab
 from view.config_tab.device_config_tab import DeviceConfigTab
 from view.password_reset_view import PasswordResetView
+from view.progress_dialog import ProgressDialog
 
 
 class MainWindow(QMainWindow):
@@ -15,6 +16,8 @@ class MainWindow(QMainWindow):
         """
         super().__init__()
         self.setWindowTitle("Cisco Management Tool")
+
+        self.progress = None
 
         self.central_stack = QStackedWidget()
         self.setCentralWidget(self.central_stack)
@@ -67,6 +70,34 @@ class MainWindow(QMainWindow):
         Displays a critical error message box.
         """
         QMessageBox.critical(self, "System Error", f"An operation failed.\n\n{message}")
+
+    def ask_question(self, title, message):
+        """
+        Displays a question dialog and returns True if the user confirms.
+        """
+        reply = QMessageBox.question(
+            self,
+            title,
+            message,
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        return reply == QMessageBox.StandardButton.Yes
+
+    def show_progress(self, message):
+        """
+        Displays a non-blocking progress dialog and forces UI update.
+        """
+        self.progress = ProgressDialog(message, self)
+        self.progress.show()
+        QApplication.processEvents()
+
+    def hide_progress(self):
+        """
+        Closes and clears the active progress dialog.
+        """
+        if self.progress:
+            self.progress.close()
+            self.progress = None
 
     def show_device_config(self, connection_data):
         """

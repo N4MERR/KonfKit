@@ -1,7 +1,5 @@
-from PySide6.QtWidgets import QMessageBox, QApplication
 from PySide6.QtCore import QThread, Signal
 
-from view.progress_dialog import ProgressDialog
 from model.network_session_manager import NetworkSessionManager
 from model.terminal_model import TerminalModel
 from model.device_configuration_models.router.ospf_model import OSPFModel
@@ -59,7 +57,6 @@ class MainController:
         self.profile_model = profile_model
         self.session_manager = NetworkSessionManager()
         self.current_connection_data = None
-        self.progress = None
         self.worker = None
 
         self.terminal_view = self.window.device_config_tab.create_new_terminal()
@@ -72,7 +69,7 @@ class MainController:
         self.profile_controller = ConnectionProfileController(
             self.window.connection_manager_tab,
             self.profile_model,
-            self.handle_session_start
+            self.handle_session_start,
         )
 
         self.password_reset_controller = PasswordResetController(
@@ -238,9 +235,7 @@ class MainController:
         """
         Initializes an asynchronous connection attempt with user feedback via a progress dialog.
         """
-        self.progress = ProgressDialog(message, self.window)
-        self.progress.show()
-        QApplication.processEvents()
+        self.window.show_progress(message)
 
         self.worker = ConnectionWorker(self.session_manager, settings)
 
@@ -248,9 +243,7 @@ class MainController:
             """
             Callback to handle UI state updates when the connection worker finishes.
             """
-            if self.progress:
-                self.progress.close()
-                self.progress = None
+            self.window.hide_progress()
 
             if success:
                 if connection_data and not is_reconnect:
@@ -285,13 +278,11 @@ class MainController:
         Alerts the user of an unexpected disconnect and provides an option to immediately reconnect.
         """
         self.window.device_config_tab.set_connection_status(False)
-        reply = QMessageBox.question(
-            self.window,
+        wants_reconnect = self.window.ask_question(
             "Connection Lost",
-            f"The connection was unexpectedly closed.\nReason: {message}\n\nDo you want to reconnect?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            f"The connection was unexpectedly closed.\nReason: {message}\n\nDo you want to reconnect?"
         )
-        if reply == QMessageBox.StandardButton.Yes:
+        if wants_reconnect:
             self.handle_reconnect()
 
     def handle_session_start(self, connection_data):
