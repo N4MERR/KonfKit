@@ -1,5 +1,23 @@
-# rocnikovy_projekt_new/controller/tab_controllers/device_configuration_controllers/load_workers.py
 from PySide6.QtCore import QThread, Signal
+
+
+def _ensure_enable_mode(session_manager):
+    """
+    Safely transitions the network device to privileged EXEC mode if it is not already.
+    Exits configuration mode prior to checking the enable state to prevent command failures.
+    """
+    if not session_manager or getattr(session_manager, "connection", None) is None:
+        return
+
+    try:
+        with session_manager._lock:
+            if session_manager.connection.check_config_mode():
+                session_manager.connection.exit_config_mode()
+
+            if not session_manager.connection.check_enable_mode():
+                session_manager.connection.enable()
+    except Exception:
+        pass
 
 
 class ConfigApplyWorker(QThread):
@@ -45,7 +63,7 @@ class InterfaceLoadWorker(QThread):
         Executes the interface querying logic defined in the specific model.
         """
         try:
-            self.model.session_manager.send_command("end")
+            _ensure_enable_mode(self.model.session_manager)
             interfaces = self.model.get_interfaces()
             self.finished_signal.emit(interfaces if interfaces is not None else [], "")
         except Exception as e:
@@ -70,7 +88,7 @@ class VlanLoadWorker(QThread):
         Executes the VLAN querying logic defined in the specific model.
         """
         try:
-            self.model.session_manager.send_command("end")
+            _ensure_enable_mode(self.model.session_manager)
             vlans = self.model.get_vlans()
             self.finished_signal.emit(vlans if vlans is not None else [], "")
         except Exception as e:
@@ -95,7 +113,7 @@ class ACLLoadWorker(QThread):
         Executes the ACL querying logic defined in the specific model.
         """
         try:
-            self.model.session_manager.send_command("end")
+            _ensure_enable_mode(self.model.session_manager)
             acls = self.model.get_acls()
             self.finished_signal.emit(acls if acls is not None else [], "")
         except Exception as e:
@@ -120,11 +138,12 @@ class PoolLoadWorker(QThread):
         Executes the NAT pool querying logic defined in the specific model.
         """
         try:
-            self.model.session_manager.send_command("end")
+            _ensure_enable_mode(self.model.session_manager)
             pools = self.model.get_pools()
             self.finished_signal.emit(pools if pools is not None else [], "")
         except Exception as e:
             self.finished_signal.emit([], str(e))
+
 
 class NatLoadWorker(QThread):
     """
@@ -145,7 +164,7 @@ class NatLoadWorker(QThread):
         Executes retrieval logic and ensures signals are emitted even on failure.
         """
         try:
-            self.model.session_manager.send_command("end")
+            _ensure_enable_mode(self.model.session_manager)
             data = []
             if self.data_type == "acls":
                 data = self.model.get_acls()
