@@ -1,3 +1,5 @@
+from PySide6.QtGui import QRegularExpressionValidator
+from PySide6.QtCore import QRegularExpression
 from .base_input_field import BaseInputField
 from utils.input_validator import InputValidator
 
@@ -12,7 +14,11 @@ class AdaptiveSubnetMaskField(BaseInputField):
         Initializes the adaptive mask field with a standard dual-stack error message and optional linkage.
         """
         super().__init__(label_text, is_optional, parent)
-        self.error_message = "Invalid mask or prefix"
+        self.error_message = "Invalid mask or prefix length"
+
+        regex = QRegularExpression(r"^[0-9.]*$")
+        validator = QRegularExpressionValidator(regex, self)
+        self.input_widget.setValidator(validator)
 
         if linked_ip_field:
             self.radio.show()

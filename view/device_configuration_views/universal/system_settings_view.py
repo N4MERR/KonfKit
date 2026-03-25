@@ -1,7 +1,6 @@
 from view.device_configuration_views.base_config_view import BaseConfigView
 from view.device_configuration_views.input_fields.base_input_field import BaseInputField
 from view.device_configuration_views.input_fields.password_field import PasswordField
-from view.device_configuration_views.input_fields.password_confirm_field import PasswordConfirmField
 from view.device_configuration_views.input_fields.multiline_field import MultilineField
 from view.device_configuration_views.input_fields.radio_indicator_field import RadioIndicatorField
 
@@ -19,7 +18,6 @@ class SystemSettingsView(BaseConfigView):
         self.add_field("domain_name", BaseInputField("Domain Name:", is_optional=True))
 
         enable_sec = self.add_field("enable_secret", PasswordField("Enable Secret:", is_optional=True))
-        self.add_field("confirm_secret", PasswordConfirmField("Confirm Secret:", enable_sec))
 
         self.password_encryption = RadioIndicatorField("Enable Service Password-Encryption")
         self.form_layout.insertWidget(self.form_layout.count() - 1, self.password_encryption)

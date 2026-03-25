@@ -1,3 +1,4 @@
+from PySide6.QtGui import QIntValidator
 from .base_input_field import BaseInputField
 from utils.input_validator import InputValidator
 
@@ -12,7 +13,10 @@ class IPv6PrefixLengthField(BaseInputField):
         Initializes the IPv6 prefix field with a standard error message and optional linkage.
         """
         super().__init__(label_text, is_optional, parent)
-        self.error_message = "Invalid prefix length"
+        self.error_message = "Invalid IPv6 prefix length (0-64)"
+
+        validator = QIntValidator(0, 64, self)
+        self.input_widget.setValidator(validator)
 
         if linked_ip_field:
             self.radio.show()
