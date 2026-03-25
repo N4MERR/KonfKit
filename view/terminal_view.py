@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QPlainTextEdit, QFrame
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QPlainTextEdit, QFrame, QApplication
 from PySide6.QtCore import Signal, Qt
 from PySide6.QtGui import QTextCursor
 
@@ -12,10 +12,10 @@ class TerminalView(QWidget):
     def __init__(self, parent=None):
         """
         Initializes the terminal layout and interactive text area.
+        The 25px top margin aligns the terminal border with the QGroupBox border.
         """
         super().__init__(parent)
         self.layout = QVBoxLayout(self)
-        # 25px top margin perfectly aligns the terminal border with the QGroupBox border
         self.layout.setContentsMargins(15, 25, 15, 15)
 
         self.console_output = QPlainTextEdit()
@@ -28,6 +28,7 @@ class TerminalView(QWidget):
             Qt.TextInteractionFlag.TextSelectableByMouse
         )
         self.console_output.setFocusPolicy(Qt.StrongFocus)
+        self.console_output.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
 
         self.layout.addWidget(self.console_output)
         self.console_output.installEventFilter(self)
@@ -54,15 +55,21 @@ class TerminalView(QWidget):
     def eventFilter(self, obj, event):
         """
         Intercepts key presses and mouse clicks for redirection to the controller.
+        Implements right-click to copy (if selected) or paste (if empty), and pure Ctrl+C interrupt signals.
         """
         if obj is self.console_output:
             if event.type() == event.Type.MouseButtonPress:
-                res = super().eventFilter(obj, event)
-                cursor = self.console_output.textCursor()
-                if cursor.position() < self._protection_point:
-                    cursor.setPosition(self._protection_point)
-                    self.console_output.setTextCursor(cursor)
-                return res
+                if event.button() == Qt.MouseButton.RightButton:
+                    cursor = self.console_output.textCursor()
+                    if cursor.hasSelection():
+                        self.console_output.copy()
+                        cursor.clearSelection()
+                        self.console_output.setTextCursor(cursor)
+                    else:
+                        clipboard_text = QApplication.clipboard().text()
+                        if clipboard_text:
+                            self.user_input_received.emit(clipboard_text)
+                    return True
 
             if event.type() == event.Type.KeyPress:
                 key = event.key()
@@ -70,13 +77,19 @@ class TerminalView(QWidget):
                 modifiers = event.modifiers()
                 cursor = self.console_output.textCursor()
 
-                if cursor.position() < self._protection_point:
-                    cursor.movePosition(QTextCursor.End)
-                    self.console_output.setTextCursor(cursor)
-
-                if key == Qt.Key_C and (modifiers & Qt.ControlModifier):
+                if key == Qt.Key_C and (modifiers == Qt.ControlModifier):
                     self.user_input_received.emit("\x03")
                     return True
+
+                if modifiers & Qt.ControlModifier:
+                    return False
+
+                if modifiers & Qt.ShiftModifier and key in (Qt.Key_Left, Qt.Key_Right, Qt.Key_Up, Qt.Key_Down):
+                    return False
+
+                if cursor.position() < self._protection_point and not cursor.hasSelection():
+                    cursor.movePosition(QTextCursor.End)
+                    self.console_output.setTextCursor(cursor)
 
                 if key == Qt.Key_Up:
                     self.user_input_received.emit("\x1b[A")
