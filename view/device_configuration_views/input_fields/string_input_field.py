@@ -19,8 +19,6 @@ class StringInputField(BaseInputField):
         self.start_with = start_with
         self.cant_start_with = cant_start_with
 
-        self.error_message = self._generate_error_message()
-
         if self.max_length is not None:
             self.input_widget.setMaxLength(self.max_length)
 
@@ -29,36 +27,28 @@ class StringInputField(BaseInputField):
             validator = QRegularExpressionValidator(regex, self)
             self.input_widget.setValidator(validator)
 
-    def _generate_error_message(self):
-        """
-        Generates a descriptive error message based on the configured constraints.
-        """
-        msg_parts = ["Invalid string."]
-        if self.max_length:
-            msg_parts.append(f"Max length: {self.max_length}.")
-        if self.start_with:
-            msg_parts.append(f"Must start with valid characters.")
-        if self.cant_start_with:
-            msg_parts.append(f"Contains invalid starting characters.")
-        return " ".join(msg_parts)
-
     def _run_validation(self, value):
         """
-        Validates the input string against all defined constraints.
+        Validates the input string against all defined constraints and assigns a specific error message dynamically upon failure.
         """
         if not value:
+            self.error_message = "Input cannot be empty."
             return False
 
         if self.start_with and not re.match(f"^[{self.start_with}]", value):
+            self.error_message = f"Must start with: {self.start_with}"
             return False
 
         if self.cant_start_with and re.match(f"^[{self.cant_start_with}]", value):
+            self.error_message = f"Cannot start with: {self.cant_start_with}"
             return False
 
         if self.allowed_chars and not re.match(f"^[{self.allowed_chars}]*$", value):
+            self.error_message = f"Contains invalid characters. Allowed: {self.allowed_chars}"
             return False
 
         if self.max_length and len(value) > self.max_length:
+            self.error_message = f"Exceeds maximum length of {self.max_length} characters."
             return False
 
         return True
