@@ -3,7 +3,7 @@ from PySide6.QtCore import Signal
 from view.device_configuration_views.base_config_view import BaseConfigView
 from view.device_configuration_views.input_fields.dropdown_field import DropdownField
 from view.device_configuration_views.input_fields.ip_address_field import IPAddressField
-from view.device_configuration_views.input_fields.base_input_field import BaseInputField
+from view.device_configuration_views.input_fields.string_input_field import StringInputField
 from view.device_configuration_views.input_fields.subnet_mask_field import SubnetMaskField
 from view.device_configuration_views.input_fields.toggle_field import ToggleField
 
@@ -64,7 +64,7 @@ class NATPoolCreationView(BaseConfigView):
         """
         super().__init__()
 
-        self.pool_name = BaseInputField("New Pool Name:", is_optional=False)
+        self.pool_name = StringInputField("New Pool Name:", max_length=64, allowed_chars="a-zA-Z0-9_-", start_with="a-zA-Z", is_optional=False)
         self.add_field("pool_name", self.pool_name)
 
         self.start_ip = IPAddressField("Start IP:", is_optional=False)
@@ -162,7 +162,7 @@ class NATTranslationRuleView(BaseConfigView):
         """
         source_type = self.source_type_field.get_value()
         is_static = source_type == "static"
-        is_list = source_type == "list"
+        is_list = source_type == "access control list"
 
         self.inside_ip.setVisible(is_static)
         self.outside_ip.setVisible(is_static)

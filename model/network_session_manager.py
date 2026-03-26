@@ -228,24 +228,17 @@ class NetworkSessionManager(QObject):
 
     def send_command_set(self, cmds):
         """
-        Starts a background thread to send a set of configuration commands.
+        Sends a set of configuration commands synchronously.
         """
         if not self.connection or not self._receiving:
             self.batch_finished.emit()
-            return
+            return None
 
-        threading.Thread(target=self._run_command_set_thread, args=(cmds,), daemon=True).start()
-
-    def _run_command_set_thread(self, cmds):
-        """
-        Execution logic for sending a batch of commands in a separate thread.
-        """
         try:
             with self._lock:
                 alive = True
                 try:
-                    if hasattr(self.connection, "remote_conn") and hasattr(self.connection.remote_conn,
-                                                                           "get_transport"):
+                    if hasattr(self.connection, "remote_conn") and hasattr(self.connection.remote_conn, "get_transport"):
                         transport = self.connection.remote_conn.get_transport()
                         if transport and not transport.is_active():
                             alive = False
@@ -263,15 +256,18 @@ class NetworkSessionManager(QObject):
                 if not self.connection.check_enable_mode():
                     self.connection.enable()
 
-                self.connection.send_config_set(
+                output = self.connection.send_config_set(
                     config_commands=cmds,
                     error_pattern=r"%"
                 )
+                return output
 
         except ConfigInvalidException as e:
             self.error_occurred.emit(str(e))
+            return None
         except Exception as e:
             self.error_occurred.emit(str(e))
+            return None
         finally:
             self.batch_finished.emit()
 

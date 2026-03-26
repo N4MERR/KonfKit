@@ -1,5 +1,5 @@
 from view.device_configuration_views.base_config_view import BaseConfigView
-from view.device_configuration_views.input_fields.base_input_field import BaseInputField
+from view.device_configuration_views.input_fields.string_input_field import StringInputField
 from view.device_configuration_views.input_fields.password_field import PasswordField
 from view.device_configuration_views.input_fields.ranged_number_field import RangedNumberField
 from view.device_configuration_views.input_fields.range_field import RangeField
@@ -20,7 +20,7 @@ class TelnetConnectionView(BaseConfigView):
         self.add_field("login_method", DropdownField("Login Method:", ["no login", "login local", "login"], is_optional=False))
         self.add_field("line_password", PasswordField("Line Password:", is_optional=True))
 
-        self.add_field("login_username", BaseInputField("Login Username:", is_optional=True))
+        self.add_field("login_username", StringInputField("Login Username:", max_length=64, allowed_chars="a-zA-Z0-9_.-", start_with="a-zA-Z0-9", is_optional=True))
         self.add_field("login_password", PasswordField("Login Password:", is_optional=True))
         self.add_field("login_privilege", RangedNumberField("Privilege (0-15):", 0, 15, is_optional=True))
 
@@ -110,7 +110,7 @@ class TelnetLoginView(BaseConfigView):
         """
         super().__init__()
 
-        self.add_field("login_name", BaseInputField("Username:", is_optional=False))
+        self.add_field("login_name", StringInputField("Username:", max_length=64, allowed_chars="a-zA-Z0-9_.-", start_with="a-zA-Z0-9", is_optional=False))
         self.add_field("privilege", RangedNumberField("Privilege (0-15):", 0, 15, is_optional=False))
         self.add_field("login_password", PasswordField("Password:", is_optional=False))
 

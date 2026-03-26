@@ -1,5 +1,5 @@
 from view.device_configuration_views.base_config_view import BaseConfigView
-from view.device_configuration_views.input_fields.base_input_field import BaseInputField
+from view.device_configuration_views.input_fields.string_input_field import StringInputField
 from view.device_configuration_views.input_fields.ip_address_field import IPAddressField
 from view.device_configuration_views.input_fields.subnet_mask_field import SubnetMaskField
 
@@ -15,12 +15,12 @@ class DHCPPoolView(BaseConfigView):
         """
         super().__init__()
 
-        self.add_field("pool_name", BaseInputField("Pool Name:", is_optional=False))
+        self.add_field("pool_name", StringInputField("Pool Name:", max_length=64, allowed_chars="a-zA-Z0-9_-", start_with="a-zA-Z", is_optional=False))
         self.add_field("network", IPAddressField("Network Address:", is_optional=False))
         self.add_field("mask", SubnetMaskField("Subnet Mask:", is_optional=False))
         self.add_field("gateway", IPAddressField("Default Gateway:", is_optional=True))
         self.add_field("dns", IPAddressField("DNS Server:", is_optional=True))
-        self.add_field("domain_name", BaseInputField("Domain Name:", is_optional=True))
+        self.add_field("domain_name", StringInputField("Domain Name:", max_length=253, allowed_chars="a-zA-Z0-9.-", start_with="a-zA-Z0-9", is_optional=True))
 
     def get_data(self) -> dict:
         """
