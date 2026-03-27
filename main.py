@@ -18,19 +18,13 @@ def get_app_dir():
 
 APP_DIR = get_app_dir()
 
-app_handler = logging.FileHandler(APP_DIR / "application.log", mode='a', encoding='utf-8')
-app_handler.setLevel(logging.INFO)
-
 error_handler = logging.FileHandler(APP_DIR / "error.log", mode='a', encoding='utf-8')
 error_handler.setLevel(logging.ERROR)
 
-stream_handler = logging.StreamHandler(sys.stdout)
-stream_handler.setLevel(logging.INFO)
-
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.ERROR,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-    handlers=[app_handler, error_handler, stream_handler]
+    handlers=[error_handler]
 )
 
 def handle_exception(exc_type, exc_value, exc_traceback):
