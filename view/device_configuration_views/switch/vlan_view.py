@@ -2,7 +2,7 @@ from view.device_configuration_views.base_config_view import BaseConfigView
 from view.device_configuration_views.input_fields.dropdown_field import DropdownField
 from view.device_configuration_views.input_fields.multi_select_list_field import MultiSelectListField
 from view.device_configuration_views.input_fields.ranged_number_field import RangedNumberField
-from view.device_configuration_views.input_fields.base_input_field import BaseInputField
+from view.device_configuration_views.input_fields.string_input_field import StringInputField
 from view.device_configuration_views.input_fields.dual_stack_ip_field import DualStackIPField
 from PySide6.QtWidgets import QPushButton
 from PySide6.QtCore import Signal
@@ -22,7 +22,7 @@ class CreateVlanView(BaseConfigView):
         self.vlan_id_field = RangedNumberField("VLAN ID (1-4094):", 1, 4094, is_optional=False)
         self.add_field("vlan_id", self.vlan_id_field)
 
-        self.vlan_name_field = BaseInputField("VLAN Name:", is_optional=True)
+        self.vlan_name_field = StringInputField("VLAN Name:", max_length=32, allowed_chars="a-zA-Z0-9_-", start_with="a-zA-Z", is_optional=True)
         self.add_field("vlan_name", self.vlan_name_field)
 
         self.dual_stack_ip_field = DualStackIPField()

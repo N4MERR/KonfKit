@@ -7,6 +7,13 @@ class PasswordField(BaseInputField):
     Field with hidden text and a toggle button to show/hide.
     """
 
+    def __init__(self, label_text, is_optional=False, parent=None):
+        """
+        Initializes the password field with a specific error message.
+        """
+        super().__init__(label_text, is_optional, parent)
+        self.error_message = "Password cannot be empty"
+
     def _create_input_widget(self):
         """
         Creates a password line edit with a visibility toggle.

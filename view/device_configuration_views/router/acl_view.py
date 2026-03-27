@@ -1,5 +1,5 @@
 from view.device_configuration_views.base_config_view import BaseConfigView
-from view.device_configuration_views.input_fields.acl_name_fields import NamedAclIdField, ExtendedAclIdField, \
+from view.device_configuration_views.input_fields.acl_fields import NamedAclIdField, ExtendedAclIdField, \
     StandardAclIdField
 from view.device_configuration_views.input_fields.dropdown_field import DropdownField
 from view.device_configuration_views.input_fields.adaptive_ip_address_field import AdaptiveIPAddressField

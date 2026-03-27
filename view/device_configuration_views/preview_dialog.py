@@ -1,8 +1,8 @@
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QPushButton,
-    QPlainTextEdit, QLabel, QFrame, QSizePolicy
+    QPlainTextEdit, QLabel, QFrame, QSizePolicy, QApplication, QGridLayout, QWidget
 )
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QEvent
 
 
 class PreviewDialog(QDialog):
@@ -23,10 +23,25 @@ class PreviewDialog(QDialog):
         self.main_layout.setSpacing(0)
         self.main_layout.setContentsMargins(15, 15, 15, 15)
 
+        self.header_layout = QHBoxLayout()
         self.header_label = QLabel("Configuration Preview")
-        self.header_label.setAlignment(Qt.AlignCenter)
-        self.header_label.setStyleSheet("font-size: 13pt; font-weight: bold; padding-bottom: 10px; background: transparent;")
-        self.main_layout.addWidget(self.header_label)
+        self.header_label.setStyleSheet(
+            "font-size: 13pt; font-weight: bold; padding-bottom: 10px; background: transparent;")
+
+        self.copy_btn = QPushButton("Copy")
+        self.copy_btn.setStyleSheet(
+            "QPushButton { background-color: #4caf50; color: white; font-weight: bold; border-radius: 4px; border: none; padding: 4px 15px; } "
+            "QPushButton:hover { background-color: #388e3c; }"
+        )
+        self.copy_btn.setCursor(Qt.PointingHandCursor)
+        self.copy_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self.copy_btn.clicked.connect(self.copy_all_text)
+
+        self.header_layout.addWidget(self.header_label)
+        self.header_layout.addStretch()
+        self.header_layout.addWidget(self.copy_btn)
+
+        self.main_layout.addLayout(self.header_layout)
 
         self.console_output = QPlainTextEdit()
         self.console_output.setFrameShape(QFrame.NoFrame)
@@ -37,12 +52,15 @@ class PreviewDialog(QDialog):
             Qt.TextInteractionFlag.TextSelectableByMouse
         )
         self.console_output.setFocusPolicy(Qt.StrongFocus)
+        self.console_output.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
         self.console_output.setPlainText(commands_text)
+        self.console_output.installEventFilter(self)
 
         self.apply_terminal_style()
-        self.main_layout.addWidget(self.console_output)
+        self.main_layout.addWidget(self.console_output, 1)
 
-        self.button_layout = QHBoxLayout()
+        self.footer_widget = QWidget()
+        self.button_layout = QGridLayout(self.footer_widget)
         self.button_layout.setContentsMargins(0, 15, 0, 0)
         self.button_layout.setSpacing(10)
 
@@ -50,28 +68,45 @@ class PreviewDialog(QDialog):
         self.apply_btn = QPushButton("Apply")
 
         self.close_btn.setStyleSheet(
-            "QPushButton { background-color: #d32f2f; color: white; font-weight: bold; border-radius: 4px; border: none; padding: 8px 20px; min-height: 32px; } "
+            "QPushButton { background-color: #d32f2f; color: white; font-weight: bold; border-radius: 4px; border: none; } "
             "QPushButton:hover { background-color: #b71c1c; }"
         )
         self.apply_btn.setStyleSheet(
-            "QPushButton { background-color: #0078d4; color: white; font-weight: bold; border-radius: 4px; border: none; padding: 8px 20px; min-height: 32px; } "
+            "QPushButton { background-color: #0078d4; color: white; font-weight: bold; border-radius: 4px; border: none; } "
             "QPushButton:hover { background-color: #005a9e; }"
         )
+
+        self.close_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
+        self.apply_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
 
         self.close_btn.setCursor(Qt.PointingHandCursor)
         self.apply_btn.setCursor(Qt.PointingHandCursor)
 
-        self.close_btn.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
-        self.apply_btn.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
-
         self.close_btn.clicked.connect(self.reject)
         self.apply_btn.clicked.connect(self.accept)
 
-        self.button_layout.addStretch(10)
-        self.button_layout.addWidget(self.close_btn, 1)
-        self.button_layout.addWidget(self.apply_btn, 1)
+        self.button_layout.setColumnStretch(0, 1)
+        self.button_layout.addWidget(self.close_btn, 0, 1)
+        self.button_layout.addWidget(self.apply_btn, 0, 2)
 
-        self.main_layout.addLayout(self.button_layout)
+        self.button_layout.setColumnMinimumWidth(1, 100)
+        self.button_layout.setColumnMinimumWidth(2, 100)
+
+        self.main_layout.addWidget(self.footer_widget)
+
+    def eventFilter(self, obj, event):
+        """
+        Intercepts mouse clicks for right-click copy functionality.
+        """
+        if obj is self.console_output and event.type() == QEvent.MouseButtonPress:
+            if event.button() == Qt.RightButton:
+                cursor = self.console_output.textCursor()
+                if cursor.hasSelection():
+                    self.console_output.copy()
+                    cursor.clearSelection()
+                    self.console_output.setTextCursor(cursor)
+                return True
+        return super().eventFilter(obj, event)
 
     def apply_terminal_style(self):
         """
@@ -87,6 +122,12 @@ class PreviewDialog(QDialog):
             "background: transparent; "
             "}"
         )
+
+    def copy_all_text(self):
+        """
+        Copies all commands to the system clipboard.
+        """
+        QApplication.clipboard().setText(self.console_output.toPlainText())
 
     def get_commands(self) -> str:
         """
