@@ -49,7 +49,6 @@ class ConnectionCard(QFrame):
     UI element representing an individual connection profile.
     """
     connect_requested = Signal(dict)
-    edit_requested = Signal(dict)
     delete_requested = Signal(dict)
 
     def __init__(self, conn, parent=None):
@@ -99,11 +98,9 @@ class ConnectionCard(QFrame):
         self.menu = QMenu(self)
 
         connect_action = self.menu.addAction("Connect")
-        edit_action = self.menu.addAction("Edit")
         delete_action = self.menu.addAction("Delete")
 
         connect_action.triggered.connect(lambda: self.connect_requested.emit(self.conn))
-        edit_action.triggered.connect(lambda: self.edit_requested.emit(self.conn))
         delete_action.triggered.connect(lambda: self.delete_requested.emit(self.conn))
 
         self.options_btn.setMenu(self.menu)
@@ -132,7 +129,6 @@ class ConnectionRow(QWidget):
     """
     add_requested = Signal()
     connect_requested = Signal(dict)
-    edit_requested = Signal(dict)
     delete_requested = Signal(dict)
 
     def __init__(self, title, protocol):
@@ -218,7 +214,6 @@ class ConnectionRow(QWidget):
         for conn in connections:
             card = ConnectionCard(conn)
             card.connect_requested.connect(self.connect_requested.emit)
-            card.edit_requested.connect(self.edit_requested.emit)
             card.delete_requested.connect(self.delete_requested.emit)
             self.container_layout.addWidget(card)
 
@@ -230,7 +225,6 @@ class ConnectionManagerTab(QWidget):
     Main tab for managing all connection profiles.
     """
     connect_profile_requested = Signal(dict)
-    edit_profile_requested = Signal(dict)
     delete_profile_requested = Signal(dict)
 
     def __init__(self):
@@ -277,7 +271,6 @@ class ConnectionManagerTab(QWidget):
         Binds signals from specific row components to tab components.
         """
         row.connect_requested.connect(self.connect_profile_requested.emit)
-        row.edit_requested.connect(self.edit_profile_requested.emit)
         row.delete_requested.connect(self.delete_profile_requested.emit)
 
     def _create_separator(self):
