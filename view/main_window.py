@@ -66,7 +66,7 @@ class MainWindow(QMainWindow):
         """
         Displays a critical error message box.
         """
-        QMessageBox.critical(self, "System Error", f"An operation failed.\n\n{message}")
+        QMessageBox.critical(self, "Error", f"An operation failed.\n\n{message}")
 
     def ask_question(self, title, message):
         """

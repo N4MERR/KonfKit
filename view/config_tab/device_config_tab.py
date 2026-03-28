@@ -57,7 +57,7 @@ class DeviceConfigTab(QWidget):
 
     def _setup_ui(self):
         """
-        Sets up the UI structure with sections organized by category.
+        Sets up the UI structure with sections organized by logical provisioning sequence.
         """
         layout = QVBoxLayout(self)
 
@@ -208,13 +208,6 @@ class DeviceConfigTab(QWidget):
             "System Setup": {
                 "System Settings": self.router_basic_settings
             },
-            "Interfaces": {
-                "Physical Interfaces": self.router_interface_view.physical,
-                "Subinterfaces": self.router_interface_view.subinterface
-            },
-            "Routing": {
-                "Static Routing": self.static_routing_view
-            },
             "SSH": {
                 "SSH Connection": self.router_ssh_view.global_section,
                 "Login": self.router_ssh_view.auth_section
@@ -223,9 +216,16 @@ class DeviceConfigTab(QWidget):
                 "Telnet Connection": self.router_telnet_view.connection_section,
                 "Login": self.router_telnet_view.login_section
             },
+            "Interfaces": {
+                "Physical Interfaces": self.router_interface_view.physical,
+                "Subinterfaces": self.router_interface_view.subinterface
+            },
             "DHCP": {
                 "DHCP Server": self.dhcp_view.pool_view,
                 "Excluded Addresses": self.dhcp_view.excluded_view
+            },
+            "Routing": {
+                "Static Routing": self.static_routing_view
             },
             "OSPF": {
                 "Basic Config": self.ospf_view.basic_config,
@@ -256,9 +256,6 @@ class DeviceConfigTab(QWidget):
             "System Setup": {
                 "General Settings": self.switch_basic_settings
             },
-            "Ether Channel": {
-                "EtherChannel": self.switch_etherchannel_view
-            },
             "SSH": {
                 "SSH Connection": self.switch_ssh_view.global_section,
                 "Login": self.switch_ssh_view.auth_section
@@ -270,6 +267,9 @@ class DeviceConfigTab(QWidget):
             "VLAN": {
                 "Create VLAN": self.vlan_view.create_vlan,
                 "Interface Configuration": self.vlan_view.interface_vlan
+            },
+            "Ether Channel": {
+                "EtherChannel": self.switch_etherchannel_view
             }
         }
         self.switch_section = ConfigSection(switch_items)
