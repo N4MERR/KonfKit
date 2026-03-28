@@ -14,7 +14,7 @@ class MainWindow(QMainWindow):
         Initializes the main window and its UI components.
         """
         super().__init__()
-        self.setWindowTitle("Cisco Management Tool")
+        self.setWindowTitle("KonfKit")
 
         self.progress = None
 
