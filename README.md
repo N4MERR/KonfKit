@@ -27,7 +27,7 @@ KonfKit is a robust, GUI-based network management and configuration tool designe
 
 ## Built With
 
-* **Python 3** - Core language
+* **Python** - Core language
 * **PyQt6** - GUI framework
 * **Netmiko** - Multi-vendor library for simplified SSH/Telnet connections
 * **PySerial** - Support for serial console connections
